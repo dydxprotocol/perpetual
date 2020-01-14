@@ -1,0 +1,15 @@
+.idea
+build/
+dist/
+node_modules/
+coverage.json
+coverage/
+coverageEnv/
+allFiredEvents
+config
+.env.local
+.coverage*
+
+# VIM
+*.swo
+*.swp
