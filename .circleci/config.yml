@@ -60,7 +60,7 @@ jobs:
     working_directory: ~/build
     steps:
       - restore_cache:
-          key: cache-{{ .Environment.CIRCLE_SHA1 }}
+          key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
       - setup_remote_docker:
           docker_layer_caching: true
       - run:
@@ -83,6 +83,9 @@ jobs:
     steps:
       - restore_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Install Docker
+          command: apk add docker
       - run:
           name: Test
           command: TESTFILES=$(circleci tests glob "test/**/*.test.ts" | circleci tests split --split-by=filesize) && npm run test -- ${TESTFILES}

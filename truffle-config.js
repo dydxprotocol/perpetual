@@ -22,6 +22,12 @@ module.exports = {
       gasPrice: 1,
       network_id: '1001',
     },
+    coverage: {
+      host: '127.0.0.1',
+      port: 8555,
+      gasPrice: 1,
+      network_id: '1002',
+    },
   },
   plugins: ['solidity-coverage'],
 };

@@ -36,7 +36,8 @@ import {
 import { Perpetual } from '../../build/wrappers/Perpetual';
 
 // JSON
-import perpetualJson from '../../build/contracts/Perpetual.json';
+const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
+const perpetualJson = require(`${jsonFolder}Perpetual.json`);
 
 import {
   address,

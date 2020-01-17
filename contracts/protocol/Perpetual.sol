@@ -42,6 +42,9 @@ contract Perpetual {
         view
         returns (uint256)
     {
-        return id;
+        if (id != 42) {
+            return id;
+        }
+        return 42;
     }
 }

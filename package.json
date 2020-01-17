@@ -14,7 +14,7 @@
   ],
   "scripts": {
     "test": "npm run deploy_test && truffle test",
-    "coverage": "truffle run coverage",
+    "coverage": "NETWORK_ID=1002 RPC_NODE_URI=http://0.0.0.0:8555 COVERAGE=true truffle run coverage --network coverage",
     "compile": "truffle compile",
     "build": "npm run compile && npm run build:wrappers",
     "build:wrappers": "typechain --target=web3-v1 --outDir=build/wrappers/ './build/contracts/*.json'",
