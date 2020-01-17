@@ -29,11 +29,6 @@ jobs:
     steps:
       - restore_cache:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: Install Docker
-          command: apk add docker
       - run:
           name: Compile contracts
           command: npm run compile -- --all
@@ -61,11 +56,6 @@ jobs:
     steps:
       - restore_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
-      - setup_remote_docker:
-          docker_layer_caching: true
-      - run:
-          name: Install Docker
-          command: apk add docker
       - run:
           name: Coverage
           command: npm run coverage
