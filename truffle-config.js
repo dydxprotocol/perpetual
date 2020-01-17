@@ -5,7 +5,7 @@ module.exports = {
   compilers: {
     solc: {
       version: '0.6.1',
-      docker: false,
+      docker: !process.env.COVERALLS_REPO_TOKEN,
       parser: 'solcjs',
       settings: {
         optimizer: {
