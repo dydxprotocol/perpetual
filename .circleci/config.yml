@@ -1,0 +1,141 @@
+version: 2
+jobs:
+  checkout_and_install:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ .Environment.DEP_CACHE_VERSION }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+            - dependency-cache-{{ .Environment.DEP_CACHE_VERSION }}-{{ .Branch }}-
+            - dependency-cache-{{ .Environment.DEP_CACHE_VERSION }}-
+      - run:
+          name: Install Dependencies
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" >> ~/.npmrc && npm ci
+      - save_cache:
+          key: dependency-cache-{{ .Environment.DEP_CACHE_VERSION }}-{{ .Branch }}-{{ checksum "package-lock.json" }}
+          paths:
+            - "$HOME/.npm"
+      - save_cache:
+          key: cache-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/build
+  build_contracts:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Compile contracts
+          command: npm run compile -- --all
+      - run:
+          name: Generate wrappers
+          command: npm run build:wrappers
+      - save_cache:
+          key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/build
+  lint:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Lint
+          command: npm run lint
+  coverage:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Coverage
+          command: npm run coverage
+          no_output_timeout: 60m
+      - run:
+          name: Coveralls
+          command: cat coverage/lcov.info | node_modules/.bin/coveralls
+  test:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+      - image: trufflesuite/ganache-cli:v6.8.2
+        command: -d -k=istanbul -i 1001
+    working_directory: ~/build
+    parallelism: 3
+    steps:
+      - restore_cache:
+          key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Install Docker
+          command: apk add docker
+      - run:
+          name: Test
+          command: TESTFILES=$(circleci tests glob "test/**/*.test.ts" | circleci tests split --split-by=filesize) && npm run test -- ${TESTFILES}
+          no_output_timeout: 20m
+  build_js:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Compile Typescript
+          command: npm run build:js
+      - save_cache:
+          key: cache-completed-build-js-{{ .Environment.CIRCLE_SHA1 }}
+          paths:
+            - ~/build
+  publish:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-completed-build-js-{{ .Environment.CIRCLE_SHA1 }}
+      - add_ssh_keys:
+          fingerprints:
+            - "a2:ec:07:aa:96:73:ca:dc:7c:ef:b2:3e:42:73:88:71"
+      - run:
+          name: Authenticate with registry
+          command: echo "//registry.npmjs.org/:_authToken=$NPM_TOKEN" > ~/build/.npmrc
+      - run:
+          command: sh scripts/publish_if_not_exists.sh
+
+workflows:
+  version: 2
+  build_and_test:
+    jobs:
+      - checkout_and_install
+      - build_contracts:
+          requires:
+            - checkout_and_install
+      - lint:
+          requires:
+            - checkout_and_install
+      - coverage:
+          requires:
+            - build_contracts
+      - test:
+          requires:
+            - build_contracts
+      - build_js:
+          requires:
+            - build_contracts
+      - publish:
+          requires:
+            - test
+            - lint
+            - build_js
+            - coverage
+          filters:
+            branches:
+              only: master

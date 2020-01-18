@@ -1,0 +1,77 @@
+{
+  "name": "@dydxprotocol/perpetual",
+  "version": "0.0.1",
+  "description": "Ethereum Smart Contracts and TypeScript library used for the dYdX Perpetual Contracts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "files": [
+    "dist/build/",
+    "dist/src/",
+    "build/wrappers/",
+    "src/",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "npm run deploy_test && truffle test",
+    "coverage": "NETWORK_ID=1002 RPC_NODE_URI=http://0.0.0.0:8555 COVERAGE=true truffle run coverage --network coverage",
+    "compile": "truffle compile",
+    "build": "npm run compile && npm run build:wrappers",
+    "build:wrappers": "typechain --target=web3-v1 --outDir=build/wrappers/ './build/contracts/*.json'",
+    "build:js": "rm -rf dist/ && tsc && cp -r build/wrappers dist/build",
+    "lint": "npm run lint:ts && npm run lint:js && npm run lint:sol && npm run lint:dydx",
+    "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
+    "lint:js": "eslint --ext .js --ignore-path .gitignore migrations/**/*.js",
+    "lint:sol": "solium -d contracts/",
+    "lint:dydx": "python util/lintcontracts.py",
+    "docker_node": "ganache-cli -i 1313 -d -k=istanbul -p 8545 -h 0.0.0.0 --db=/home/.ganache",
+    "deploy": "truffle migrate --network=$NETWORK --reset",
+    "deploy_test": "npm run reset_test_evm && NETWORK=test npm run deploy && npm run snapshot_test_evm",
+    "reset_test_evm": "node scripts/reset-test-evm.js",
+    "snapshot_test_evm": "node scripts/snapshot-test-evm.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dydxprotocol/perpetual"
+  },
+  "keywords": [
+    "dydx",
+    "ethereum"
+  ],
+  "author": "dYdX Trading Inc.",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/dydxprotocol/perpetual/issues"
+  },
+  "homepage": "https://github.com/dydxprotocol/perpetual#readme",
+  "dependencies": {
+    "bignumber.js": "^9.0.0",
+    "bn.js": "^5.1.1",
+    "openzeppelin-solidity": "2.4.0",
+    "web3": "1.2.4"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.2.7",
+    "@types/mocha": "^5.2.7",
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^10.0.3",
+    "chai": "^4.2.0",
+    "coveralls": "^3.0.9",
+    "dotenv-flow": "^3.1.0",
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.20.0",
+    "ethlint": "^1.2.5",
+    "ganache-cli": "6.8.2",
+    "mocha": "^7.0.0",
+    "solidity-coverage": "^0.7.1",
+    "truffle": "^5.1.8",
+    "ts-node": "^8.6.2",
+    "tslint": "^5.20.1",
+    "tslint-config-airbnb": "^5.11.2",
+    "tslint-no-focused-test": "^0.5.0",
+    "typechain": "^1.0.3",
+    "typechain-target-web3-v1": "^1.0.4",
+    "typescript": "^3.7.4"
+  }
+}
