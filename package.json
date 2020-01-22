@@ -13,7 +13,7 @@
     "README.md"
   ],
   "scripts": {
-    "test": "npm run deploy_test && truffle test",
+    "test": "truffle test",
     "coverage": "NETWORK_ID=1002 RPC_NODE_URI=http://0.0.0.0:8555 COVERAGE=true truffle run coverage --network coverage",
     "compile": "truffle compile",
     "build": "npm run compile && npm run build:wrappers",
@@ -65,6 +65,7 @@
     "ganache-cli": "6.8.2",
     "mocha": "^7.0.0",
     "solidity-coverage": "^0.7.1",
+    "solium": "^1.2.5",
     "truffle": "^5.1.8",
     "ts-node": "^8.6.2",
     "tslint": "^5.20.1",

@@ -19,32 +19,16 @@
 pragma solidity 0.6.1;
 pragma experimental ABIEncoderV2;
 
+import { P1Initializer } from "./P1Initializer.sol";
+
 
 /**
- * @title Perpetual
+ * @title PerpetualV1
  * @author dYdX
  *
  * Main contract that inherits from other contracts
  */
-contract Perpetual {
-    uint256 id = 0;
-
-    constructor(
-        uint256 _id
-    )
-        public
-    {
-        id = _id;
-    }
-
-    function getId()
-        public
-        view
-        returns (uint256)
-    {
-        if (id != 42) {
-            return id;
-        }
-        return 42;
-    }
+contract PerpetualV1 is
+    P1Initializer
+{
 }

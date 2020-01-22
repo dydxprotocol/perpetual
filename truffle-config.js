@@ -1,5 +1,5 @@
-require('ts-node/register');
-require('dotenv-flow').config();
+require('ts-node/register'); // eslint-disable-line
+require('dotenv-flow').config(); // eslint-disable-line
 
 module.exports = {
   compilers: {
