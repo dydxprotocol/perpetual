@@ -16,35 +16,20 @@
 
 */
 
-pragma solidity 0.6.1;
+pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
+
+/* solium-disable-next-line */
+import { InitializableAdminUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/InitializableAdminUpgradeabilityProxy.sol";
 
 
 /**
- * @title Perpetual
+ * @title PerpetualProxy
  * @author dYdX
  *
- * Main contract that inherits from other contracts
+ * Proxy contract that forwards calls to the main Perpetual conntract.
  */
-contract Perpetual {
-    uint256 id = 0;
-
-    constructor(
-        uint256 _id
-    )
-        public
-    {
-        id = _id;
-    }
-
-    function getId()
-        public
-        view
-        returns (uint256)
-    {
-        if (id != 42) {
-            return id;
-        }
-        return 42;
-    }
+contract PerpetualProxy is
+    InitializableAdminUpgradeabilityProxy
+{
 }

@@ -2,8 +2,10 @@
  * To publish a contract with the published npm package, include it here
  */
 
-import { default as Perpetual } from '../build/contracts/Perpetual.json';
+import { default as PerpetualProxy } from '../build/contracts/PerpetualProxy.json';
+import { default as PerpetualV1 } from '../build/contracts/PerpetualV1.json';
 
 export default {
-  Perpetual,
+  PerpetualProxy,
+  PerpetualV1,
 };

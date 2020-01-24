@@ -19,27 +19,28 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { I_P1Funder } from "../intf/I_P1Funder.sol";
+import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
+import { I_P1Vault } from "../intf/I_P1Vault.sol";
+import { P1Types } from "../lib/P1Types.sol";
 
-contract Migrations {
-    address public owner;
-    uint256 public last_completed_migration;
 
-    modifier restricted() {
-        if (msg.sender == owner) {
-            _;
-        }
-    }
+/**
+ * @title P1Storage
+ * @author dYdX
+ *
+ * Storage contract
+ */
+contract P1Storage {
+    mapping(bytes32 => P1Types.Balance) internal _BALANCES_;
+    mapping(bytes32 => P1Types.Index) internal _INDEXES_;
 
-    constructor() public {
-        owner = msg.sender;
-    }
+    mapping(address => bool) internal _OPERATORS_;
 
-    function setCompleted(uint256 completed) public restricted {
-        last_completed_migration = completed;
-    }
+    I_P1Oracle public _ORACLE_;
+    I_P1Funder public _FUNDER_;
+    I_P1Vault public _VAULT_;
 
-    function upgrade(address newAddress) public restricted {
-        Migrations upgraded = Migrations(newAddress);
-        upgraded.setCompleted(last_completed_migration);
-    }
+    P1Types.Index public _INDEX_;
+    uint256 internal _OPEN_INTEREST_;
 }

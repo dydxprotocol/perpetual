@@ -20,26 +20,29 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 
-contract Migrations {
-    address public owner;
-    uint256 public last_completed_migration;
+/**
+ * @title P1Types
+ * @author dYdX
+ *
+ * Types contract
+ */
+contract P1Types {
+    // ============ Structs ============
 
-    modifier restricted() {
-        if (msg.sender == owner) {
-            _;
-        }
+    struct Index {
+        uint112 positive;
+        uint112 negative;
+        uint32 timestamp;
     }
 
-    constructor() public {
-        owner = msg.sender;
+    struct Balance {
+        int128 margin;
+        int128 position;
     }
 
-    function setCompleted(uint256 completed) public restricted {
-        last_completed_migration = completed;
-    }
-
-    function upgrade(address newAddress) public restricted {
-        Migrations upgraded = Migrations(newAddress);
-        upgraded.setCompleted(last_completed_migration);
+    struct TradeArg {
+        uint256 accountId1;
+        uint256 accountId2;
+        bytes data;
     }
 }

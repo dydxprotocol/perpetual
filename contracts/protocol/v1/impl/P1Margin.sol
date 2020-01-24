@@ -19,27 +19,33 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { P1Storage } from "./P1Storage.sol";
 
-contract Migrations {
-    address public owner;
-    uint256 public last_completed_migration;
 
-    modifier restricted() {
-        if (msg.sender == owner) {
-            _;
-        }
+/**
+ * @title P1Margin
+ * @author dYdX
+ *
+ * Margin logic contract
+ */
+contract P1Margin is
+    P1Storage
+{
+    function deposit(
+        bytes32 account,
+        uint256 amount
+    )
+        public
+    {
+        // TODO: logic
     }
 
-    constructor() public {
-        owner = msg.sender;
-    }
-
-    function setCompleted(uint256 completed) public restricted {
-        last_completed_migration = completed;
-    }
-
-    function upgrade(address newAddress) public restricted {
-        Migrations upgraded = Migrations(newAddress);
-        upgraded.setCompleted(last_completed_migration);
+    function withdraw(
+        bytes32 account,
+        uint256 amount
+    )
+        public
+    {
+        // TODO: logic
     }
 }

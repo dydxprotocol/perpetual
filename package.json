@@ -7,7 +7,6 @@
   "files": [
     "dist/build/",
     "dist/src/",
-    "build/wrappers/",
     "src/",
     "LICENSE",
     "README.md"
@@ -16,9 +15,8 @@
     "test": "npm run deploy_test && truffle test",
     "coverage": "NETWORK_ID=1002 RPC_NODE_URI=http://0.0.0.0:8555 COVERAGE=true truffle run coverage --network coverage",
     "compile": "truffle compile",
-    "build": "npm run compile && npm run build:wrappers",
-    "build:wrappers": "typechain --target=web3-v1 --outDir=build/wrappers/ './build/contracts/*.json'",
-    "build:js": "rm -rf dist/ && tsc && cp -r build/wrappers dist/build",
+    "build": "npm run compile -- --all && npm run build:js",
+    "build:js": "rm -rf dist/ && tsc",
     "lint": "npm run lint:ts && npm run lint:js && npm run lint:sol && npm run lint:dydx",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "lint:js": "eslint --ext .js --ignore-path .gitignore migrations/**/*.js",
@@ -45,9 +43,9 @@
   },
   "homepage": "https://github.com/dydxprotocol/perpetual#readme",
   "dependencies": {
+    "@openzeppelin/contracts": "2.4.0",
+    "@openzeppelin/upgrades": "2.6.0",
     "bignumber.js": "^9.0.0",
-    "bn.js": "^5.1.1",
-    "openzeppelin-solidity": "2.4.0",
     "web3": "1.2.4"
   },
   "devDependencies": {
@@ -56,6 +54,7 @@
     "babel-cli": "^6.26.0",
     "babel-eslint": "^10.0.3",
     "chai": "^4.2.0",
+    "chai-bignumber": "^3.0.0",
     "coveralls": "^3.0.9",
     "dotenv-flow": "^3.1.0",
     "eslint": "^6.8.0",
@@ -65,13 +64,12 @@
     "ganache-cli": "6.8.2",
     "mocha": "^7.0.0",
     "solidity-coverage": "^0.7.1",
+    "solium": "^1.2.5",
     "truffle": "^5.1.8",
     "ts-node": "^8.6.2",
     "tslint": "^5.20.1",
     "tslint-config-airbnb": "^5.11.2",
     "tslint-no-focused-test": "^0.5.0",
-    "typechain": "^1.0.3",
-    "typechain-target-web3-v1": "^1.0.4",
     "typescript": "^3.7.4"
   }
 }

@@ -20,26 +20,12 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 
-contract Migrations {
-    address public owner;
-    uint256 public last_completed_migration;
-
-    modifier restricted() {
-        if (msg.sender == owner) {
-            _;
-        }
-    }
-
-    constructor() public {
-        owner = msg.sender;
-    }
-
-    function setCompleted(uint256 completed) public restricted {
-        last_completed_migration = completed;
-    }
-
-    function upgrade(address newAddress) public restricted {
-        Migrations upgraded = Migrations(newAddress);
-        upgraded.setCompleted(last_completed_migration);
-    }
+/**
+ * @title I_PerpetualV1
+ * @author dYdX
+ *
+ * PerpetualV1 interface
+ */
+interface I_PerpetualV1 {
+    // TODO
 }

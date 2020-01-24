@@ -19,27 +19,32 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { I_P1Oracle } from "../../protocol/v1/intf/I_P1Oracle.sol";
 
-contract Migrations {
-    address public owner;
-    uint256 public last_completed_migration;
+/**
+ * @title Test_P1Oracle
+ * @author dYdX
+ *
+ * P1Oracle for testing
+ */
+contract Test_P1Oracle is
+    I_P1Oracle
+{
+    uint256 public _PRICE_ = 0;
 
-    modifier restricted() {
-        if (msg.sender == owner) {
-            _;
-        }
+    function getPrice()
+        external
+        view
+        returns (uint256)
+    {
+        return _PRICE_;
     }
 
-    constructor() public {
-        owner = msg.sender;
-    }
-
-    function setCompleted(uint256 completed) public restricted {
-        last_completed_migration = completed;
-    }
-
-    function upgrade(address newAddress) public restricted {
-        Migrations upgraded = Migrations(newAddress);
-        upgraded.setCompleted(last_completed_migration);
+    function setPrice(
+        uint256 newPrice
+    )
+        external
+    {
+        _PRICE_ = newPrice;
     }
 }

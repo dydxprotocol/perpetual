@@ -178,7 +178,7 @@ def main():
     for file in files:
         everythingOkay &= lintFunctionComments(dir_path, file)
         everythingOkay &= lintImports(dir_path, file)
-        everythingOkay &= lintCommentHeader(dir_path, file, "0.6.1")
+        everythingOkay &= lintCommentHeader(dir_path, file, "0.5.16")
 
     if everythingOkay:
         print "No contract linting issues found."

@@ -19,27 +19,25 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { P1Storage } from "./P1Storage.sol";
+import { P1Types } from "../lib/P1Types.sol";
 
-contract Migrations {
-    address public owner;
-    uint256 public last_completed_migration;
 
-    modifier restricted() {
-        if (msg.sender == owner) {
-            _;
-        }
-    }
-
-    constructor() public {
-        owner = msg.sender;
-    }
-
-    function setCompleted(uint256 completed) public restricted {
-        last_completed_migration = completed;
-    }
-
-    function upgrade(address newAddress) public restricted {
-        Migrations upgraded = Migrations(newAddress);
-        upgraded.setCompleted(last_completed_migration);
+/**
+ * @title P1Trade
+ * @author dYdX
+ *
+ * Trade logic contract
+ */
+contract P1Trade is
+    P1Storage
+{
+    function trade(
+        bytes32[] memory accounts,
+        P1Types.TradeArg[] memory trades
+    )
+        public
+    {
+        // TODO: logic
     }
 }
