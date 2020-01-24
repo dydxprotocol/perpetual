@@ -16,11 +16,17 @@
 
 */
 
+import BigNumber from 'bignumber.js';
 import {
   HttpProvider,
   IpcProvider,
   WebsocketProvider,
+  Log,
+  EventLog,
 } from 'web3-core';
+import {
+  TransactionReceipt,
+} from 'web3-eth';
 
 // ============ Types ============
 
@@ -48,4 +54,60 @@ export const Networks = {
 export interface EthereumAccount {
   address?: string;
   privateKey: string;
+}
+
+export interface TxResult {
+  transactionHash?: string;
+  transactionIndex?: number;
+  blockHash?: string;
+  blockNumber?: number;
+  from?: string;
+  to?: string;
+  contractAddress?: string;
+  cumulativeGasUsed?: number;
+  gasUsed?: number;
+  logs?: Log[];
+  events?: {
+    [eventName: string]: EventLog;
+  };
+  status?: boolean;
+  confirmation?: Promise<TransactionReceipt>;
+  gasEstimate?: number;
+  gas?: number;
+}
+
+export interface TxOptions {
+  from?: address;
+  gasPrice?: number;
+  gas?: number;
+  value?: number;
+}
+
+export interface SendOptions extends TxOptions {
+  confirmations?: number;
+  confirmationType?: ConfirmationType;
+  gasMultiplier?: number;
+}
+
+export interface CallOptions extends TxOptions {
+  blockNumber?: number;
+}
+
+// ============ Solidity Interfaces ============
+
+export interface TradeArg {
+  makerAccountIndex: number;
+  takerAccountIndex: number;
+  data: string;
+}
+
+export interface Balance {
+  position: BigNumber;
+  margin: BigNumber;
+}
+
+export interface Index {
+  positive: BigNumber;
+  negative: BigNumber;
+  timestamp: BigNumber;
 }

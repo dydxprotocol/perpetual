@@ -19,17 +19,16 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-/* solium-disable-next-line */
-import { InitializableAdminUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/InitializableAdminUpgradeabilityProxy.sol";
-
 
 /**
- * @title PerpetualProxy
+ * @title I_P1Funder
  * @author dYdX
  *
- * Proxy contract that forwards calls to the main Perpetual conntract.
+ * Funder interface
  */
-contract PerpetualProxy is
-    InitializableAdminUpgradeabilityProxy
-{
+interface I_P1Funder {
+    function getFunding(uint256 timestamp)
+        external
+        view
+        returns (bool, uint256);
 }

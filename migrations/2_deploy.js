@@ -12,7 +12,8 @@ const migration = async (deployer, network, accounts) => {
   await deployer.deploy(PerpetualProxy);
 
   // initialize the contracts
-  await PerpetualProxy.initialize(
+  const proxy = await PerpetualProxy.deployed();
+  await proxy.initialize(
     PerpetualV1.address, // logic
     accounts[0], // admin
     '0x8129fc1c', // data = bytes4(keccak256("initialize()"))

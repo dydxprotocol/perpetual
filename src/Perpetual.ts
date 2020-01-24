@@ -18,17 +18,26 @@
 
 import Web3 from 'web3';
 import {
+  address,
   Networks,
   Provider,
 } from './lib/types';
 import { Testing } from './testing/Testing';
 import { Contracts } from './modules/Contracts';
+import { Proxy } from './modules/Proxy';
+import { Getters } from './modules/Getters';
+import { Margin } from './modules/Margin';
+import { Trade } from './modules/Trade';
 
 export class Perpetual {
 
   public web3: Web3;
   public contracts: Contracts;
   public testing: Testing;
+  public proxy: Proxy;
+  public getters: Getters;
+  public margin: Margin;
+  public trade: Trade;
 
   constructor(
     provider: Provider,
@@ -37,5 +46,16 @@ export class Perpetual {
     this.web3 = new Web3(provider);
     this.contracts = new Contracts(provider, networkId, this.web3);
     this.testing = new Testing(provider);
+    this.proxy = new Proxy(this.contracts);
+    this.getters = new Getters(this.contracts);
+    this.margin = new Margin(this.contracts);
+    this.trade = new Trade(this.contracts);
+  }
+
+  public setDefaultAccount(
+    account: address,
+  ): void {
+    this.web3.eth.defaultAccount = account;
+    this.contracts.setDefaultAccount(account);
   }
 }

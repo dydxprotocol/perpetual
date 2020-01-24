@@ -19,17 +19,30 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-/* solium-disable-next-line */
-import { InitializableAdminUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/InitializableAdminUpgradeabilityProxy.sol";
-
 
 /**
- * @title PerpetualProxy
+ * @title P1Types
  * @author dYdX
  *
- * Proxy contract that forwards calls to the main Perpetual conntract.
+ * Types contract
  */
-contract PerpetualProxy is
-    InitializableAdminUpgradeabilityProxy
-{
+contract P1Types {
+    // ============ Structs ============
+
+    struct Index {
+        uint112 positive;
+        uint112 negative;
+        uint32 timestamp;
+    }
+
+    struct Balance {
+        int128 margin;
+        int128 position;
+    }
+
+    struct TradeArg {
+        uint256 accountId1;
+        uint256 accountId2;
+        bytes data;
+    }
 }

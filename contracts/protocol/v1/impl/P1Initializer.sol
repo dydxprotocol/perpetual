@@ -16,21 +16,33 @@
 
 */
 
-pragma solidity 0.6.1;
+pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
+
+import { Initializable } from "@openzeppelin/upgrades/contracts/Initializable.sol";
+import { P1Storage } from "./P1Storage.sol";
+import { P1Types } from "../lib/P1Types.sol";
 
 
 /**
- * @title P1Types
+ * @title P1Initializer
  * @author dYdX
  *
- * Types contract
+ * Initializer contract
  */
-contract P1Types {
-    // ============ Structs ============
-
-    struct Index {
-        uint128 value;
-        uint32 timestamp;
+contract P1Initializer is
+    Initializable,
+    P1Storage
+{
+    function initialize()
+        public
+        initializer
+        payable
+    {
+        _INDEX_ = P1Types.Index({
+            positive: 10**18,
+            negative: 10**18,
+            timestamp: uint32(block.timestamp)
+        });
     }
 }

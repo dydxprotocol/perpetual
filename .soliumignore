@@ -1,5 +1,3 @@
 node_modules
-contracts/mocks
-contracts/openzeppelin
 contracts/testing
 contracts/Migrations.sol

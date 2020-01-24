@@ -16,10 +16,13 @@
 
 */
 
-pragma solidity 0.6.1;
+pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { P1Types } from "./P1Types.sol";
+import { I_P1Funder } from "../intf/I_P1Funder.sol";
+import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
+import { I_P1Vault } from "../intf/I_P1Vault.sol";
+import { P1Types } from "../lib/P1Types.sol";
 
 
 /**
@@ -29,7 +32,15 @@ import { P1Types } from "./P1Types.sol";
  * Storage contract
  */
 contract P1Storage {
-    uint256 public id; // TODO: remove
+    mapping(bytes32 => P1Types.Balance) internal _BALANCES_;
+    mapping(bytes32 => P1Types.Index) internal _INDEXES_;
 
-    P1Types.Index public index;
+    mapping(address => bool) internal _OPERATORS_;
+
+    I_P1Oracle public _ORACLE_;
+    I_P1Funder public _FUNDER_;
+    I_P1Vault public _VAULT_;
+
+    P1Types.Index public _INDEX_;
+    uint256 internal _OPEN_INTEREST_;
 }

@@ -22,7 +22,7 @@ jobs:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/build
-  build_contracts:
+  compile_contracts:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
     working_directory: ~/build
@@ -32,13 +32,24 @@ jobs:
       - run:
           name: Compile contracts
           command: npm run compile -- --all
-      - run:
-          name: Generate wrappers
-          command: npm run build:wrappers
       - save_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/build
+  coverage:
+    docker:
+      - image: dydxprotocol/node:8.12-alpine-v1
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Coverage
+          command: npm run coverage
+          no_output_timeout: 60m
+      - run:
+          name: Coveralls
+          command: cat coverage/lcov.info | node_modules/.bin/coveralls
   lint:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
@@ -49,20 +60,6 @@ jobs:
       - run:
           name: Lint
           command: npm run lint
-  coverage:
-    docker:
-      - image: dydxprotocol/node:8.12-alpine-v1
-    working_directory: ~/build
-    steps:
-      - restore_cache:
-          key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
-      - run:
-          name: Coverage
-          command: npm run coverage
-          no_output_timeout: 60m
-      - run:
-          name: Coveralls
-          command: cat coverage/lcov.info | node_modules/.bin/coveralls
   test:
     docker:
       - image: dydxprotocol/node:8.12-alpine-v1
@@ -115,7 +112,7 @@ workflows:
   build_and_test:
     jobs:
       - checkout_and_install
-      - build_contracts:
+      - compile_contracts:
           requires:
             - checkout_and_install
       - lint:
@@ -123,13 +120,13 @@ workflows:
             - checkout_and_install
       - coverage:
           requires:
-            - build_contracts
+            - checkout_and_install
       - test:
           requires:
-            - build_contracts
+            - compile_contracts
       - build_js:
           requires:
-            - build_contracts
+            - compile_contracts
       - publish:
           requires:
             - test

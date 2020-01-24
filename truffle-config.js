@@ -4,7 +4,7 @@ require('dotenv-flow').config(); // eslint-disable-line
 module.exports = {
   compilers: {
     solc: {
-      version: '0.6.1',
+      version: '0.5.16',
       docker: !process.env.COVERALLS_REPO_TOKEN,
       parser: 'solcjs',
       settings: {

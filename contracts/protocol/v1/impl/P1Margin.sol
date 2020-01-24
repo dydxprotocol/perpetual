@@ -16,19 +16,36 @@
 
 */
 
-pragma solidity 0.6.1;
+pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { P1Storage } from "./P1Storage.sol";
 
 
 /**
- * @title P1Getters
+ * @title P1Margin
  * @author dYdX
  *
- * Getters contract
+ * Margin logic contract
  */
-contract P1Getters is
+contract P1Margin is
     P1Storage
 {
+    function deposit(
+        bytes32 account,
+        uint256 amount
+    )
+        public
+    {
+        // TODO: logic
+    }
+
+    function withdraw(
+        bytes32 account,
+        uint256 amount
+    )
+        public
+    {
+        // TODO: logic
+    }
 }

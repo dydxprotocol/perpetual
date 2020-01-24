@@ -16,10 +16,15 @@
 
 */
 
-pragma solidity 0.6.1;
+pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { P1Initializer } from "./P1Initializer.sol";
+import { P1Admin } from "./impl/P1Admin.sol";
+import { P1Getters } from "./impl/P1Getters.sol";
+import { P1Initializer } from "./impl/P1Initializer.sol";
+import { P1Margin } from "./impl/P1Margin.sol";
+import { P1Trade } from "./impl/P1Trade.sol";
+import { I_PerpetualV1 } from "./intf/I_PerpetualV1.sol";
 
 
 /**
@@ -29,6 +34,11 @@ import { P1Initializer } from "./P1Initializer.sol";
  * Main contract that inherits from other contracts
  */
 contract PerpetualV1 is
-    P1Initializer
+    I_PerpetualV1,
+    P1Admin,
+    P1Getters,
+    P1Initializer,
+    P1Margin,
+    P1Trade
 {
 }

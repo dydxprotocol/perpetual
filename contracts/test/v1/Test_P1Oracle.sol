@@ -19,17 +19,32 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-/* solium-disable-next-line */
-import { InitializableAdminUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/InitializableAdminUpgradeabilityProxy.sol";
-
+import { I_P1Oracle } from "../../protocol/v1/intf/I_P1Oracle.sol";
 
 /**
- * @title PerpetualProxy
+ * @title Test_P1Oracle
  * @author dYdX
  *
- * Proxy contract that forwards calls to the main Perpetual conntract.
+ * P1Oracle for testing
  */
-contract PerpetualProxy is
-    InitializableAdminUpgradeabilityProxy
+contract Test_P1Oracle is
+    I_P1Oracle
 {
+    uint256 public _PRICE_ = 0;
+
+    function getPrice()
+        external
+        view
+        returns (uint256)
+    {
+        return _PRICE_;
+    }
+
+    function setPrice(
+        uint256 newPrice
+    )
+        external
+    {
+        _PRICE_ = newPrice;
+    }
 }

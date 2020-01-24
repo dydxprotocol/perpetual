@@ -16,28 +16,28 @@
 
 */
 
-pragma solidity 0.6.1;
+pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { P1Storage } from "./P1Storage.sol";
-import { Initializable } from "../../openzeppelin/upgradeability/Initializable.sol";
+import { P1Types } from "../lib/P1Types.sol";
 
 
 /**
- * @title P1Initializer
+ * @title P1Trade
  * @author dYdX
  *
- * Initializer contract
+ * Trade logic contract
  */
-contract P1Initializer is
-    Initializable,
+contract P1Trade is
     P1Storage
 {
-    function initialize()
+    function trade(
+        bytes32[] memory accounts,
+        P1Types.TradeArg[] memory trades
+    )
         public
-        initializer
-        payable
     {
-        id = 1; // TODO: remove
+        // TODO: logic
     }
 }
