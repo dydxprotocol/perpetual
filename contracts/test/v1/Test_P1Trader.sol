@@ -19,33 +19,29 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { I_P1Oracle } from "../../protocol/v1/intf/I_P1Oracle.sol";
+import { P1Types } from "../../protocol/v1/lib/P1Types.sol";
+import { I_P1Trader } from "../../protocol/v1/intf/I_P1Trader.sol";
 
 
 /**
- * @title Test_P1Oracle
+ * @title Test_P1Trader
  * @author dYdX
  *
- * P1Oracle for testing
+ * P1Trader for testing
  */
-contract Test_P1Oracle is
-    I_P1Oracle
+contract Test_P1Trader is
+    I_P1Trader
 {
-    uint256 public _PRICE_ = 0;
-
-    function getPrice()
-        external
-        view
-        returns (uint256)
-    {
-        return _PRICE_;
-    }
-
-    function setPrice(
-        uint256 newPrice
+    function trade(
+        bytes32 maker,
+        bytes32 taker,
+        P1Types.Balance calldata makerBalance,
+        P1Types.Balance calldata takerBalance,
+        uint256 price,
+        bytes calldata data
     )
         external
     {
-        _PRICE_ = newPrice;
+        // TODO
     }
 }

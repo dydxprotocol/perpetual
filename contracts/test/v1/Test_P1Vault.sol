@@ -19,33 +19,39 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { I_P1Oracle } from "../../protocol/v1/intf/I_P1Oracle.sol";
-
+import { I_P1Vault } from "../../protocol/v1/intf/I_P1Vault.sol";
 
 /**
- * @title Test_P1Oracle
+ * @title Test_P1Vault
  * @author dYdX
  *
- * P1Oracle for testing
+ * P1Vault for testing
  */
-contract Test_P1Oracle is
-    I_P1Oracle
+contract Test_P1Vault is
+    I_P1Vault
 {
-    uint256 public _PRICE_ = 0;
+    function deposit(
+        address from
+    )
+        external
+    {
+        // TODO
+    }
 
-    function getPrice()
+    function withdraw(
+        address to
+    )
+        external
+    {
+        // TODO
+    }
+
+    function getBalance()
         external
         view
         returns (uint256)
     {
-        return _PRICE_;
-    }
-
-    function setPrice(
-        uint256 newPrice
-    )
-        external
-    {
-        _PRICE_ = newPrice;
+        // TODO
+        return 0;
     }
 }

@@ -19,33 +19,24 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { I_P1Oracle } from "../../protocol/v1/intf/I_P1Oracle.sol";
+import { I_P1Funder } from "../../protocol/v1/intf/I_P1Funder.sol";
 
 
 /**
- * @title Test_P1Oracle
+ * @title Test_P1Funder
  * @author dYdX
  *
- * P1Oracle for testing
+ * P1Funder for testing
  */
-contract Test_P1Oracle is
-    I_P1Oracle
+contract Test_P1Funder is
+    I_P1Funder
 {
-    uint256 public _PRICE_ = 0;
-
-    function getPrice()
+    function getFunding(uint256 timestamp)
         external
         view
-        returns (uint256)
+        returns (bool, uint256)
     {
-        return _PRICE_;
-    }
-
-    function setPrice(
-        uint256 newPrice
-    )
-        external
-    {
-        _PRICE_ = newPrice;
+        // TODO
+        return false, _TIMESTAMP_;
     }
 }
