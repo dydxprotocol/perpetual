@@ -1,3 +1,5 @@
+const { isDevNetwork } = require('./helpers');
+
 // ============ Contracts ============
 
 // Base Protocol
@@ -7,14 +9,10 @@ const PerpetualV1 = artifacts.require('PerpetualV1');
 // ============ Main Migration ============
 
 const migration = async (deployer, network, accounts) => {
-  // deploy the contracts
-  await deployer.deploy(PerpetualV1);
-  await deployer.deploy(
-    PerpetualProxy,
-    PerpetualV1.address, // logic
-    accounts[0], // admin
-    '0x', // data
-  );
+  await Promise.all([
+    deployTestContracts(deployer, network),
+    deployProtocol(deployer, network),
+  ]);
 
   // initialize the contracts
   const perpetualV1 = await PerpetualV1.at(PerpetualProxy.address);
@@ -27,3 +25,23 @@ const migration = async (deployer, network, accounts) => {
 };
 
 module.exports = migration;
+
+// ============ Deploy Functions ============
+
+async function deployTestContracts(deployer, network) {
+  if (isDevNetwork(network)) {
+    await Promise.all([
+      deployer.deploy(TestMakerOracle),
+    ]);
+  }
+}
+
+async function deployProtocol(deployer, _network) {
+  await deployer.deploy(PerpetualV1);
+  await deployer.deploy(
+    PerpetualProxy,
+    PerpetualV1.address, // logic
+    accounts[0], // admin
+    '0x', // data
+  );
+}
