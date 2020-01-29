@@ -19,7 +19,12 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { P1Settlement } from "./P1Settlement.sol";
 import { P1Storage } from "./P1Storage.sol";
+import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
+import { P1Types } from "../lib/P1Types.sol";
 
 
 /**
@@ -29,23 +34,78 @@ import { P1Storage } from "./P1Storage.sol";
  * Margin logic contract
  */
 contract P1Margin is
-    P1Storage
+    P1Storage,
+    P1Settlement
 {
+    using P1BalanceMath for P1Types.Balance;
+
+    // ============ Events ============
+
+    event LogDeposit(
+        address indexed account,
+        uint256 amount
+    );
+
+    event LogWithdraw(
+        address indexed account,
+        uint256 amount
+    );
+
+    // ============ Functions ============
+
     function deposit(
-        bytes32 account,
+        address account,
         uint256 amount
     )
         public
+        nonReentrant
     {
-        // TODO: logic
+        P1Types.Context memory context = _loadContext();
+        _settleAccount(context, account);
+
+        SafeERC20.safeTransferFrom(
+            IERC20(_TOKEN_),
+            msg.sender,
+            address(this),
+            amount
+        );
+
+        _TOTAL_MARGIN_ = _TOTAL_MARGIN_.add(amount);
+        _BALANCES_[account] = _BALANCES_[account].marginAdd(amount);
+        emit LogDeposit(account, amount);
     }
 
     function withdraw(
-        bytes32 account,
+        address account,
         uint256 amount
     )
         public
+        nonReentrant
     {
-        // TODO: logic
+        require(
+            account == msg.sender
+            || _GLOBAL_OPERATORS_[msg.sender]
+            || _LOCAL_OPERATORS_[account][msg.sender],
+            "sender no withdraw permission"
+        );
+
+        P1Types.Context memory context = _loadContext();
+        _settleAccount(context, account);
+
+        SafeERC20.safeTransfer(
+            IERC20(_TOKEN_),
+            msg.sender,
+            amount
+        );
+
+        _TOTAL_MARGIN_ = _TOTAL_MARGIN_.sub(amount);
+        _BALANCES_[account] = _BALANCES_[account].marginSub(amount);
+
+        require(
+            _isCollateralized(context, account),
+            "account not collateralized"
+        );
+
+        emit LogWithdraw(account, amount);
     }
 }

@@ -24,25 +24,33 @@ pragma experimental ABIEncoderV2;
  * @title P1Types
  * @author dYdX
  *
- * Types contract
+ * Types library
  */
-contract P1Types {
+library P1Types {
     // ============ Structs ============
 
     struct Index {
-        uint112 positive;
-        uint112 negative;
+        uint112 longs;
+        uint112 shorts;
         uint32 timestamp;
     }
 
     struct Balance {
-        int128 margin;
-        int128 position;
+        bool marginPositive;
+        bool positionPositive;
+        uint120 margin;
+        uint120 position;
     }
 
-    struct TradeArg {
-        uint256 accountId1;
-        uint256 accountId2;
-        bytes data;
+    struct Context {
+        uint256 price;
+        uint256 minCollateral;
+        Index index;
+    }
+
+    struct TradeResult {
+        uint256 marginAmount;
+        uint256 positionAmount;
+        bool isBuy;
     }
 }

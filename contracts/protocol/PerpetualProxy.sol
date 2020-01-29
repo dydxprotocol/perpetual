@@ -20,7 +20,7 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 /* solium-disable-next-line */
-import { InitializableAdminUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/InitializableAdminUpgradeabilityProxy.sol";
+import { AdminUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/AdminUpgradeabilityProxy.sol";
 
 
 /**
@@ -30,6 +30,26 @@ import { InitializableAdminUpgradeabilityProxy } from "@openzeppelin/upgrades/co
  * Proxy contract that forwards calls to the main Perpetual conntract.
  */
 contract PerpetualProxy is
-    InitializableAdminUpgradeabilityProxy
+    AdminUpgradeabilityProxy
 {
+    constructor(
+        address logic,
+        address admin,
+        bytes memory data
+    )
+        public
+        AdminUpgradeabilityProxy(
+            logic,
+            admin,
+            data
+        )
+    {
+
+    }
+
+    function _willFallback()
+        internal
+    {
+        // Override the default functionality that prevents the admin from calling non-admin functions
+    }
 }

@@ -19,30 +19,33 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { Initializable } from "@openzeppelin/upgrades/contracts/Initializable.sol";
-import { P1Storage } from "./P1Storage.sol";
-import { P1Types } from "../lib/P1Types.sol";
-
 
 /**
- * @title P1Initializer
+ * @title Storage
  * @author dYdX
  *
- * Initializer contract
+ * Storage library
  */
-contract P1Initializer is
-    Initializable,
-    P1Storage
-{
-    function initialize()
-        public
-        initializer
-        payable
+library Storage {
+
+    /* solium-disable-next-line security/no-named-returns */
+    function load(bytes32 slot)
+        internal
+        view
+        returns (bytes32 result)
     {
-        _INDEX_ = P1Types.Index({
-            positive: 10**18,
-            negative: 10**18,
-            timestamp: uint32(block.timestamp)
-        });
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            result := sload(slot)
+        }
+    }
+
+    function store(bytes32 slot, bytes32 value)
+        internal
+    {
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            sstore(slot, value)
+        }
     }
 }

@@ -30,12 +30,12 @@ import { P1Types } from "../lib/P1Types.sol";
  */
 interface I_P1Trader {
     function trade(
-        bytes32 maker,
-        bytes32 taker,
-        P1Types.Balance calldata makerBalance,
-        P1Types.Balance calldata takerBalance,
+        address sender,
+        address maker,
+        address taker,
         uint256 price,
         bytes calldata data
     )
-        external;
+        external
+        returns(P1Types.TradeResult memory);
 }

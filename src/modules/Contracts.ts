@@ -214,7 +214,7 @@ export class Contracts {
     }
 
     if (txOptions.confirmationType === ConfirmationType.Confirmed) {
-      return { confirmation: confirmationPromise };
+      return confirmationPromise;
     }
 
     return {
@@ -227,11 +227,14 @@ export class Contracts {
     method: ContractSendMethod,
     specificOptions: CallOptions = {},
   ): Promise<any> {
-    const txOptions = {
+    const {
+      blockNumber,
+      ...otherOptions
+    } = {
       ...this.defaultOptions,
       ...specificOptions,
     };
-    return (method as any).call(txOptions, txOptions.blockNumber);
+    return (method as any).call(otherOptions);
   }
 
   // ============ Helper Functions ============

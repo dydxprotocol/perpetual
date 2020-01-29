@@ -16,6 +16,7 @@
 
 */
 
+import BigNumber from 'bignumber.js';
 import { Contracts } from './Contracts';
 import {
   address,
@@ -29,12 +30,14 @@ import {
 export class Proxy {
   private contracts: Contracts;
   private proxy: Contract;
+  private perpetualV1: Contract;
 
   constructor(
     contracts: Contracts,
   ) {
     this.contracts = contracts;
     this.proxy = this.contracts.perpetualProxy;
+    this.perpetualV1 = this.contracts.perpetualV1;
   }
 
   // ============ Getters ============
@@ -43,7 +46,7 @@ export class Proxy {
     options?: CallOptions,
   ): Promise<address> {
     return this.contracts.call(
-      this.proxy.methods.admin(),
+      this.perpetualV1.methods.getAdmin(),
       options,
     );
   }
@@ -60,16 +63,18 @@ export class Proxy {
   // ============ Setters ============
 
   public async initialize(
-    logic: address,
-    admin: address,
-    data: string,
+    token: address,
+    oracle: address,
+    funder: address,
+    minCollateral: BigNumber,
     options?: SendOptions,
   ): Promise<any> {
     return this.contracts.send(
-      this.proxy.methods.initialize(
-        logic,
-        admin,
-        data,
+      this.perpetualV1.methods.initializeV1(
+        token,
+        oracle,
+        funder,
+        minCollateral.toFixed(),
       ),
       options,
     );

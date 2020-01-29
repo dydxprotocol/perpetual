@@ -19,12 +19,13 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { Storage } from "../lib/Storage.sol";
 import { P1Admin } from "./impl/P1Admin.sol";
 import { P1Getters } from "./impl/P1Getters.sol";
-import { P1Initializer } from "./impl/P1Initializer.sol";
 import { P1Margin } from "./impl/P1Margin.sol";
+import { P1Operator } from "./impl/P1Operator.sol";
 import { P1Trade } from "./impl/P1Trade.sol";
-import { I_PerpetualV1 } from "./intf/I_PerpetualV1.sol";
+import { P1Types } from "./lib/P1Types.sol";
 
 
 /**
@@ -34,11 +35,40 @@ import { I_PerpetualV1 } from "./intf/I_PerpetualV1.sol";
  * Main contract that inherits from other contracts
  */
 contract PerpetualV1 is
-    I_PerpetualV1,
     P1Admin,
     P1Getters,
-    P1Initializer,
     P1Margin,
+    P1Operator,
     P1Trade
 {
+    bytes32 internal constant PERPETUAL_V1_INITIALIZE_SLOT =
+    bytes32(uint256(keccak256("dYdX.PerpetualV1.initialize")) - 1);
+
+    function initializeV1(
+        address token,
+        address oracle,
+        address funder,
+        uint256 minCollateral
+    )
+        external
+        onlyAdmin
+    {
+        require(
+            Storage.load(PERPETUAL_V1_INITIALIZE_SLOT) == 0x0,
+            "PerpetualV1 already initialized"
+        );
+
+        Storage.store(PERPETUAL_V1_INITIALIZE_SLOT, bytes32(uint256(1)));
+
+        _TOKEN_ = token;
+        _ORACLE_ = oracle;
+        _FUNDER_ = funder;
+        _MIN_COLLATERAL_ = minCollateral;
+
+        _INDEX_ = P1Types.Index({
+            longs: 10**18,
+            shorts: 10**18,
+            timestamp: uint32(block.timestamp)
+        });
+    }
 }

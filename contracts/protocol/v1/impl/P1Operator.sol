@@ -23,62 +23,43 @@ import { P1Storage } from "./P1Storage.sol";
 
 
 /**
- * @title P1Admin
+ * @title P1Operator
  * @author dYdX
  *
- * Admin logic contract
+ * Operator logic contract
  */
-contract P1Admin is
+contract P1Operator is
     P1Storage
 {
     // ============ Events ============
 
-    event LogSetGlobalOperator(
-        address operator,
-        bool approved
+    event LogAddLocalOperator(
+        address indexed sender,
+        address operator
     );
 
-    event LogSetOracle(
-        address oracle
-    );
-
-    event LogSetFunder(
-        address funder
+    event LogRemoveLocalOperator(
+        address indexed sender,
+        address operator
     );
 
     // ============ Functions ============
 
-    function setGlobalOperator(
-        address operator,
-        bool approved
+    function addLocalOperator(
+        address operator
     )
-        public
-        onlyAdmin
-        nonReentrant
+        external
     {
-        _GLOBAL_OPERATORS_[operator] = approved;
-        emit LogSetGlobalOperator(operator, approved);
+        _LOCAL_OPERATORS_[msg.sender][operator] = true;
+        emit LogAddLocalOperator(msg.sender, operator);
     }
 
-    function setOracle(
-        address oracle
+    function removeLocalOperator(
+        address operator
     )
-        public
-        onlyAdmin
-        nonReentrant
+        external
     {
-        _ORACLE_ = oracle;
-        emit LogSetOracle(oracle);
-    }
-
-    function setFunder(
-        address funder
-    )
-        public
-        onlyAdmin
-        nonReentrant
-    {
-        _FUNDER_ = funder;
-        emit LogSetFunder(funder);
+        _LOCAL_OPERATORS_[msg.sender][operator] = false;
+        emit LogRemoveLocalOperator(msg.sender, operator);
     }
 }
