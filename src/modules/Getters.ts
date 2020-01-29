@@ -43,15 +43,22 @@ export class Getters {
     account: address,
     options?: CallOptions,
   ): Promise<Balance> {
-    const result = await this.contracts.call(
+    const [
+      marginPositive,
+      positionPositive,
+      margin,
+      position,
+    ] = await this.contracts.call(
       this.perpetual.methods.getAccountBalance(
         account,
       ),
       options,
     );
+    const marginBN = new BigNumber(margin);
+    const positionBN = new BigNumber(position);
     return {
-      margin: new BigNumber(result[0]),
-      position: new BigNumber(result[1]),
+      margin: marginPositive ? marginBN : marginBN.times(-1),
+      position: positionPositive ? positionBN : positionBN.times(-1),
     };
   }
 
@@ -66,22 +73,54 @@ export class Getters {
       options,
     );
     return {
-      positive: new BigNumber(result[0]),
-      negative: new BigNumber(result[1]),
+      longs: new BigNumber(result[0]),
+      shorts: new BigNumber(result[1]),
       timestamp: new BigNumber(result[2]),
     };
   }
 
-  // ============ Global Getters ============
-
-  public async getIsOperator(
+  public async getIsLocalOperator(
+    account: address,
     operator: address,
     options?: CallOptions,
   ): Promise<boolean> {
     return this.contracts.call(
-      this.perpetual.methods.getIsOperator(
+      this.perpetual.methods.getIsLocalOperator(
+        account,
         operator,
       ),
+      options,
+    );
+  }
+
+  // ============ Global Getters ============
+
+  public async getAdmin(
+    options?: CallOptions,
+  ): Promise<address> {
+    return this.contracts.call(
+      this.perpetual.methods.owner(),
+      options,
+    );
+  }
+
+  public async getIsGlobalOperator(
+    operator: address,
+    options?: CallOptions,
+  ): Promise<boolean> {
+    return this.contracts.call(
+      this.perpetual.methods.getIsGlobalOperator(
+        operator,
+      ),
+      options,
+    );
+  }
+
+  public async getTokenContract(
+    options?: CallOptions,
+  ): Promise<address> {
+    return this.contracts.call(
+      this.perpetual.methods.getTokenContract(),
       options,
     );
   }
@@ -104,15 +143,6 @@ export class Getters {
     );
   }
 
-  public async getVaultContract(
-    options?: CallOptions,
-  ): Promise<address> {
-    return this.contracts.call(
-      this.perpetual.methods.getVaultContract(),
-      options,
-    );
-  }
-
   public async getGlobalIndex(
     options?: CallOptions,
   ): Promise<Index> {
@@ -121,8 +151,8 @@ export class Getters {
       options,
     );
     return {
-      positive: new BigNumber(result[0]),
-      negative: new BigNumber(result[1]),
+      longs: new BigNumber(result[0]),
+      shorts: new BigNumber(result[1]),
       timestamp: new BigNumber(result[2]),
     };
   }

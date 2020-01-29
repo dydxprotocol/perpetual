@@ -19,9 +19,8 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { I_P1Funder } from "../intf/I_P1Funder.sol";
-import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
-import { I_P1Vault } from "../intf/I_P1Vault.sol";
+import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import { Adminable } from "../../lib/Adminable.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
 
@@ -29,18 +28,24 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Storage
  * @author dYdX
  *
- * Storage contract
+ * Storage contract. Contains or inherits from all contracts that have storage
  */
-contract P1Storage {
-    mapping(bytes32 => P1Types.Balance) internal _BALANCES_;
-    mapping(bytes32 => P1Types.Index) internal _INDEXES_;
+contract P1Storage is
+    Adminable,
+    ReentrancyGuard
+{
+    mapping(address => P1Types.Balance) internal _BALANCES_;
+    mapping(address => P1Types.Index) internal _INDEXES_;
 
-    mapping(address => bool) internal _OPERATORS_;
+    mapping(address => bool) internal _GLOBAL_OPERATORS_;
+    mapping(address => mapping(address => bool)) internal _LOCAL_OPERATORS_;
 
-    I_P1Oracle public _ORACLE_;
-    I_P1Funder public _FUNDER_;
-    I_P1Vault public _VAULT_;
+    address internal _TOKEN_;
+    address internal _ORACLE_;
+    address internal _FUNDER_;
 
-    P1Types.Index public _INDEX_;
-    uint256 internal _OPEN_INTEREST_;
+    P1Types.Index internal _INDEX_;
+    uint256 internal _TOTAL_POSITION_;
+    uint256 internal _TOTAL_MARGIN_;
+    uint256 internal _MIN_COLLATERAL_;
 }

@@ -5,7 +5,7 @@ module.exports = {
   compilers: {
     solc: {
       version: '0.5.16',
-      docker: !process.env.COVERALLS_REPO_TOKEN,
+      docker: !process.env.COVERALLS_REPO_TOKEN, // use docker except in CircleCI
       parser: 'solcjs',
       settings: {
         optimizer: {
@@ -30,4 +30,7 @@ module.exports = {
     },
   },
   plugins: ['solidity-coverage'],
+  mocha: {
+    timeout: false,
+  },
 };

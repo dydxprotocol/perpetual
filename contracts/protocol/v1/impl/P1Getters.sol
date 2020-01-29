@@ -20,9 +20,6 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { P1Storage } from "./P1Storage.sol";
-import { I_P1Funder } from "../intf/I_P1Funder.sol";
-import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
-import { I_P1Vault } from "../intf/I_P1Vault.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
 
@@ -38,41 +35,60 @@ contract P1Getters is
     // ============ Account Getters ============
 
     function getAccountBalance(
-        bytes32 account
+        address account
     )
         external
         view
-        returns(P1Types.Balance memory)
+        returns (P1Types.Balance memory)
     {
         return _BALANCES_[account];
     }
 
     function getAccountIndex(
-        bytes32 account
+        address account
     )
         external
         view
-        returns(P1Types.Index memory)
+        returns (P1Types.Index memory)
     {
         return _INDEXES_[account];
     }
 
-    // ============ Global Getters ============
-
-    function getIsOperator(
+    function getIsLocalOperator(
+        address account,
         address operator
     )
         external
         view
-        returns(bool)
+        returns (bool)
     {
-        return _OPERATORS_[operator];
+        return _LOCAL_OPERATORS_[account][operator];
+    }
+
+    // ============ Global Getters ============
+
+    function getIsGlobalOperator(
+        address operator
+    )
+        external
+        view
+        returns (bool)
+    {
+        return _GLOBAL_OPERATORS_[operator];
+    }
+
+    function getTokenContract()
+        external
+        view
+        returns (address)
+    {
+        return _TOKEN_;
     }
 
     function getOracleContract()
         external
         view
-        returns(I_P1Oracle)
+        returns (address)
     {
         return _ORACLE_;
     }
@@ -80,23 +96,15 @@ contract P1Getters is
     function getFunderContract()
         external
         view
-        returns(I_P1Funder)
+        returns (address)
     {
         return _FUNDER_;
-    }
-
-    function getVaultContract()
-        external
-        view
-        returns(I_P1Vault)
-    {
-        return _VAULT_;
     }
 
     function getGlobalIndex()
         external
         view
-        returns(P1Types.Index memory)
+        returns (P1Types.Index memory)
     {
         return _INDEX_;
     }
@@ -104,8 +112,8 @@ contract P1Getters is
     function getOpenInterest()
         external
         view
-        returns(uint256)
+        returns (uint256)
     {
-        return _OPEN_INTEREST_;
+        return _TOTAL_POSITION_;
     }
 }
