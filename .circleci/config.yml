@@ -2,7 +2,7 @@ version: 2
 jobs:
   checkout_and_install:
     docker:
-      - image: dydxprotocol/node:8.12-alpine-v1
+      - image: dydxprotocol/node:10.16.3-alpine
     working_directory: ~/build
     steps:
       - checkout
@@ -24,7 +24,7 @@ jobs:
             - ~/build
   compile_contracts:
     docker:
-      - image: dydxprotocol/node:8.12-alpine-v1
+      - image: dydxprotocol/node:10.16.3-alpine
     working_directory: ~/build
     steps:
       - restore_cache:
@@ -38,7 +38,7 @@ jobs:
             - ~/build
   coverage:
     docker:
-      - image: dydxprotocol/node:8.12-alpine-v1
+      - image: dydxprotocol/node:10.16.3-alpine
     working_directory: ~/build
     steps:
       - restore_cache:
@@ -52,7 +52,7 @@ jobs:
           command: cat coverage/lcov.info | node_modules/.bin/coveralls
   lint:
     docker:
-      - image: dydxprotocol/node:8.12-alpine-v1
+      - image: dydxprotocol/node:10.16.3-alpine
     working_directory: ~/build
     steps:
       - restore_cache:
@@ -62,7 +62,7 @@ jobs:
           command: npm run lint
   test:
     docker:
-      - image: dydxprotocol/node:8.12-alpine-v1
+      - image: dydxprotocol/node:10.16.3-alpine
       - image: trufflesuite/ganache-cli:v6.8.2
         command: -d -k=istanbul -i 1001
     working_directory: ~/build
@@ -79,7 +79,7 @@ jobs:
           no_output_timeout: 20m
   build_js:
     docker:
-      - image: dydxprotocol/node:8.12-alpine-v1
+      - image: dydxprotocol/node:10.16.3-alpine
     working_directory: ~/build
     steps:
       - restore_cache:
@@ -93,7 +93,7 @@ jobs:
             - ~/build
   publish:
     docker:
-      - image: dydxprotocol/node:8.12-alpine-v1
+      - image: dydxprotocol/node:10.16.3-alpine
     working_directory: ~/build
     steps:
       - restore_cache:
