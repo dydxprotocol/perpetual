@@ -1,5 +1,6 @@
+import BigNumber from 'bignumber.js';
 import { Contracts } from '../modules/Contracts';
-import { SendOptions, TradeResult, TxResult, address, Integer } from '../lib/types';
+import { SendOptions, TradeResult, TxResult, address } from '../lib/types';
 
 export class TestP1Trader {
   private contracts: Contracts;
@@ -32,7 +33,7 @@ export class TestP1Trader {
     sender: address,
     maker: address,
     taker: address,
-    price: Integer,
+    price: BigNumber,
     calldata: number[][],
   ): Promise<TradeResult> {
     return this.contracts.send(

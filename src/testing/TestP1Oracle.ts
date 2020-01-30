@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { Contracts } from '../modules/Contracts';
-import { SendOptions, TxResult, Integer } from '../lib/types';
+import { SendOptions, TxResult } from '../lib/types';
 
 export class TestP1Oracle {
   private contracts: Contracts;
@@ -16,7 +16,7 @@ export class TestP1Oracle {
   }
 
   public async setPrice(
-    newPrice: Integer,
+    newPrice: BigNumber,
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
@@ -27,7 +27,7 @@ export class TestP1Oracle {
     );
   }
 
-  public async getPrice(): Promise<Integer> {
+  public async getPrice(): Promise<BigNumber> {
     const price = await this.contracts.call(
       this.contracts.testP1Oracle.methods.getPrice(),
     );

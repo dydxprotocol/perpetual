@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { Contracts } from '../modules/Contracts';
-import { SendOptions, TxResult, Integer } from '../lib/types';
+import { SendOptions, TxResult } from '../lib/types';
 
 export class TestP1Funder {
   private contracts: Contracts;
@@ -17,7 +17,7 @@ export class TestP1Funder {
 
   public async setFunding(
     isPositive: boolean,
-    newFunding: Integer,
+    newFunding: BigNumber,
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
@@ -30,8 +30,8 @@ export class TestP1Funder {
   }
 
   public async getFunding(
-    timestamp: Integer,
-  ): Promise<Integer> {
+    timestamp: BigNumber,
+  ): Promise<BigNumber> {
     const [isPositive, funding] = await this.contracts.call(
       this.contracts.testP1Funder.methods.getFunding(timestamp),
     );
