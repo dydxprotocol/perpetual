@@ -31,12 +31,21 @@ import { I_P1Funder } from "../../protocol/v1/intf/I_P1Funder.sol";
 contract Test_P1Funder is
     I_P1Funder
 {
-    function getFunding(uint256 timestamp)
+    bool public _FUNDING_IS_POSITIVE_ = true;
+    uint256 public _FUNDING_ = 0;
+
+    function getFunding(uint256 _timestamp)
         external
         view
         returns (bool, uint256)
     {
-        // TODO
-        return (false, 0);
+        return (_FUNDING_IS_POSITIVE_, _FUNDING_);
+    }
+
+    function setFunding(bool isPositive, uint256 newFunding)
+        external
+    {
+        _FUNDING_IS_POSITIVE_ = isPositive;
+        _FUNDING_ = newFunding;
     }
 }

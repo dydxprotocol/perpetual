@@ -32,17 +32,36 @@ import { I_P1Trader } from "../../protocol/v1/intf/I_P1Trader.sol";
 contract Test_P1Trader is
     I_P1Trader
 {
+    P1Types.TradeResult public _TRADE_RESULT_;
+
     function trade(
-        address sender,
-        address maker,
-        address taker,
-        uint256 price,
-        bytes calldata data
+        address, // sender
+        address, // maker
+        address, // taker
+        uint256, // price
+        bytes calldata // data
     )
         external
         returns(P1Types.TradeResult memory)
     {
-        P1Types.TradeResult memory temp = P1Types.TradeResult(0, 0, true);
-        return temp;
+        return P1Types.TradeResult({
+            marginAmount: _TRADE_RESULT_.marginAmount,
+            positionAmount: _TRADE_RESULT_.positionAmount,
+            isBuy: _TRADE_RESULT_.isBuy
+        });
+    }
+
+    function setTradeResult(
+        uint256 marginAmount,
+        uint256 positionAmount,
+        bool isBuy
+    )
+        external
+    {
+        _TRADE_RESULT_ = P1Types.TradeResult({
+            marginAmount: marginAmount,
+            positionAmount: positionAmount,
+            isBuy: isBuy
+        });
     }
 }
