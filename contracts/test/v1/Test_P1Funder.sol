@@ -34,7 +34,9 @@ contract Test_P1Funder is
     bool public _FUNDING_IS_POSITIVE_ = true;
     uint256 public _FUNDING_ = 0;
 
-    function getFunding(uint256 _timestamp)
+    function getFunding(
+        uint256 // timestamp
+    )
         external
         view
         returns (bool, uint256)

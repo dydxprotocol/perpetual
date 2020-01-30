@@ -101,6 +101,12 @@ export interface TradeArg {
   data: string;
 }
 
+export interface TradeResult {
+  marginAmount: BigNumber;
+  positionAmount: BigNumber;
+  isBuy: boolean;
+}
+
 export interface Balance {
   position: BigNumber;
   margin: BigNumber;
