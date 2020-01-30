@@ -28,7 +28,7 @@ import {
 
 // JSON
 const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
-const erc20Json = require(`${jsonFolder}IErc20.json`);
+const erc20Json = require(`${jsonFolder}IERC20.json`);
 const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 const testP1FunderJson = require(`${jsonFolder}Test_P1Funder.json`);
