@@ -2,8 +2,10 @@ import chai from 'chai';
 import BigNumber from 'bignumber.js';
 chai.use(require('chai-bignumber')(BigNumber));
 
-const REQUIRE_MSG = 'Returned error: VM Exception while processing transaction: revert';
-const ASSERT_MSG = 'Returned error: VM Exception while processing transaction: invalid opcode';
+const REQUIRE_MSG =
+  'Returned error: VM Exception while processing transaction: revert';
+const ASSERT_MSG =
+  'Returned error: VM Exception while processing transaction: invalid opcode';
 
 // For solidity function calls that violate require()
 export async function expectThrow(promise: Promise<any>, reason?: string) {
@@ -35,7 +37,10 @@ function assertCertainError(error: Error, expected_error_msg?: string) {
   const matchedIndex = message.search(expected_error_msg);
   let matchedString = message;
   if (matchedIndex === 0) {
-    matchedString = message.substring(matchedIndex, matchedIndex + expected_error_msg.length);
+    matchedString = message.substring(
+      matchedIndex,
+      matchedIndex + expected_error_msg.length,
+    );
   }
   chai.expect(matchedString).to.eq(expected_error_msg);
 }

@@ -17,20 +17,14 @@
 */
 
 import { Contracts } from './Contracts';
-import {
-  address,
-  SendOptions,
-  TradeArg,
-} from '../lib/types';
+import { address, SendOptions, TradeArg } from '../lib/types';
 import { Contract } from 'web3-eth-contract';
 
 export class Trade {
   private contracts: Contracts;
   private perpetual: Contract;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
     this.perpetual = this.contracts.perpetualV1;
   }
@@ -43,10 +37,7 @@ export class Trade {
     options?: SendOptions,
   ): Promise<address> {
     return this.contracts.send(
-      this.perpetual.methods.trade(
-        accounts,
-        tradeArgs,
-      ),
+      this.perpetual.methods.trade(accounts, tradeArgs),
       options,
     );
   }

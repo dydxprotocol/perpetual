@@ -18,21 +18,14 @@
 
 import BigNumber from 'bignumber.js';
 import { Contracts } from './Contracts';
-import {
-  address,
-  Balance,
-  CallOptions,
-  Index,
-} from '../lib/types';
+import { address, Balance, CallOptions, Index } from '../lib/types';
 import { Contract } from 'web3-eth-contract';
 
 export class Getters {
   private contracts: Contracts;
   private perpetual: Contract;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
     this.perpetual = this.contracts.perpetualV1;
   }
@@ -49,9 +42,7 @@ export class Getters {
       margin,
       position,
     ] = await this.contracts.call(
-      this.perpetual.methods.getAccountBalance(
-        account,
-      ),
+      this.perpetual.methods.getAccountBalance(account),
       options,
     );
     const marginBN = new BigNumber(margin);
@@ -67,9 +58,7 @@ export class Getters {
     options?: CallOptions,
   ): Promise<Index> {
     const result = await this.contracts.call(
-      this.perpetual.methods.getAccountIndex(
-        account,
-      ),
+      this.perpetual.methods.getAccountIndex(account),
       options,
     );
     return {
@@ -85,23 +74,15 @@ export class Getters {
     options?: CallOptions,
   ): Promise<boolean> {
     return this.contracts.call(
-      this.perpetual.methods.getIsLocalOperator(
-        account,
-        operator,
-      ),
+      this.perpetual.methods.getIsLocalOperator(account, operator),
       options,
     );
   }
 
   // ============ Global Getters ============
 
-  public async getAdmin(
-    options?: CallOptions,
-  ): Promise<address> {
-    return this.contracts.call(
-      this.perpetual.methods.owner(),
-      options,
-    );
+  public async getAdmin(options?: CallOptions): Promise<address> {
+    return this.contracts.call(this.perpetual.methods.owner(), options);
   }
 
   public async getIsGlobalOperator(
@@ -109,43 +90,33 @@ export class Getters {
     options?: CallOptions,
   ): Promise<boolean> {
     return this.contracts.call(
-      this.perpetual.methods.getIsGlobalOperator(
-        operator,
-      ),
+      this.perpetual.methods.getIsGlobalOperator(operator),
       options,
     );
   }
 
-  public async getTokenContract(
-    options?: CallOptions,
-  ): Promise<address> {
+  public async getTokenContract(options?: CallOptions): Promise<address> {
     return this.contracts.call(
       this.perpetual.methods.getTokenContract(),
       options,
     );
   }
 
-  public async getOracleContract(
-    options?: CallOptions,
-  ): Promise<address> {
+  public async getOracleContract(options?: CallOptions): Promise<address> {
     return this.contracts.call(
       this.perpetual.methods.getOracleContract(),
       options,
     );
   }
 
-  public async getFunderContract(
-    options?: CallOptions,
-  ): Promise<address> {
+  public async getFunderContract(options?: CallOptions): Promise<address> {
     return this.contracts.call(
       this.perpetual.methods.getFunderContract(),
       options,
     );
   }
 
-  public async getGlobalIndex(
-    options?: CallOptions,
-  ): Promise<Index> {
+  public async getGlobalIndex(options?: CallOptions): Promise<Index> {
     const result = await this.contracts.call(
       this.perpetual.methods.getGlobalIndex(),
       options,
@@ -157,9 +128,7 @@ export class Getters {
     };
   }
 
-  public async getOpenInterest(
-    options?: CallOptions,
-  ): Promise<BigNumber> {
+  public async getOpenInterest(options?: CallOptions): Promise<BigNumber> {
     const result = await this.contracts.call(
       this.perpetual.methods.getOpenInterest(),
       options,

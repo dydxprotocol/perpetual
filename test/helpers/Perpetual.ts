@@ -12,10 +12,9 @@ export const perpetual = new Perpetual(
   Number(process.env.NETWORK_ID),
 );
 
-export async function getPerpetual(
-): Promise<{
-  perpetual: Perpetual,
-  accounts: address[],
+export async function getPerpetual(): Promise<{
+  perpetual: Perpetual;
+  accounts: address[];
 }> {
   if (!defaultAccountSet) {
     accounts = await perpetual.web3.eth.getAccounts();

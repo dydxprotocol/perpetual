@@ -22,6 +22,7 @@
     "lint:js": "eslint --ext .js --ignore-path .gitignore migrations/**/*.js",
     "lint:sol": "solium -d contracts/",
     "lint:dydx": "python util/lintcontracts.py",
+    "prettier": "prettier --write */**/*.ts */**/*.js",
     "docker_node": "ganache-cli -i 1313 -d -k=istanbul -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "deploy": "truffle migrate --network=$NETWORK --reset",
     "deploy_test": "npm run reset_test_evm && NETWORK=test npm run deploy && npm run snapshot_test_evm",
@@ -46,6 +47,7 @@
     "@openzeppelin/contracts": "2.4.0",
     "@openzeppelin/upgrades": "2.6.0",
     "bignumber.js": "^9.0.0",
+    "prettier": "^1.19.1",
     "web3": "1.2.4"
   },
   "devDependencies": {

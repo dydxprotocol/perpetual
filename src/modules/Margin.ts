@@ -18,19 +18,14 @@
 
 import BigNumber from 'bignumber.js';
 import { Contracts } from './Contracts';
-import {
-  address,
-  SendOptions,
-} from '../lib/types';
+import { address, SendOptions } from '../lib/types';
 import { Contract } from 'web3-eth-contract';
 
 export class Margin {
   private contracts: Contracts;
   private perpetual: Contract;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
     this.perpetual = this.contracts.perpetualV1;
   }
@@ -42,9 +37,7 @@ export class Margin {
     options?: SendOptions,
   ): Promise<address> {
     return this.contracts.send(
-      this.perpetual.methods.deposit(
-        amount.toFixed(0),
-      ),
+      this.perpetual.methods.deposit(amount.toFixed(0)),
       options,
     );
   }
@@ -54,9 +47,7 @@ export class Margin {
     options?: SendOptions,
   ): Promise<address> {
     return this.contracts.send(
-      this.perpetual.methods.withdraw(
-        amount.toFixed(0),
-      ),
+      this.perpetual.methods.withdraw(amount.toFixed(0)),
       options,
     );
   }

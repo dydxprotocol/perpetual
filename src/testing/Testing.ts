@@ -22,9 +22,7 @@ import { EVM } from './EVM';
 export class Testing {
   public evm: EVM;
 
-  constructor(
-    provider: Provider,
-  ) {
+  constructor(provider: Provider) {
     this.evm = new EVM(provider);
   }
 }

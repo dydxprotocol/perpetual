@@ -17,17 +17,13 @@
 */
 
 import Web3 from 'web3';
-import {
-  PromiEvent,
-  TransactionReceipt,
-} from 'web3-core';
-import {
-  ContractSendMethod,
-  Contract,
-} from 'web3-eth-contract';
+import { PromiEvent, TransactionReceipt } from 'web3-core';
+import { ContractSendMethod, Contract } from 'web3-eth-contract';
 
 // JSON
-const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
+const jsonFolder = `../../${
+  process.env.COVERAGE ? '.coverage_artifacts' : 'build'
+}/contracts/`;
 const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 
@@ -55,11 +51,7 @@ export class Contracts {
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
 
-  constructor(
-    provider: Provider,
-    networkId: number,
-    web3: Web3,
-  ) {
+  constructor(provider: Provider, networkId: number, web3: Web3) {
     this.web3 = web3;
     this.defaultOptions = {
       gas: null,
@@ -84,12 +76,9 @@ export class Contracts {
     this.setDefaultAccount(this.web3.eth.defaultAccount);
   }
 
-  public setProvider(
-    provider: Provider,
-    networkId: number,
-  ): void {
-    this.contractsList.forEach(
-      contract => this.setContractProvider(
+  public setProvider(provider: Provider, networkId: number): void {
+    this.contractsList.forEach(contract =>
+      this.setContractProvider(
         contract.contract,
         contract.json,
         provider,
@@ -98,11 +87,9 @@ export class Contracts {
     );
   }
 
-  public setDefaultAccount(
-    account: address,
-  ): void {
+  public setDefaultAccount(account: address): void {
     this.contractsList.forEach(
-      contract => contract.contract.options.from = account,
+      contract => (contract.contract.options.from = account),
     );
   }
 
@@ -115,7 +102,10 @@ export class Contracts {
       ...specificOptions,
     };
 
-    if (txOptions.confirmationType === ConfirmationType.Simulate || !txOptions.gas) {
+    if (
+      txOptions.confirmationType === ConfirmationType.Simulate ||
+      !txOptions.gas
+    ) {
       const gasEstimate = await this.estimateGas(method, txOptions);
       txOptions.gas = Math.floor(gasEstimate * txOptions.gasMultiplier);
 
@@ -133,7 +123,9 @@ export class Contracts {
     let confirmationOutcome = OUTCOMES.INITIAL;
 
     if (!Object.values(ConfirmationType).includes(txOptions.confirmationType)) {
-      throw new Error(`Invalid confirmation type: ${txOptions.confirmationType}`);
+      throw new Error(
+        `Invalid confirmation type: ${txOptions.confirmationType}`,
+      );
     }
 
     let transactionHash: string;
@@ -141,55 +133,52 @@ export class Contracts {
     let confirmationPromise: Promise<TransactionReceipt>;
 
     if (
-      txOptions.confirmationType === ConfirmationType.Hash
-      || txOptions.confirmationType === ConfirmationType.Both
+      txOptions.confirmationType === ConfirmationType.Hash ||
+      txOptions.confirmationType === ConfirmationType.Both
     ) {
-      hashPromise = new Promise(
-        (resolve, reject) => {
-          promi.on('error', (error: Error) => {
-            if (hashOutcome === OUTCOMES.INITIAL) {
-              hashOutcome = OUTCOMES.REJECTED;
-              reject(error);
+      hashPromise = new Promise((resolve, reject) => {
+        promi.on('error', (error: Error) => {
+          if (hashOutcome === OUTCOMES.INITIAL) {
+            hashOutcome = OUTCOMES.REJECTED;
+            reject(error);
+            (promi as any).off();
+          }
+        });
+
+        promi.on('transactionHash', (txHash: string) => {
+          if (hashOutcome === OUTCOMES.INITIAL) {
+            hashOutcome = OUTCOMES.RESOLVED;
+            resolve(txHash);
+            if (txOptions.confirmationType !== ConfirmationType.Both) {
               (promi as any).off();
             }
-          });
-
-          promi.on('transactionHash', (txHash: string) => {
-            if (hashOutcome === OUTCOMES.INITIAL) {
-              hashOutcome = OUTCOMES.RESOLVED;
-              resolve(txHash);
-              if (txOptions.confirmationType !== ConfirmationType.Both) {
-                (promi as any).off();
-              }
-            }
-          });
-        },
-      );
+          }
+        });
+      });
       transactionHash = await hashPromise;
     }
 
     if (
-      txOptions.confirmationType === ConfirmationType.Confirmed
-      || txOptions.confirmationType === ConfirmationType.Both
+      txOptions.confirmationType === ConfirmationType.Confirmed ||
+      txOptions.confirmationType === ConfirmationType.Both
     ) {
-      confirmationPromise = new Promise(
-        (resolve, reject) => {
-          promi.on('error', (error: Error) => {
-            if (
-              confirmationOutcome === OUTCOMES.INITIAL
-              && (
-                txOptions.confirmationType === ConfirmationType.Confirmed
-                || hashOutcome === OUTCOMES.RESOLVED
-              )
-            ) {
-              confirmationOutcome = OUTCOMES.REJECTED;
-              reject(error);
-              (promi as any).off();
-            }
-          });
+      confirmationPromise = new Promise((resolve, reject) => {
+        promi.on('error', (error: Error) => {
+          if (
+            confirmationOutcome === OUTCOMES.INITIAL &&
+            (txOptions.confirmationType === ConfirmationType.Confirmed ||
+              hashOutcome === OUTCOMES.RESOLVED)
+          ) {
+            confirmationOutcome = OUTCOMES.REJECTED;
+            reject(error);
+            (promi as any).off();
+          }
+        });
 
-          if (txOptions.confirmations) {
-            promi.on('confirmation', (confNumber: number, receipt: TransactionReceipt) => {
+        if (txOptions.confirmations) {
+          promi.on(
+            'confirmation',
+            (confNumber: number, receipt: TransactionReceipt) => {
               if (confNumber >= txOptions.confirmations) {
                 if (confirmationOutcome === OUTCOMES.INITIAL) {
                   confirmationOutcome = OUTCOMES.RESOLVED;
@@ -197,16 +186,16 @@ export class Contracts {
                   (promi as any).off();
                 }
               }
-            });
-          } else {
-            promi.on('receipt', (receipt: TransactionReceipt) => {
-              confirmationOutcome = OUTCOMES.RESOLVED;
-              resolve(receipt);
-              (promi as any).off();
-            });
-          }
-        },
-      );
+            },
+          );
+        } else {
+          promi.on('receipt', (receipt: TransactionReceipt) => {
+            confirmationOutcome = OUTCOMES.RESOLVED;
+            resolve(receipt);
+            (promi as any).off();
+          });
+        }
+      });
     }
 
     if (txOptions.confirmationType === ConfirmationType.Hash) {
@@ -227,10 +216,7 @@ export class Contracts {
     method: ContractSendMethod,
     specificOptions: CallOptions = {},
   ): Promise<any> {
-    const {
-      blockNumber,
-      ...otherOptions
-    } = {
+    const { blockNumber, ...otherOptions } = {
       ...this.defaultOptions,
       ...specificOptions,
     };
@@ -246,8 +232,9 @@ export class Contracts {
     networkId: number,
   ): void {
     contract.setProvider(provider);
-    contract.options.address = contractJson.networks[networkId]
-      && contractJson.networks[networkId].address;
+    contract.options.address =
+      contractJson.networks[networkId] &&
+      contractJson.networks[networkId].address;
   }
 
   private async estimateGas(

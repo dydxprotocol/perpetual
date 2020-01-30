@@ -18,23 +18,15 @@
 
 import BigNumber from 'bignumber.js';
 import { Contracts } from './Contracts';
-import {
-  address,
-  CallOptions,
-  SendOptions,
-} from '../lib/types';
-import {
-  Contract,
-} from 'web3-eth-contract';
+import { address, CallOptions, SendOptions } from '../lib/types';
+import { Contract } from 'web3-eth-contract';
 
 export class Proxy {
   private contracts: Contracts;
   private proxy: Contract;
   private perpetualV1: Contract;
 
-  constructor(
-    contracts: Contracts,
-  ) {
+  constructor(contracts: Contracts) {
     this.contracts = contracts;
     this.proxy = this.contracts.perpetualProxy;
     this.perpetualV1 = this.contracts.perpetualV1;
@@ -42,22 +34,12 @@ export class Proxy {
 
   // ============ Getters ============
 
-  public async admin(
-    options?: CallOptions,
-  ): Promise<address> {
-    return this.contracts.call(
-      this.perpetualV1.methods.getAdmin(),
-      options,
-    );
+  public async admin(options?: CallOptions): Promise<address> {
+    return this.contracts.call(this.perpetualV1.methods.getAdmin(), options);
   }
 
-  public async implementation(
-    options?: CallOptions,
-  ): Promise<address> {
-    return this.contracts.call(
-      this.proxy.methods.implementation(),
-      options,
-    );
+  public async implementation(options?: CallOptions): Promise<address> {
+    return this.contracts.call(this.proxy.methods.implementation(), options);
   }
 
   // ============ Setters ============
@@ -85,9 +67,7 @@ export class Proxy {
     options?: SendOptions,
   ): Promise<any> {
     return this.contracts.send(
-      this.proxy.methods.changeAdmin(
-        newAdmin,
-      ),
+      this.proxy.methods.changeAdmin(newAdmin),
       options,
     );
   }
@@ -97,9 +77,7 @@ export class Proxy {
     options?: SendOptions,
   ): Promise<any> {
     return this.contracts.send(
-      this.proxy.methods.upgradeTo(
-        newImplementation,
-      ),
+      this.proxy.methods.upgradeTo(newImplementation),
       options,
     );
   }
@@ -110,10 +88,7 @@ export class Proxy {
     options?: SendOptions,
   ): Promise<any> {
     return this.contracts.send(
-      this.proxy.methods.upgradeToAndCall(
-        newImplementation,
-        data,
-      ),
+      this.proxy.methods.upgradeToAndCall(newImplementation, data),
       options,
     );
   }

@@ -24,9 +24,7 @@ import {
   Log,
   EventLog,
 } from 'web3-core';
-import {
-  TransactionReceipt,
-} from 'web3-eth';
+import { TransactionReceipt } from 'web3-eth';
 
 // ============ Types ============
 
