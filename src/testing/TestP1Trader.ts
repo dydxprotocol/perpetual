@@ -1,6 +1,5 @@
-import BigNumber from 'bignumber.js';
 import { Contracts } from '../modules/Contracts';
-import { SendOptions, TradeResult, TxResult, address } from '../lib/types';
+import { SendOptions, TradeResult, TxResult } from '../lib/types';
 
 export class TestP1Trader {
   private contracts: Contracts;
