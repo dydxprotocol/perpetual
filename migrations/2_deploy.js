@@ -25,9 +25,9 @@ const PerpetualProxy = artifacts.require('PerpetualProxy');
 const PerpetualV1 = artifacts.require('PerpetualV1');
 
 // Test Contracts
-const Test_P1Funder = artifacts.require('Test_P1Funder');
-const Test_P1Oracle = artifacts.require('Test_P1Oracle');
-const Test_P1Trader = artifacts.require('Test_P1Trader');
+const TestP1Funder = artifacts.require('Test_P1Funder');
+const TestP1Oracle = artifacts.require('Test_P1Oracle');
+const TestP1Trader = artifacts.require('Test_P1Trader');
 
 // ============ Main Migration ============
 
@@ -54,9 +54,9 @@ module.exports = migration;
 async function deployTestContracts(deployer, network) {
   if (isDevNetwork(network)) {
     await Promise.all([
-      deployer.deploy(Test_P1Funder),
-      deployer.deploy(Test_P1Oracle),
-      deployer.deploy(Test_P1Trader),
+      deployer.deploy(TestP1Funder),
+      deployer.deploy(TestP1Oracle),
+      deployer.deploy(TestP1Trader),
     ]);
   }
 }

@@ -1,6 +1,6 @@
 import { Perpetual } from '../../src/Perpetual';
 
-import { address} from '../../src/lib/types';
+import { address } from '../../src/lib/types';
 
 export async function useTestContracts(
   perpetual: Perpetual,
@@ -8,13 +8,13 @@ export async function useTestContracts(
 ) {
   await perpetual.contracts.call(
     perpetual.contracts.perpetualV1.methods.setFunder(
-      perpetual.contracts.testP1Funder.options.address
+      perpetual.contracts.testP1Funder.options.address,
     ),
     { from: accounts[0] },
   );
   await perpetual.contracts.call(
     perpetual.contracts.perpetualV1.methods.setOracle(
-      perpetual.contracts.testP1Oracle.options.address
+      perpetual.contracts.testP1Oracle.options.address,
     ),
     { from: accounts[0] },
   );

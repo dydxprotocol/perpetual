@@ -19,8 +19,8 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { P1Types } from "../../protocol/v1/lib/P1Types.sol";
 import { I_P1Trader } from "../../protocol/v1/intf/I_P1Trader.sol";
+import { P1Types } from "../../protocol/v1/lib/P1Types.sol";
 
 
 /**
