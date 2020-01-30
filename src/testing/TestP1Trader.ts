@@ -28,22 +28,4 @@ export class TestP1Trader {
       options,
     );
   }
-
-  public async trade(
-    sender: address,
-    maker: address,
-    taker: address,
-    price: BigNumber,
-    calldata: number[][],
-  ): Promise<TradeResult> {
-    return this.contracts.send(
-      this.contracts.testP1Trader.methods.trade(
-        sender,
-        maker,
-        taker,
-        price.toFixed(0),
-        calldata,
-      ),
-    );
-  }
 }
