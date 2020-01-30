@@ -26,8 +26,12 @@ import {
   Contract,
 } from 'web3-eth-contract';
 
+// Contracts
+import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
+
 // JSON
 const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
+const erc20Json = require(`${jsonFolder}IErc20.json`);
 const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 const testP1FunderJson = require(`${jsonFolder}Test_P1Funder.json`);
@@ -55,6 +59,7 @@ export class Contracts {
   private defaultOptions: SendOptions;
 
   // Contract instances
+  public erc20: ERC20;
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
 
@@ -80,6 +85,7 @@ export class Contracts {
     };
 
     // Contracts
+    this.erc20 = new this.web3.eth.Contract(erc20Json.abi) as ERC20;
     this.perpetualProxy = new this.web3.eth.Contract(perpetualProxyJson.abi);
     this.perpetualV1 = new this.web3.eth.Contract(perpetualV1Json.abi);
 
@@ -90,6 +96,7 @@ export class Contracts {
 
     this.contractsList = [
       // Contracts
+      { contract: this.erc20, json: erc20Json },
       { contract: this.perpetualProxy, json: perpetualProxyJson },
       { contract: this.perpetualV1, json: perpetualProxyJson },
 
