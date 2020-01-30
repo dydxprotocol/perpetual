@@ -25,16 +25,16 @@ const PerpetualProxy = artifacts.require('PerpetualProxy');
 const PerpetualV1 = artifacts.require('PerpetualV1');
 
 // Test Contracts
-const Test_P1Oracle = artifacts.require('Test_P1Funder');
+const Test_P1Funder = artifacts.require('Test_P1Funder');
 const Test_P1Oracle = artifacts.require('Test_P1Oracle');
-const Test_P1Oracle = artifacts.require('Test_P1Trader');
+const Test_P1Trader = artifacts.require('Test_P1Trader');
 
 // ============ Main Migration ============
 
 const migration = async (deployer, network, accounts) => {
   await Promise.all([
     deployTestContracts(deployer, network),
-    deployProtocol(deployer, network),
+    deployProtocol(deployer, network, accounts),
   ]);
 
   // initialize the contracts
@@ -61,7 +61,7 @@ async function deployTestContracts(deployer, network) {
   }
 }
 
-async function deployProtocol(deployer, _network) {
+async function deployProtocol(deployer, _network, accounts) {
   await deployer.deploy(PerpetualV1);
   await deployer.deploy(
     PerpetualProxy,
