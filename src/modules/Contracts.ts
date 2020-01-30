@@ -30,6 +30,9 @@ import {
 const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
 const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
+const testP1FunderJson = require(`${jsonFolder}Test_P1Funder.json`);
+const testP1OracleJson = require(`${jsonFolder}Test_P1Oracle.json`);
+const testP1TraderJson = require(`${jsonFolder}Test_P1Trader.json`);
 
 import {
   address,
@@ -55,6 +58,11 @@ export class Contracts {
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
 
+  // Testing contract instances
+  public testP1Funder: Contract;
+  public testP1Oracle: Contract;
+  public testP1Trader: Contract;
+
   constructor(
     provider: Provider,
     networkId: number,
@@ -75,9 +83,20 @@ export class Contracts {
     this.perpetualProxy = new this.web3.eth.Contract(perpetualProxyJson.abi);
     this.perpetualV1 = new this.web3.eth.Contract(perpetualV1Json.abi);
 
+    // Testing contracts
+    this.testP1Funder = new this.web3.eth.Contract(testP1FunderJson.abi);
+    this.testP1Oracle = new this.web3.eth.Contract(testP1OracleJson.abi);
+    this.testP1Trader = new this.web3.eth.Contract(testP1TraderJson.abi);
+
     this.contractsList = [
+      // Contracts
       { contract: this.perpetualProxy, json: perpetualProxyJson },
       { contract: this.perpetualV1, json: perpetualProxyJson },
+
+      // Testing contracts
+      { contract: this.testP1Funder, json: testP1FunderJson },
+      { contract: this.testP1Oracle, json: testP1OracleJson },
+      { contract: this.testP1Trader, json: testP1TraderJson },
     ];
 
     this.setProvider(provider, networkId);

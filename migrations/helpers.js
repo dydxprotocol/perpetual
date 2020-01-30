@@ -16,36 +16,23 @@
 
 */
 
-pragma solidity 0.5.16;
-pragma experimental ABIEncoderV2;
-
-import { I_P1Oracle } from "../../protocol/v1/intf/I_P1Oracle.sol";
-
-
-/**
- * @title Test_P1Oracle
- * @author dYdX
- *
- * P1Oracle for testing
- */
-contract Test_P1Oracle is
-    I_P1Oracle
-{
-    uint256 public _PRICE_ = 0;
-
-    function getPrice()
-        external
-        view
-        returns (uint256)
-    {
-        return _PRICE_;
-    }
-
-    function setPrice(
-        uint256 newPrice
-    )
-        external
-    {
-        _PRICE_ = newPrice;
-    }
+function isDevNetwork(network) {
+  verifyNetwork(network);
+  return network.startsWith('development')
+      || network.startsWith('test')
+      || network.startsWith('test_ci')
+      || network.startsWith('develop')
+      || network.startsWith('dev')
+      || network.startsWith('docker')
+      || network.startsWith('coverage');
 }
+
+function verifyNetwork(network) {
+  if (!network) {
+    throw new Error('No network provided');
+  }
+}
+
+module.exports = {
+  isDevNetwork,
+};

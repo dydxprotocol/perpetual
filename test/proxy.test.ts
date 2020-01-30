@@ -1,6 +1,7 @@
 import { snapshot, resetEVM } from './helpers/EVM';
 import { expect, expectThrow } from './helpers/Expect';
 import { getPerpetual } from './helpers/Perpetual';
+import { useTestContracts } from './helpers/useTestContracts';
 import { address } from '../src/lib/types';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import { Perpetual } from '../src/Perpetual';
@@ -18,6 +19,7 @@ describe('Proxy', () => {
 
   beforeEach(async () => {
     await resetEVM(snapshotId);
+    await useTestContracts(perpetual, accounts);
   });
 
   describe('initialize()', () => {
