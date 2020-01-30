@@ -18,14 +18,15 @@ describe('Proxy', () => {
   });
 
   beforeEach(async () => {
-    await resetEVM(snapshotId);
     await initializeWithTestContracts(perpetual, accounts);
   });
 
+  afterEach(async () => {
+    await resetEVM(snapshotId);
+  });
+
   describe('initialize()', () => {
-    it('succeeds', async () => {
-      // TODO
-    });
+    it('succeeds', async () => {});
 
     it('fails to do a second time', async () => {
       await expectThrow(

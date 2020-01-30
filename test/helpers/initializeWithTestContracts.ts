@@ -6,7 +6,7 @@ export default async function initializeWithTestContracts(
   perpetual: Perpetual,
   accounts: address[],
 ) {
-  perpetual.contracts.call(
+  await perpetual.contracts.send(
     perpetual.contracts.perpetualV1.methods.initializeV1(
       perpetual.contracts.tokenA.options.address,
       perpetual.contracts.testP1Oracle.options.address,

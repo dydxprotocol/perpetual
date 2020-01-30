@@ -13,11 +13,14 @@ describe('Perpetual', () => {
 
   before(async () => {
     ({ perpetual, accounts } = await getPerpetual());
-    await initializeWithTestContracts(perpetual, accounts);
     snapshotId = await snapshot();
   });
 
   beforeEach(async () => {
+    await initializeWithTestContracts(perpetual, accounts);
+  });
+
+  afterEach(async () => {
     await resetEVM(snapshotId);
   });
 
