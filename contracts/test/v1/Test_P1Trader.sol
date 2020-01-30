@@ -33,15 +33,16 @@ contract Test_P1Trader is
     I_P1Trader
 {
     function trade(
-        bytes32 maker,
-        bytes32 taker,
-        P1Types.Balance calldata makerBalance,
-        P1Types.Balance calldata takerBalance,
+        address sender,
+        address maker,
+        address taker,
         uint256 price,
         bytes calldata data
     )
         external
+        returns(P1Types.TradeResult memory)
     {
-        // TODO
+        P1Types.TradeResult memory temp = P1Types.TradeResult(0, 0, true);
+        return temp;
     }
 }

@@ -37,6 +37,6 @@ contract Test_P1Funder is
         returns (bool, uint256)
     {
         // TODO
-        return false, _TIMESTAMP_;
+        return (false, 0);
     }
 }
