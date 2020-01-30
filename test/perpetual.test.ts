@@ -1,7 +1,7 @@
 import { expectBN } from './helpers/Expect';
 import { snapshot, resetEVM } from './helpers/EVM';
 import { getPerpetual } from './helpers/Perpetual';
-import { useTestContracts } from './helpers/useTestContracts';
+import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import { address } from '../src/lib/types';
 import { Perpetual } from '../src/Perpetual';
 
@@ -13,7 +13,7 @@ describe('Perpetual', () => {
 
   before(async () => {
     ({ perpetual, accounts } = await getPerpetual());
-    await useTestContracts(perpetual, accounts);
+    await initializeWithTestContracts(perpetual, accounts);
     snapshotId = await snapshot();
   });
 
