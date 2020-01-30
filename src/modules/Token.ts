@@ -18,9 +18,10 @@
 
 import BigNumber from 'bignumber.js';
 import { EventEmitterStatic as EventEmitter } from 'eventemitter3';
+import { Contract } from 'web3-eth-contract';
+
 import { Contracts } from './Contracts';
 import { INTEGERS } from '../lib/Constants';
-import { IErc20 as ERC20 } from '../../build/wrappers/IErc20';
 import {
   SendOptions,
   TxResult,
@@ -299,13 +300,13 @@ export class Token {
 
   private getToken(
     tokenAddress: string,
-  ): ERC20 {
+  ): Contract {
     if (this.tokens[tokenAddress]) {
       return this.tokens[tokenAddress];
     }
 
-    const token: ERC20 = this.contracts.erc20;
-    const contract: ERC20 = token.clone();
+    const token: Contract = this.contracts.erc20;
+    const contract: Contract = token.clone();
     contract.options.address = tokenAddress;
 
     this.tokens[tokenAddress] = contract;

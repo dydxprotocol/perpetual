@@ -17,9 +17,10 @@
 */
 
 import BigNumber from 'bignumber.js';
+import { Contract } from 'web3-eth-contract';
+
 import { Contracts } from '../modules/Contracts';
 import { Token } from '../modules/Token';
-import { TestToken as TestTokenContract } from '../../build/wrappers/TestToken';
 import {
   SendOptions,
   CallOptions,
@@ -30,12 +31,12 @@ import {
 export class TestToken {
   private contracts: Contracts;
   private token: Token;
-  private testTokenContract: TestTokenContract;
+  private testTokenContract: Contract;
 
   constructor(
     contracts: Contracts,
     token: Token,
-    testTokenContract: TestTokenContract,
+    testTokenContract: Contract,
   ) {
     this.contracts = contracts;
     this.token = token;
