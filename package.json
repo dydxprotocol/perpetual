@@ -25,6 +25,7 @@
     "docker_node": "ganache-cli -i 1313 -d -k=istanbul -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "deploy": "truffle migrate --network=$NETWORK --reset",
     "deploy_test": "npm run reset_test_evm && NETWORK=test npm run deploy && npm run snapshot_test_evm",
+    "migrate": "truffle migrate",
     "reset_test_evm": "node scripts/reset-test-evm.js",
     "snapshot_test_evm": "node scripts/snapshot-test-evm.js"
   },
