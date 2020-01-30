@@ -31,6 +31,8 @@ import {
 // ============ Types ============
 
 export type address = string;
+export type Integer = BigNumber;
+export type Decimal = BigNumber;
 export type Provider = HttpProvider | IpcProvider | WebsocketProvider;
 
 // ============ Enums ============
@@ -99,6 +101,12 @@ export interface TradeArg {
   makerAccountIndex: number;
   takerAccountIndex: number;
   data: string;
+}
+
+export interface TradeResult {
+  marginAmount: Integer;
+  positionAmount: Integer;
+  isBuy: boolean;
 }
 
 export interface Balance {
