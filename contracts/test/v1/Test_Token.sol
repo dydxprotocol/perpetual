@@ -22,6 +22,12 @@ pragma experimental ABIEncoderV2;
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 
 
+/**
+ * @title Test_Token
+ * @author dYdX
+ *
+ * ERC20 token for testing
+ */
 contract Test_Token {
     using SafeMath for uint256;
 
