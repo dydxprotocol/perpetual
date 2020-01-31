@@ -28,6 +28,7 @@ const PerpetualV1 = artifacts.require('PerpetualV1');
 const TestP1Funder = artifacts.require('Test_P1Funder');
 const TestP1Oracle = artifacts.require('Test_P1Oracle');
 const TestP1Trader = artifacts.require('Test_P1Trader');
+const TestToken = artifacts.require('Test_Token');
 
 // ============ Main Migration ============
 
@@ -36,15 +37,6 @@ const migration = async (deployer, network, accounts) => {
     deployTestContracts(deployer, network),
     deployProtocol(deployer, network, accounts),
   ]);
-
-  // initialize the contracts
-  const perpetualV1 = await PerpetualV1.at(PerpetualProxy.address);
-  perpetualV1.initializeV1(
-    '0x0000000000000000000000000000000000000000', // TODO: token
-    '0x0000000000000000000000000000000000000000', // TODO: oracle
-    '0x0000000000000000000000000000000000000000', // TODO: funder
-    '1100000000000000000', // minCollateral
-  );
 };
 
 module.exports = migration;
@@ -57,6 +49,7 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestP1Funder),
       deployer.deploy(TestP1Oracle),
       deployer.deploy(TestP1Trader),
+      deployer.deploy(TestToken),
     ]);
   }
 }

@@ -1,7 +1,7 @@
 import { snapshot, resetEVM } from './helpers/EVM';
 import { expect, expectThrow } from './helpers/Expect';
 import { getPerpetual } from './helpers/Perpetual';
-import { useTestContracts } from './helpers/useTestContracts';
+import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import { address } from '../src/lib/types';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import { Perpetual } from '../src/Perpetual';
@@ -10,22 +10,26 @@ let perpetual: Perpetual;
 let accounts: address[];
 
 describe('Proxy', () => {
-  let snapshotId: string;
+  let preInitSnapshotId: string;
+  let postInitSnapshotId: string;
 
   before(async () => {
     ({ perpetual, accounts } = await getPerpetual());
-    snapshotId = await snapshot();
+    preInitSnapshotId = await snapshot();
+    await initializeWithTestContracts(perpetual, accounts);
+    postInitSnapshotId = await snapshot();
   });
 
   beforeEach(async () => {
-    await resetEVM(snapshotId);
-    await useTestContracts(perpetual, accounts);
+    await resetEVM(postInitSnapshotId);
+  });
+
+  after(async () => {
+    await resetEVM(preInitSnapshotId);
   });
 
   describe('initialize()', () => {
-    it('succeeds', async () => {
-      // TODO
-    });
+    it('succeeds', async () => {});
 
     it('fails to do a second time', async () => {
       await expectThrow(

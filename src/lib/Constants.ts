@@ -30,6 +30,9 @@ export const INTEGERS = {
   ONE_YEAR_IN_SECONDS,
   ZERO: new BigNumber(0),
   ONE: new BigNumber(1),
+  ONES_255: new BigNumber(
+    '115792089237316195423570985008687907853269984665640564039457584007913129639935',
+  ), // 2**256-1
 };
 
 export const ADDRESSES = {

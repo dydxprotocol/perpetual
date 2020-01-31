@@ -33,6 +33,7 @@ const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 const testP1FunderJson = require(`${jsonFolder}Test_P1Funder.json`);
 const testP1OracleJson = require(`${jsonFolder}Test_P1Oracle.json`);
 const testP1TraderJson = require(`${jsonFolder}Test_P1Trader.json`);
+const testTokenJson = require(`${jsonFolder}Test_Token.json`);
 
 import {
   address,
@@ -62,6 +63,7 @@ export class Contracts {
   public testP1Funder: Contract;
   public testP1Oracle: Contract;
   public testP1Trader: Contract;
+  public testToken: Contract;
 
   constructor(
     provider: Provider,
@@ -87,6 +89,7 @@ export class Contracts {
     this.testP1Funder = new this.web3.eth.Contract(testP1FunderJson.abi);
     this.testP1Oracle = new this.web3.eth.Contract(testP1OracleJson.abi);
     this.testP1Trader = new this.web3.eth.Contract(testP1TraderJson.abi);
+    this.testToken = new this.web3.eth.Contract(testTokenJson.abi);
 
     this.contractsList = [
       // Contracts
@@ -97,6 +100,7 @@ export class Contracts {
       { contract: this.testP1Funder, json: testP1FunderJson },
       { contract: this.testP1Oracle, json: testP1OracleJson },
       { contract: this.testP1Trader, json: testP1TraderJson },
+      { contract: this.testToken, json: testTokenJson },
     ];
 
     this.setProvider(provider, networkId);
