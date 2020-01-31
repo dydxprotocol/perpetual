@@ -90,6 +90,11 @@ contract P1Trade is
                 tradeArg.data
             );
 
+            // if the accounts are equal no need to update balances
+            if (maker == taker) {
+                continue;
+            }
+
             P1Types.Balance memory makerBalance = _BALANCES_[maker];
             P1Types.Balance memory takerBalance = _BALANCES_[taker];
 

@@ -16,26 +16,40 @@
 
 */
 
+import { Contract } from 'web3-eth-contract';
 import { Contracts } from './Contracts';
 import {
   address,
   SendOptions,
   TradeArg,
 } from '../lib/types';
-import { Contract } from 'web3-eth-contract';
+import { TradeOperation } from './TradeOperation';
+import { Orders } from './Orders';
 
 export class Trade {
   private contracts: Contracts;
   private perpetual: Contract;
+  private orders: Orders;
 
   constructor(
     contracts: Contracts,
+    orders: Orders,
   ) {
     this.contracts = contracts;
     this.perpetual = this.contracts.perpetualV1;
+    this.orders = orders;
   }
 
-  // ============ Getters ============
+  // ============ Public Functions ============
+
+  public initiate(): TradeOperation {
+    return new TradeOperation(
+      this.contracts,
+      this.orders,
+    );
+  }
+
+  // ============ Solidity Functions ============
 
   public async trade(
     accounts: string[],

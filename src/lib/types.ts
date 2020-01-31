@@ -31,6 +31,7 @@ import {
 // ============ Types ============
 
 export type address = string;
+export type TypedSignature = string;
 export type Provider = HttpProvider | IpcProvider | WebsocketProvider;
 
 // ============ Enums ============
@@ -40,6 +41,27 @@ export enum ConfirmationType {
   Confirmed = 1,
   Both = 2,
   Simulate = 3,
+}
+
+export enum SigningMethod {
+  Compatibility = 'Compatibility',   // picks intelligently between UnsafeHash and Hash
+  UnsafeHash = 'UnsafeHash',         // raw hash signed
+  Hash = 'Hash',                     // hash prepended according to EIP-191
+  TypedData = 'TypedData',           // order hashed according to EIP-712
+  MetaMask = 'MetaMask',             // order hashed according to EIP-712 (MetaMask-only)
+  MetaMaskLatest = 'MetaMaskLatest', // ... according to latest version of EIP-712 (MetaMask-only)
+  CoinbaseWallet = 'CoinbaseWallet', // ... according to latest version of EIP-712 (CoinbaseWallet)
+}
+
+export enum OrderStatus {
+  Null = 0,
+  Approved = 1,
+  Canceled = 2,
+}
+
+export interface OrderState {
+  status: OrderStatus;
+  filledAmount: BigNumber;
 }
 
 // ============ Constants ============
@@ -96,8 +118,9 @@ export interface CallOptions extends TxOptions {
 // ============ Solidity Interfaces ============
 
 export interface TradeArg {
-  makerAccountIndex: number;
-  takerAccountIndex: number;
+  makerIndex: number;
+  takerIndex: number;
+  trader: address;
   data: string;
 }
 
@@ -115,4 +138,20 @@ export interface Balance {
 export interface Index {
   timestamp: BigNumber;
   value: BigNumber;
+}
+
+export interface Order {
+  isBuy: boolean;
+  amount: BigNumber;
+  limitPrice: BigNumber;
+  stopPrice: BigNumber;
+  fee: BigNumber;
+  maker: address;
+  taker: address;
+  expiration: BigNumber;
+  salt: BigNumber;
+}
+
+export interface SignedOrder extends Order {
+  typedSignature: string;
 }
