@@ -57,8 +57,8 @@ export class Getters {
     const marginBN = new BigNumber(margin);
     const positionBN = new BigNumber(position);
     return {
-      margin: marginIsPositive ? marginBN : marginBN.times(-1),
-      position: positionIsPositive ? positionBN : positionBN.times(-1),
+      margin: marginIsPositive ? marginBN : marginBN.negated(),
+      position: positionIsPositive ? positionBN : positionBN.negated(),
     };
   }
 
@@ -172,7 +172,7 @@ export class Getters {
     const valueBN = new BigNumber(value);
     return {
       timestamp: new BigNumber(timestamp),
-      value: isPositive ? valueBN : valueBN.times(-1),
+      value: isPositive ? valueBN : valueBN.negated(),
     };
   }
 }

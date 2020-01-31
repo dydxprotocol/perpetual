@@ -192,7 +192,7 @@ contract P1Settlement is
 
         // add value of position
         uint256 positionValue = uint256(balance.position).baseMul(context.price);
-        if (balance.marginIsPositive) {
+        if (balance.positionIsPositive) {
             positiveValue = positiveValue.add(positionValue);
         } else {
             negativeValue = negativeValue.add(positionValue);
