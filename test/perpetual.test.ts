@@ -1,42 +1,19 @@
 import { expectBN } from './helpers/Expect';
-import { snapshot, resetEVM } from './helpers/EVM';
-import { getPerpetual } from './helpers/Perpetual';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
-import { address } from '../src/lib/types';
-import { Perpetual } from '../src/Perpetual';
+import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 
-let perpetual: Perpetual;
-let accounts: address[];
-
-describe('Perpetual', () => {
-  let preInitSnapshotId: string;
-  let postInitSnapshotId: string;
-
-  before(async () => {
-    ({ perpetual, accounts } = await getPerpetual());
-    preInitSnapshotId = await snapshot();
-    await initializeWithTestContracts(perpetual, accounts);
-    postInitSnapshotId = await snapshot();
-  });
-
-  beforeEach(async () => {
-    await resetEVM(postInitSnapshotId);
-  });
-
-  after(async () => {
-    await resetEVM(preInitSnapshotId);
-  });
+perpetualDescribe('Perpetual', initializeWithTestContracts, (ctx: ITestContext) => {
 
   describe('initial state', () => {
     it('has proper index', async () => {
-      const index = await perpetual.getters.getGlobalIndex();
-      const { timestamp } = await perpetual.web3.eth.getBlock('latest');
+      const index = await ctx.perpetual.getters.getGlobalIndex();
+      const { timestamp } = await ctx.perpetual.web3.eth.getBlock('latest');
       expectBN(index.value).eq(0);
       expectBN(index.timestamp).lte(timestamp as any);
     });
 
     it('has empty balances', async () => {
-      const balance = await perpetual.getters.getAccountBalance(accounts[0]);
+      const balance = await ctx.perpetual.getters.getAccountBalance(ctx.accounts[0]);
       expectBN(balance.margin).eq(0);
       expectBN(balance.position).eq(0);
     });
