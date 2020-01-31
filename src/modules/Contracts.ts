@@ -28,13 +28,12 @@ import {
 
 // JSON
 const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
-const erc20Json = require(`${jsonFolder}IERC20.json`);
 const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 const testP1FunderJson = require(`${jsonFolder}Test_P1Funder.json`);
 const testP1OracleJson = require(`${jsonFolder}Test_P1Oracle.json`);
 const testP1TraderJson = require(`${jsonFolder}Test_P1Trader.json`);
-const tokenAJson = require(`${jsonFolder}TokenA.json`);
+const testTokenJson = require(`${jsonFolder}Test_Token.json`);
 
 import {
   address,
@@ -57,7 +56,6 @@ export class Contracts {
   private defaultOptions: SendOptions;
 
   // Contract instances
-  public erc20: Contract;
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
 
@@ -65,7 +63,7 @@ export class Contracts {
   public testP1Funder: Contract;
   public testP1Oracle: Contract;
   public testP1Trader: Contract;
-  public tokenA: Contract;
+  public testToken: Contract;
 
   constructor(
     provider: Provider,
@@ -84,7 +82,6 @@ export class Contracts {
     };
 
     // Contracts
-    this.erc20 = new this.web3.eth.Contract(erc20Json.abi);
     this.perpetualProxy = new this.web3.eth.Contract(perpetualProxyJson.abi);
     this.perpetualV1 = new this.web3.eth.Contract(perpetualV1Json.abi);
 
@@ -92,11 +89,10 @@ export class Contracts {
     this.testP1Funder = new this.web3.eth.Contract(testP1FunderJson.abi);
     this.testP1Oracle = new this.web3.eth.Contract(testP1OracleJson.abi);
     this.testP1Trader = new this.web3.eth.Contract(testP1TraderJson.abi);
-    this.tokenA = new this.web3.eth.Contract(tokenAJson.abi);
+    this.testToken = new this.web3.eth.Contract(testTokenJson.abi);
 
     this.contractsList = [
       // Contracts
-      { contract: this.erc20, json: erc20Json },
       { contract: this.perpetualProxy, json: perpetualProxyJson },
       { contract: this.perpetualV1, json: perpetualProxyJson },
 
@@ -104,7 +100,7 @@ export class Contracts {
       { contract: this.testP1Funder, json: testP1FunderJson },
       { contract: this.testP1Oracle, json: testP1OracleJson },
       { contract: this.testP1Trader, json: testP1TraderJson },
-      { contract: this.tokenA, json: tokenAJson },
+      { contract: this.testToken, json: testTokenJson },
     ];
 
     this.setProvider(provider, networkId);

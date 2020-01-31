@@ -28,7 +28,7 @@ const PerpetualV1 = artifacts.require('PerpetualV1');
 const TestP1Funder = artifacts.require('Test_P1Funder');
 const TestP1Oracle = artifacts.require('Test_P1Oracle');
 const TestP1Trader = artifacts.require('Test_P1Trader');
-const TokenA = artifacts.require('TokenA');
+const TestToken = artifacts.require('Test_Token');
 
 // ============ Main Migration ============
 
@@ -49,7 +49,7 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestP1Funder),
       deployer.deploy(TestP1Oracle),
       deployer.deploy(TestP1Trader),
-      deployer.deploy(TokenA),
+      deployer.deploy(TestToken),
     ]);
   }
 }

@@ -30,96 +30,87 @@ import {
 } from '../lib/types';
 
 export class Token {
-  private contracts: Contracts;
-  private tokens: object;
+  protected contracts: Contracts;
+  protected token: Contract;
 
   constructor(
     contracts: Contracts,
+    token: Contract,
   ) {
     this.contracts = contracts;
-    this.tokens = {};
+    this.token = token;
+  }
+
+  public get address(): string {
+    return this.token.options.address;
   }
 
   public async getAllowance(
-    tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
-    const token = this.getToken(tokenAddress);
     const allowStr: string = await this.contracts.call(
-      token.methods.allowance(ownerAddress, spenderAddress),
+      this.token.methods.allowance(ownerAddress, spenderAddress),
       options,
     );
     return new BigNumber(allowStr);
   }
 
   public async getBalance(
-    tokenAddress: address,
     ownerAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
-    const token = this.getToken(tokenAddress);
     const balStr: string = await this.contracts.call(
-      token.methods.balanceOf(ownerAddress),
+      this.token.methods.balanceOf(ownerAddress),
       options,
     );
     return new BigNumber(balStr);
   }
 
   public async getTotalSupply(
-    tokenAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
-    const token = this.getToken(tokenAddress);
     const supplyStr: string = await this.contracts.call(
-      token.methods.totalSupply(),
+      this.token.methods.totalSupply(),
       options,
     );
     return new BigNumber(supplyStr);
   }
 
   public async getName(
-    tokenAddress: address,
     options?: CallOptions,
   ): Promise<string> {
-    const token = this.getToken(tokenAddress);
     return this.contracts.call(
-      token.methods.name(),
+      this.token.methods.name(),
       options,
     );
   }
 
   public async getSymbol(
-    tokenAddress: address,
     options?: CallOptions,
   ): Promise<string> {
-    const token = this.getToken(tokenAddress);
     return this.contracts.call(
-      token.methods.symbol(),
+      this.token.methods.symbol(),
       options,
     );
   }
 
   public async getDecimals(
-    tokenAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
-    const token = this.getToken(tokenAddress);
     const decStr: string = await this.contracts.call(
-      token.methods.decimals(),
+      this.token.methods.decimals(),
       options,
     );
     return new BigNumber(decStr);
   }
 
   public async getPerpetualAllowance(
-    tokenAddress: address,
     ownerAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
     return this.getAllowance(
-      tokenAddress,
       ownerAddress,
       this.contracts.perpetualV1.options.address,
       options,
@@ -127,16 +118,13 @@ export class Token {
   }
 
   public async setAllowance(
-    tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
     amount: BigNumber,
     options: SendOptions = {},
   ): Promise<TxResult> {
-    const token = this.getToken(tokenAddress);
-
     return this.contracts.send(
-      token.methods.approve(
+      this.token.methods.approve(
         spenderAddress,
         amount.toFixed(0),
       ),
@@ -145,13 +133,11 @@ export class Token {
   }
 
   public async setPerpetualllowance(
-    tokenAddress: address,
     ownerAddress: address,
     amount: BigNumber,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
-      tokenAddress,
       ownerAddress,
       this.contracts.perpetualV1.options.address,
       amount,
@@ -160,13 +146,11 @@ export class Token {
   }
 
   public async setMaximumAllowance(
-    tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
-      tokenAddress,
       ownerAddress,
       spenderAddress,
       INTEGERS.ONES_255,
@@ -175,12 +159,10 @@ export class Token {
   }
 
   public async setMaximumPerpetualAllowance(
-    tokenAddress: address,
     ownerAddress: address,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
-      tokenAddress,
       ownerAddress,
       this.contracts.perpetualV1.options.address,
       INTEGERS.ONES_255,
@@ -189,12 +171,10 @@ export class Token {
   }
 
   public async unsetPerpetualAllowance(
-    tokenAddress: address,
     ownerAddress: address,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
-      tokenAddress,
       ownerAddress,
       this.contracts.perpetualV1.options.address,
       INTEGERS.ZERO,
@@ -203,16 +183,13 @@ export class Token {
   }
 
   public async transfer(
-    tokenAddress: address,
     fromAddress: address,
     toAddress: address,
     amount: BigNumber,
     options: SendOptions = {},
   ): Promise<TxResult> {
-    const token = this.getToken(tokenAddress);
-
     return this.contracts.send(
-      token.methods.transfer(
+      this.token.methods.transfer(
         toAddress,
         amount.toFixed(0),
       ),
@@ -221,17 +198,14 @@ export class Token {
   }
 
   public async transferFrom(
-    tokenAddress: address,
     fromAddress: address,
     toAddress: address,
     senderAddress: address,
     amount: BigNumber,
     options: SendOptions = {},
   ): Promise<TxResult> {
-    const token = this.getToken(tokenAddress);
-
     return this.contracts.send(
-      token.methods.transferFrom(
+      this.token.methods.transferFrom(
         fromAddress,
         toAddress,
         amount.toFixed(0),
@@ -241,7 +215,6 @@ export class Token {
   }
 
   public subscribeToTransfers(
-    tokenAddress: address,
     {
       from,
       to,
@@ -252,8 +225,6 @@ export class Token {
       fromBlock?: number,
     } = {},
   ): EventEmitter {
-    const token = this.getToken(tokenAddress);
-
     const filter: { from?: address, to?: address } = {};
 
     if (from) {
@@ -263,14 +234,13 @@ export class Token {
       filter.to = to;
     }
 
-    return token.events.Transfer({
+    return this.token.events.Transfer({
       filter,
       fromBlock,
     });
   }
 
   public subscribeToApprovals(
-    tokenAddress: address,
     {
       owner,
       spender,
@@ -281,8 +251,6 @@ export class Token {
       fromBlock?: number,
     } = {},
   ): EventEmitter {
-    const token = this.getToken(tokenAddress);
-
     const filter: { owner?: address, spender?: address } = {};
 
     if (owner) {
@@ -292,25 +260,9 @@ export class Token {
       filter.spender = spender;
     }
 
-    return token.events.Approval({
+    return this.token.events.Approval({
       filter,
       fromBlock,
     });
-  }
-
-  private getToken(
-    tokenAddress: string,
-  ): Contract {
-    if (this.tokens[tokenAddress]) {
-      return this.tokens[tokenAddress];
-    }
-
-    const token: Contract = this.contracts.erc20;
-    const contract: Contract = token.clone();
-    contract.options.address = tokenAddress;
-
-    this.tokens[tokenAddress] = contract;
-
-    return contract;
   }
 }
