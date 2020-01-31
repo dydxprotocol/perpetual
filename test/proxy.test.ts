@@ -10,19 +10,22 @@ let perpetual: Perpetual;
 let accounts: address[];
 
 describe('Proxy', () => {
-  let snapshotId: string;
+  let preInitSnapshotId: string;
+  let postInitSnapshotId: string;
 
   before(async () => {
     ({ perpetual, accounts } = await getPerpetual());
-    snapshotId = await snapshot();
+    preInitSnapshotId = await snapshot();
+    await initializeWithTestContracts(perpetual, accounts);
+    postInitSnapshotId = await snapshot();
   });
 
   beforeEach(async () => {
-    await initializeWithTestContracts(perpetual, accounts);
+    await resetEVM(postInitSnapshotId);
   });
 
-  afterEach(async () => {
-    await resetEVM(snapshotId);
+  after(async () => {
+    await resetEVM(preInitSnapshotId);
   });
 
   describe('initialize()', () => {
