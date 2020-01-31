@@ -53,11 +53,11 @@ contract PerpetualV1 is
         external
         onlyAdmin
     {
+        // only allow initialization once
         require(
             Storage.load(PERPETUAL_V1_INITIALIZE_SLOT) == 0x0,
             "PerpetualV1 already initialized"
         );
-
         Storage.store(PERPETUAL_V1_INITIALIZE_SLOT, bytes32(uint256(1)));
 
         _TOKEN_ = token;
@@ -66,9 +66,9 @@ contract PerpetualV1 is
         _MIN_COLLATERAL_ = minCollateral;
 
         _INDEX_ = P1Types.Index({
-            longs: 10**18,
-            shorts: 10**18,
-            timestamp: uint32(block.timestamp)
+            timestamp: uint32(block.timestamp),
+            isPositive: false,
+            value: 0
         });
     }
 }

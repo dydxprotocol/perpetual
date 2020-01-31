@@ -23,6 +23,7 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { P1Storage } from "./P1Storage.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { SafeCast } from "../../lib/SafeCast.sol";
+import { SignedMath } from "../../lib/SignedMath.sol";
 import { I_P1Funder } from "../intf/I_P1Funder.sol";
 import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
@@ -42,6 +43,7 @@ contract P1Settlement is
     using SafeCast for uint256;
     using SafeMath for uint256;
     using P1BalanceMath for P1Types.Balance;
+    using SignedMath for SignedMath.Int;
 
     // ============ Events ============
 
@@ -70,26 +72,33 @@ contract P1Settlement is
         // get Funding (F)
         uint256 timeDelta = block.timestamp.sub(index.timestamp);
         if (timeDelta > 0) {
+            // turn the current index into a signed integer
+            SignedMath.Int memory signedIndex = SignedMath.Int({
+                value: index.value,
+                isPositive: index.isPositive
+            });
+
             (
                 bool fundingPositive,
                 uint256 fundingValue
             ) = I_P1Funder(_FUNDER_).getFunding(timeDelta);
 
-            // multiply funding by price, add 1
-            fundingValue = fundingValue.baseMul(price).addOne();
+            // multiply funding by price
+            fundingValue = fundingValue.baseMul(price);
 
             // affect positive and negative by FP or 1/FP
             if (fundingPositive) {
-                index.longs = uint256(index.longs).baseDiv(fundingValue).toUint112();
-                index.shorts = uint256(index.shorts).baseMul(fundingValue).toUint112();
+                signedIndex = signedIndex.add(fundingValue);
             } else {
-                index.longs = uint256(index.longs).baseMul(fundingValue).toUint112();
-                index.shorts = uint256(index.shorts).baseDiv(fundingValue).toUint112();
+                signedIndex = signedIndex.sub(fundingValue);
             }
 
             // store new index
-            index.timestamp = block.timestamp.toUint32();
-            _INDEX_ = index;
+            _INDEX_ = P1Types.Index({
+                timestamp: block.timestamp.toUint32(),
+                isPositive: signedIndex.isPositive,
+                value: signedIndex.value.toUint128()
+            });
 
             emit LogIndexUpdated(index);
         }
@@ -135,33 +144,29 @@ contract P1Settlement is
             return;
         }
 
-        // settlement
-        uint256 newValue = 0;
-        uint256 oldValue = 0;
-        if (balance.positionPositive) {
-            newValue = newIndex.longs;
-            oldValue = oldIndex.longs;
+        // get the difference between the newIndex and oldIndex
+        SignedMath.Int memory signedIndexDiff = SignedMath.Int({
+            isPositive: newIndex.isPositive,
+            value: newIndex.value
+        });
+        if (oldIndex.isPositive) {
+            signedIndexDiff = signedIndexDiff.sub(oldIndex.value);
         } else {
-            newValue = newIndex.shorts;
-            oldValue = oldIndex.shorts;
+            signedIndexDiff = signedIndexDiff.add(oldIndex.value);
         }
 
-        bool positiveSettlement;
-        uint256 settlementAmount;
-        if (newValue > oldValue) {
-            positiveSettlement = true;
-            settlementAmount = newValue.sub(oldValue).mul(balance.position);
-            _BALANCES_[account] = balance.marginAdd(settlementAmount);
+        // settlement
+        signedIndexDiff.value = signedIndexDiff.value.baseMul(balance.position);
+        if (signedIndexDiff.isPositive) {
+            _BALANCES_[account] = balance.marginAdd(signedIndexDiff.value);
         } else {
-            positiveSettlement = false;
-            settlementAmount = oldValue.sub(newValue).mul(balance.position);
-            _BALANCES_[account] = balance.marginSub(settlementAmount);
+            _BALANCES_[account] = balance.marginSub(signedIndexDiff.value);
         }
 
         emit LogAccountSettled(
             account,
-            positiveSettlement,
-            settlementAmount
+            signedIndexDiff.isPositive,
+            signedIndexDiff.value
         );
     }
 
@@ -178,21 +183,19 @@ contract P1Settlement is
         uint256 positiveValue = 0;
         uint256 negativeValue = 0;
 
-        if (balance.margin != 0) {
-            if (balance.marginPositive) {
-                positiveValue = balance.margin;
-            } else {
-                negativeValue = balance.margin;
-            }
+        // add value of margin
+        if (balance.marginIsPositive) {
+            positiveValue = balance.margin;
+        } else {
+            negativeValue = balance.margin;
         }
 
-        if (balance.position != 0) {
-            uint256 positionValue = uint256(balance.position).baseMul(context.price);
-            if (balance.marginPositive) {
-                positiveValue = positiveValue.add(positionValue);
-            } else {
-                negativeValue = negativeValue.add(positionValue);
-            }
+        // add value of position
+        uint256 positionValue = uint256(balance.position).baseMul(context.price);
+        if (balance.positionIsPositive) {
+            positiveValue = positiveValue.add(positionValue);
+        } else {
+            negativeValue = negativeValue.add(positionValue);
         }
 
         return positiveValue.mul(BaseMath.base()) >= negativeValue.mul(context.minCollateral);

@@ -44,8 +44,8 @@ export class Getters {
     options?: CallOptions,
   ): Promise<Balance> {
     const [
-      marginPositive,
-      positionPositive,
+      marginIsPositive,
+      positionIsPositive,
       margin,
       position,
     ] = await this.contracts.call(
@@ -57,8 +57,8 @@ export class Getters {
     const marginBN = new BigNumber(margin);
     const positionBN = new BigNumber(position);
     return {
-      margin: marginPositive ? marginBN : marginBN.times(-1),
-      position: positionPositive ? positionBN : positionBN.times(-1),
+      margin: marginIsPositive ? marginBN : marginBN.negated(),
+      position: positionIsPositive ? positionBN : positionBN.negated(),
     };
   }
 
@@ -72,11 +72,7 @@ export class Getters {
       ),
       options,
     );
-    return {
-      longs: new BigNumber(result[0]),
-      shorts: new BigNumber(result[1]),
-      timestamp: new BigNumber(result[2]),
-    };
+    return this.solidityIndexToIndex(result);
   }
 
   public async getIsLocalOperator(
@@ -150,11 +146,7 @@ export class Getters {
       this.perpetual.methods.getGlobalIndex(),
       options,
     );
-    return {
-      longs: new BigNumber(result[0]),
-      shorts: new BigNumber(result[1]),
-      timestamp: new BigNumber(result[2]),
-    };
+    return this.solidityIndexToIndex(result);
   }
 
   public async getOpenInterest(
@@ -165,5 +157,22 @@ export class Getters {
       options,
     );
     return new BigNumber(result);
+  }
+
+  // ============ Helper Functions ============
+
+  private solidityIndexToIndex(
+    solidityIndex: any[],
+  ): Index {
+    const [
+      timestamp,
+      isPositive,
+      value,
+    ] = solidityIndex;
+    const valueBN = new BigNumber(value);
+    return {
+      timestamp: new BigNumber(timestamp),
+      value: isPositive ? valueBN : valueBN.negated(),
+    };
   }
 }

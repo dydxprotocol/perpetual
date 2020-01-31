@@ -30,14 +30,14 @@ library P1Types {
     // ============ Structs ============
 
     struct Index {
-        uint112 longs;
-        uint112 shorts;
         uint32 timestamp;
+        bool isPositive;
+        uint128 value;
     }
 
     struct Balance {
-        bool marginPositive;
-        bool positionPositive;
+        bool marginIsPositive;
+        bool positionIsPositive;
         uint120 margin;
         uint120 position;
     }

@@ -31,8 +31,7 @@ describe('Perpetual', () => {
     it('has proper index', async () => {
       const index = await perpetual.getters.getGlobalIndex();
       const { timestamp } = await perpetual.web3.eth.getBlock('latest');
-      expectBN(index.longs).eq('1e18');
-      expectBN(index.shorts).eq('1e18');
+      expectBN(index.value).eq(0);
       expectBN(index.timestamp).lte(timestamp as any);
     });
 
