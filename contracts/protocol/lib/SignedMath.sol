@@ -35,7 +35,7 @@ library SignedMath {
 
     struct Int {
         uint256 value;
-        bool positive;
+        bool isPositive;
     }
 
     // ============ Functions ============
@@ -48,21 +48,21 @@ library SignedMath {
         pure
         returns (Int memory)
     {
-        if (sint.positive) {
+        if (sint.isPositive) {
             return Int({
                 value: value.add(sint.value),
-                positive: true
+                isPositive: true
             });
         }
         if (sint.value < value) {
             return Int({
                 value: value.sub(sint.value),
-                positive: true
+                isPositive: true
             });
         }
         return Int({
             value: sint.value.sub(value),
-            positive: false
+            isPositive: false
         });
     }
 
@@ -74,21 +74,21 @@ library SignedMath {
         pure
         returns (Int memory)
     {
-        if (!sint.positive) {
+        if (!sint.isPositive) {
             return Int({
                 value: value.add(sint.value),
-                positive: false
+                isPositive: false
             });
         }
         if (sint.value > value) {
             return Int({
                 value: sint.value.sub(value),
-                positive: true
+                isPositive: true
             });
         }
         return Int({
             value: value.sub(sint.value),
-            positive: false
+            isPositive: false
         });
     }
 }

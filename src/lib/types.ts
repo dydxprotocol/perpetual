@@ -113,7 +113,6 @@ export interface Balance {
 }
 
 export interface Index {
-  longs: BigNumber;
-  shorts: BigNumber;
   timestamp: BigNumber;
+  value: BigNumber;
 }
