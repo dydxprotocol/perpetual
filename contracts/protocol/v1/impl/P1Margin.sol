@@ -86,7 +86,7 @@ contract P1Margin is
             account == msg.sender
             || _GLOBAL_OPERATORS_[msg.sender]
             || _LOCAL_OPERATORS_[account][msg.sender],
-            "sender no withdraw permission"
+            "sender does not have permission to withdraw"
         );
 
         P1Types.Context memory context = _loadContext();

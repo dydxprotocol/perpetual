@@ -11,7 +11,7 @@ export class TestP1Oracle {
     this.contracts = contracts;
   }
 
-  public getAddress(): string {
+  public get address(): string {
     return this.contracts.testP1Oracle.options.address;
   }
 

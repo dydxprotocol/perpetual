@@ -1,6 +1,10 @@
-.DS_Store
-.idea
 .0x-artifacts/
+.coverage*
+.DS_Store
+.env.local
+.idea
+.nyc_output
+
 build/
 dist/
 node_modules/
@@ -9,8 +13,6 @@ coverage/
 coverageEnv/
 allFiredEvents
 config
-.env.local
-.coverage*
 
 # VIM
 *.swo

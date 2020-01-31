@@ -10,4 +10,11 @@ export default async function initializeWithTestContracts(ctx: ITestContext): Pr
     ),
     { from: ctx.accounts[0] },
   );
+  await ctx.perpetual.contracts.send(
+    ctx.perpetual.contracts.perpetualV1.methods.setGlobalOperator(
+      ctx.perpetual.contracts.testP1Trader.options.address,
+      true, // approved
+    ),
+    { from: ctx.accounts[0] },
+  );
 }

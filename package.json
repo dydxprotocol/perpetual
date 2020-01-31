@@ -66,6 +66,7 @@
     "ethlint": "^1.2.5",
     "ganache-cli": "6.8.2",
     "mocha": "^7.0.0",
+    "nyc": "^15.0.0",
     "solidity-coverage": "^0.7.1",
     "solium": "^1.2.5",
     "truffle": "^5.1.12",

@@ -10,7 +10,7 @@ export class TestP1Trader {
     this.contracts = contracts;
   }
 
-  public getAddress(): string {
+  public get address(): string {
     return this.contracts.testP1Trader.options.address;
   }
 
@@ -20,8 +20,8 @@ export class TestP1Trader {
   ): Promise<TxResult> {
     return this.contracts.send(
       this.contracts.testP1Trader.methods.setTradeResult(
-        tradeResult.marginAmount,
-        tradeResult.positionAmount,
+        tradeResult.marginAmount.toFixed(0),
+        tradeResult.positionAmount.toFixed(0),
         tradeResult.isBuy,
       ),
       options,

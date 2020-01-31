@@ -16,15 +16,29 @@
 
 */
 
-import { Provider } from '../lib/types';
 import { EVM } from './EVM';
+import { TestP1Funder } from './TestP1Funder';
+import { TestP1Oracle } from './TestP1Oracle';
+import { TestP1Trader } from './TestP1Trader';
+import { TestToken } from './TestToken';
+import { Provider } from '../lib/types';
+import { Contracts } from '../modules/Contracts';
 
 export class Testing {
   public evm: EVM;
+  public funder: TestP1Funder;
+  public oracle: TestP1Oracle;
+  public trader: TestP1Trader;
+  public token: TestToken;
 
   constructor(
     provider: Provider,
+    contracts: Contracts,
   ) {
     this.evm = new EVM(provider);
+    this.funder = new TestP1Funder(contracts);
+    this.oracle = new TestP1Oracle(contracts);
+    this.trader = new TestP1Trader(contracts);
+    this.token = new TestToken(contracts);
   }
 }
