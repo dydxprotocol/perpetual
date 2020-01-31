@@ -17,7 +17,6 @@
 */
 
 import BigNumber from 'bignumber.js';
-import { EventEmitterStatic as EventEmitter } from 'eventemitter3';
 import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from './Contracts';
@@ -132,7 +131,7 @@ export class Token {
     );
   }
 
-  public async setPerpetualllowance(
+  public async setPerpetualAllowance(
     ownerAddress: address,
     amount: BigNumber,
     options: SendOptions = {},
@@ -212,57 +211,5 @@ export class Token {
       ),
       { ...options, from: senderAddress },
     );
-  }
-
-  public subscribeToTransfers(
-    {
-      from,
-      to,
-      fromBlock,
-    }: {
-      from?: address,
-      to?: address,
-      fromBlock?: number,
-    } = {},
-  ): EventEmitter {
-    const filter: { from?: address, to?: address } = {};
-
-    if (from) {
-      filter.from = from;
-    }
-    if (to) {
-      filter.to = to;
-    }
-
-    return this.token.events.Transfer({
-      filter,
-      fromBlock,
-    });
-  }
-
-  public subscribeToApprovals(
-    {
-      owner,
-      spender,
-      fromBlock,
-    }: {
-      owner?: address,
-      spender?: address,
-      fromBlock?: number,
-    } = {},
-  ): EventEmitter {
-    const filter: { owner?: address, spender?: address } = {};
-
-    if (owner) {
-      filter.owner = owner;
-    }
-    if (spender) {
-      filter.spender = spender;
-    }
-
-    return this.token.events.Approval({
-      filter,
-      fromBlock,
-    });
   }
 }
