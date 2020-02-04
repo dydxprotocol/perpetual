@@ -16,13 +16,17 @@
 
 */
 
-const { isDevNetwork } = require('./helpers');
+const {
+  getChainId,
+  isDevNetwork,
+} = require('./helpers');
 
 // ============ Contracts ============
 
 // Base Protocol
 const PerpetualProxy = artifacts.require('PerpetualProxy');
 const PerpetualV1 = artifacts.require('PerpetualV1');
+const P1Orders = artifacts.require('P1Orders');
 
 // Test Contracts
 const TestP1Funder = artifacts.require('Test_P1Funder');
@@ -37,6 +41,8 @@ const migration = async (deployer, network, accounts) => {
     deployTestContracts(deployer, network),
     deployProtocol(deployer, network, accounts),
   ]);
+
+  await deployTraders(deployer, network, accounts);
 };
 
 module.exports = migration;
@@ -54,7 +60,7 @@ async function deployTestContracts(deployer, network) {
   }
 }
 
-async function deployProtocol(deployer, _network, accounts) {
+async function deployProtocol(deployer, network, accounts) {
   await deployer.deploy(PerpetualV1);
   await deployer.deploy(
     PerpetualProxy,
@@ -62,4 +68,21 @@ async function deployProtocol(deployer, _network, accounts) {
     accounts[0], // admin
     '0x', // data
   );
+}
+
+async function deployTraders(deployer, network) {
+  // deploy traders
+  await Promise.all([
+    deployer.deploy(
+      P1Orders,
+      PerpetualProxy.address,
+      getChainId(network),
+    ),
+  ]);
+
+  // set global operators
+  const perpetual = await PerpetualV1.at(PerpetualProxy.address);
+  await Promise.all([
+    perpetual.setGlobalOperator(P1Orders.address, true),
+  ]);
 }

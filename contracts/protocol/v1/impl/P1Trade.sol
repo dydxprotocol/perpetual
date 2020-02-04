@@ -67,6 +67,7 @@ contract P1Trade is
         public
         nonReentrant
     {
+        _verifyAccounts(accounts);
         P1Types.Context memory context = _loadContext();
         _settleAccounts(context, accounts);
 
@@ -89,6 +90,11 @@ contract P1Trade is
                 context.price,
                 tradeArg.data
             );
+
+            // if the accounts are equal no need to update balances
+            if (maker == taker) {
+                continue;
+            }
 
             P1Types.Balance memory makerBalance = _BALANCES_[maker];
             P1Types.Balance memory takerBalance = _BALANCES_[taker];
@@ -123,6 +129,27 @@ contract P1Trade is
                 _isCollateralized(context, accounts[i]),
                 "account is undercollateralized"
             );
+        }
+    }
+
+    function _verifyAccounts(
+        address[] memory accounts
+    )
+        private
+        pure
+    {
+        require(
+            accounts.length > 0,
+            "Accounts must have non-zero length"
+        );
+        address prevAccount = accounts[0];
+        for (uint256 i = 1; i < accounts.length; i++) {
+            address account = accounts[i];
+            require(
+                account >= prevAccount,
+                "Accounts must be sorted"
+            );
+            prevAccount = account;
         }
     }
 }

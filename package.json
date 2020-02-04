@@ -46,10 +46,12 @@
     "@openzeppelin/contracts": "2.4.0",
     "@openzeppelin/upgrades": "2.6.0",
     "bignumber.js": "^9.0.0",
+    "es6-promisify": "^6.0.2",
     "web3": "1.2.4"
   },
   "devDependencies": {
     "@types/chai": "^4.2.7",
+    "@types/es6-promisify": "^6.0.0",
     "@types/mocha": "^5.2.7",
     "babel-cli": "^6.26.0",
     "babel-eslint": "^10.0.3",

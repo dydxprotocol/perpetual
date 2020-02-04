@@ -16,6 +16,25 @@
 
 */
 
+function getChainId(network) {
+  if (isMainnet(network)) {
+    return 1;
+  }
+  if (isKovan(network)) {
+    return 42;
+  }
+  if (network.startsWith('coverage')) {
+    return 1002;
+  }
+  if (network.startsWith('docker')) {
+    return 1313;
+  }
+  if (network.startsWith('test')) {
+    return 1001;
+  }
+  throw new Error('No chainId for network', network);
+}
+
 function isDevNetwork(network) {
   verifyNetwork(network);
   return network.startsWith('development')
@@ -27,6 +46,18 @@ function isDevNetwork(network) {
       || network.startsWith('coverage');
 }
 
+// ============ Helper Functions ============
+
+function isMainnet(network) {
+  verifyNetwork(network);
+  return network.startsWith('mainnet');
+}
+
+function isKovan(network) {
+  verifyNetwork(network);
+  return network.startsWith('kovan');
+}
+
 function verifyNetwork(network) {
   if (!network) {
     throw new Error('No network provided');
@@ -34,5 +65,6 @@ function verifyNetwork(network) {
 }
 
 module.exports = {
+  getChainId,
   isDevNetwork,
 };

@@ -27,6 +27,7 @@ import { Contracts } from './modules/Contracts';
 import { Proxy } from './modules/Proxy';
 import { Getters } from './modules/Getters';
 import { Margin } from './modules/Margin';
+import { Orders } from './modules/Orders';
 import { Trade } from './modules/Trade';
 
 export class Perpetual {
@@ -37,6 +38,7 @@ export class Perpetual {
   public proxy: Proxy;
   public getters: Getters;
   public margin: Margin;
+  public orders: Orders;
   public trade: Trade;
 
   constructor(
@@ -49,7 +51,8 @@ export class Perpetual {
     this.proxy = new Proxy(this.contracts);
     this.getters = new Getters(this.contracts);
     this.margin = new Margin(this.contracts);
-    this.trade = new Trade(this.contracts);
+    this.orders = new Orders(this.contracts, this.web3, networkId);
+    this.trade = new Trade(this.contracts, this.orders);
   }
 
   public setDefaultAccount(
