@@ -17,7 +17,7 @@
 */
 
 function getChainId(network) {
-  if (isMainNet(network)) {
+  if (isMainnet(network)) {
     return 1;
   }
   if (isKovan(network)) {
@@ -48,7 +48,7 @@ function isDevNetwork(network) {
 
 // ============ Helper Functions ============
 
-function isMainNet(network) {
+function isMainnet(network) {
   verifyNetwork(network);
   return network.startsWith('mainnet');
 }

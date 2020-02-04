@@ -138,8 +138,12 @@ contract P1Trade is
         private
         pure
     {
-        address prevAccount = address(0);
-        for (uint256 i = 0; i < accounts.length; i++) {
+        require(
+            accounts.length > 0,
+            "Accounts must have non-zero length"
+        );
+        address prevAccount = accounts[0];
+        for (uint256 i = 1; i < accounts.length; i++) {
             address account = accounts[i];
             require(
                 account >= prevAccount,

@@ -23,8 +23,8 @@ export function hashBytes(input: string) {
 }
 
 export function stripHexPrefix(input: string) {
-  if (input.indexOf('0x') === 0) {
-    return input.substr(2);
+  if (input.startsWith('0x')) {
+    return input.slice(2);
   }
   return input;
 }
