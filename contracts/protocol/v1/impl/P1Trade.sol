@@ -67,6 +67,7 @@ contract P1Trade is
         public
         nonReentrant
     {
+        _verifyAccounts(accounts);
         P1Types.Context memory context = _loadContext();
         _settleAccounts(context, accounts);
 
@@ -128,6 +129,23 @@ contract P1Trade is
                 _isCollateralized(context, accounts[i]),
                 "account is undercollateralized"
             );
+        }
+    }
+
+    function _verifyAccounts(
+        address[] memory accounts
+    )
+        private
+        pure
+    {
+        address prevAccount = address(0);
+        for (uint256 i = 0; i < accounts.length; i++) {
+            address account = accounts[i];
+            require(
+                account >= prevAccount,
+                "Accounts must be sorted"
+            );
+            prevAccount = account;
         }
     }
 }

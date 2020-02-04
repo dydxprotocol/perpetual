@@ -162,7 +162,7 @@ describe('P1Orders', () => {
           defaultSignedOrder.amount.div(2),
           defaultSignedOrder.limitPrice.div(2),
           defaultSignedOrder.fee.div(2),
-        ).commit({ from: defaultSignedOrder.taker, log: true } as any),
+        ).commit({ from: defaultSignedOrder.taker }),
         'account is undercollateralized',
       );
     });

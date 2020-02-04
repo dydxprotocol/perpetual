@@ -9,9 +9,13 @@ import {
   SignedOrder,
   TradeArg,
 } from '../lib/types';
-import {
-  addressesAreEqual,
-} from '../lib/BytesHelper';
+
+interface TempTradeArg {
+  maker: address;
+  taker: address;
+  trader: address;
+  data: string;
+}
 
 export class TradeOperation {
   // constants
@@ -19,8 +23,7 @@ export class TradeOperation {
   private orders: Orders;
 
   // stateful data
-  private accounts: address[];
-  private tradeArgs: TradeArg[];
+  private trades: TempTradeArg[];
   private committed: boolean;
 
   constructor(
@@ -30,8 +33,7 @@ export class TradeOperation {
     this.contracts = contracts;
     this.orders = orders;
 
-    this.tradeArgs = [];
-    this.accounts = [];
+    this.trades = [];
     this.committed = false;
   }
 
@@ -64,10 +66,7 @@ export class TradeOperation {
     if (this.committed) {
       throw new Error('Operation already committed');
     }
-    if (!this.accounts.length) {
-      throw new Error('No accounts have been added to trade');
-    }
-    if (!this.tradeArgs.length) {
+    if (!this.trades.length) {
       throw new Error('No tradeArgs have been added to trade');
     }
 
@@ -75,11 +74,27 @@ export class TradeOperation {
       this.committed = true;
     }
 
+    // construct sorted address list
+    const accountSet = new Set<address>();
+    this.trades.forEach((t) => {
+      accountSet.add(t.maker);
+      accountSet.add(t.taker);
+    });
+    const accounts: address[] = Array.from(accountSet).sort();
+
+    // construct trade args
+    const tradeArgs: TradeArg[] = this.trades.map(t => ({
+      makerIndex: accounts.findIndex(a => a === t.maker),
+      takerIndex: accounts.findIndex(a => a === t.taker),
+      trader: t.trader,
+      data: t.data,
+    }));
+
     try {
       return this.contracts.send(
         this.contracts.perpetualV1.methods.trade(
-          this.accounts,
-          this.tradeArgs,
+          accounts,
+          tradeArgs,
         ),
         options,
       );
@@ -106,30 +121,11 @@ export class TradeOperation {
       throw new Error('Operation already committed');
     }
 
-    const takerIndex = this.getAccountIndex(taker);
-    const makerIndex = this.getAccountIndex(maker);
-    const newTradeArg: TradeArg = {
-      makerIndex,
-      takerIndex,
+    this.trades.push({
       trader,
       data,
-    };
-
-    this.tradeArgs.push(newTradeArg);
-  }
-
-  private getAccountIndex(
-    account: address,
-  ): number {
-    const index = this.accounts.findIndex(a => addressesAreEqual(a, account));
-
-    // return the index if it exists
-    if (index >= 0) {
-      return index;
-    }
-
-    // push the account onto the list and return that index
-    this.accounts.push(account);
-    return this.accounts.length - 1;
+      maker: maker.toLowerCase(),
+      taker: taker.toLowerCase(),
+    });
   }
 }

@@ -142,11 +142,6 @@ export class Contracts {
       ...specificOptions,
     };
 
-    if ((txOptions as any).log) {
-      console.log((method as any).arguments);
-      console.log(method.encodeABI()); // TODO: remove
-    }
-
     if (txOptions.confirmationType === ConfirmationType.Simulate || !txOptions.gas) {
       const gasEstimate = await this.estimateGas(method, txOptions);
       txOptions.gas = Math.floor(gasEstimate * txOptions.gasMultiplier);
