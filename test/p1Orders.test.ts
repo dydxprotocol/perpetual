@@ -1,19 +1,13 @@
 import BigNumber from 'bignumber.js';
 import { expect, expectThrow } from './helpers/Expect';
-import { snapshot, resetEVM } from './helpers/EVM';
-import { getPerpetual } from './helpers/Perpetual';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import {
-  address,
   Order,
   SignedOrder,
   SigningMethod,
 } from '../src/lib/types';
 import { ADDRESSES } from '../src/lib/Constants';
-import { Perpetual } from '../src/Perpetual';
-
-let perpetual: Perpetual;
-let accounts: address[];
 
 const defaultOrder: Order = {
   isBuy: true,
@@ -28,42 +22,28 @@ const defaultOrder: Order = {
 };
 let defaultSignedOrder: SignedOrder;
 
-describe('P1Orders', () => {
-  let preInitSnapshotId: string;
-  let postInitSnapshotId: string;
+async function init(ctx: ITestContext) {
+  await initializeWithTestContracts(ctx);
 
-  before(async () => {
-    ({ perpetual, accounts } = await getPerpetual());
+  defaultOrder.maker = ctx.accounts[5];
+  defaultOrder.taker = ctx.accounts[1];
 
-    defaultOrder.maker = accounts[5];
-    defaultOrder.taker = accounts[1];
+  const typedSignature = await ctx.perpetual.orders.signOrder(defaultOrder, SigningMethod.Hash);
+  defaultSignedOrder = {
+    ...defaultOrder,
+    typedSignature,
+  };
+}
 
-    const typedSignature = await perpetual.orders.signOrder(defaultOrder, SigningMethod.Hash);
-    defaultSignedOrder = {
-      ...defaultOrder,
-      typedSignature,
-    };
-
-    preInitSnapshotId = await snapshot();
-    await initializeWithTestContracts(perpetual, accounts);
-    postInitSnapshotId = await snapshot();
-  });
-
-  beforeEach(async () => {
-    await resetEVM(postInitSnapshotId);
-  });
-
-  after(async () => {
-    await resetEVM(preInitSnapshotId);
-  });
+perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
   describe('Signing', () => {
     it('Signs correctly for hash', async () => {
-      const typedSignature = await perpetual.orders.signOrder(
+      const typedSignature = await ctx.perpetual.orders.signOrder(
         defaultOrder,
         SigningMethod.Hash,
       );
-      const validSignature = perpetual.orders.orderHasValidSignature({
+      const validSignature = ctx.perpetual.orders.orderHasValidSignature({
         ...defaultOrder,
         typedSignature,
       });
@@ -71,11 +51,11 @@ describe('P1Orders', () => {
     });
 
     it('Signs correctly for typed data', async () => {
-      const typedSignature = await perpetual.orders.signOrder(
+      const typedSignature = await ctx.perpetual.orders.signOrder(
         defaultOrder,
         SigningMethod.TypedData,
       );
-      const validSignature = perpetual.orders.orderHasValidSignature({
+      const validSignature = ctx.perpetual.orders.orderHasValidSignature({
         ...defaultOrder,
         typedSignature,
       });
@@ -157,7 +137,7 @@ describe('P1Orders', () => {
     it('Succeeds for simple case', async () => {
       // TODO: change to success
       await expectThrow(
-        perpetual.trade.initiate().fillSignedOrder(
+        ctx.perpetual.trade.initiate().fillSignedOrder(
           defaultSignedOrder,
           defaultSignedOrder.amount.div(2),
           defaultSignedOrder.limitPrice.div(2),
