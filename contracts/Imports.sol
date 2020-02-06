@@ -7,9 +7,6 @@
 pragma solidity 0.5.16;
 
 /* solium-disable-next-line */
-// import { Address } from "@openzeppelin/upgrades/contracts/utils/Address.sol";
-
-/* solium-disable-next-line */
 import { Proxy } from "@openzeppelin/upgrades/contracts/upgradeability/Proxy.sol";
 /* solium-disable-next-line */
 import { BaseUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/BaseUpgradeabilityProxy.sol";
