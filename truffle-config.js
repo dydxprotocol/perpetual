@@ -9,7 +9,7 @@ module.exports = {
       parser: 'solcjs',
       settings: {
         optimizer: {
-          // TODO: Pass optimizer settings through to sol-trace.
+          // TODO(ken): Pass optimizer settings through to sol-trace.
           enabled: process.env.ENABLE_SOL_TRACE !== 'true',
           runs: 10000,
         },
