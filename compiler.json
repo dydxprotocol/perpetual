@@ -6,9 +6,5 @@
       "enabled": true,
       "runs": 10000
     }
-  },
-  "contractsDir": ".",
-  "contracts": [
-    "node_modules/@openzeppelin/upgrades/contracts/upgradeability/BaseAdminUpgradeabilityProxy.sol"
-  ]
+  }
 }
