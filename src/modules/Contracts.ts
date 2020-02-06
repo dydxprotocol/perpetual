@@ -97,7 +97,7 @@ export class Contracts {
     this.contractsList = [
       // Contracts
       { contract: this.perpetualProxy, json: perpetualProxyJson },
-      { contract: this.perpetualV1, json: perpetualV1Json },
+      { contract: this.perpetualV1, json: perpetualProxyJson },
       { contract: this.p1Orders, json: p1OrdersJson },
 
       // Testing contracts
