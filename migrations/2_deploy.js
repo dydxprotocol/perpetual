@@ -42,7 +42,7 @@ const migration = async (deployer, network, accounts) => {
     deployProtocol(deployer, network, accounts),
   ]);
 
-  await deployTraders(deployer, network, accounts);
+  // await deployTraders(deployer, network, accounts);
 };
 
 module.exports = migration;
@@ -57,32 +57,43 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestP1Trader),
       deployer.deploy(TestToken),
     ]);
+    // console.log(`TestP1Funder: ${TestP1Funder.address}`);
+    // console.log(`TestP1Oracle: ${TestP1Oracle.address}`);
+    // console.log(`TestP1Trader: ${TestP1Trader.address}`);
+    // console.log(`TestToken: ${TestToken.address}`);
   }
 }
 
 async function deployProtocol(deployer, network, accounts) {
   await deployer.deploy(PerpetualV1);
-  await deployer.deploy(
-    PerpetualProxy,
-    PerpetualV1.address, // logic
-    accounts[0], // admin
-    '0x', // data
-  );
+  // await deployer.deploy(
+  //   PerpetualProxy,
+  //   PerpetualV1.address, // logic
+  //   accounts[0], // admin
+  //   '0x', // data
+  // );
+  // console.log(`PerpetualV1: ${PerpetualV1.address}`);
+  // console.log(`PerpetualProxy: ${PerpetualProxy.address}`);
 }
 
-async function deployTraders(deployer, network) {
-  // deploy traders
-  await Promise.all([
-    deployer.deploy(
-      P1Orders,
-      PerpetualProxy.address,
-      getChainId(network),
-    ),
-  ]);
+// async function deployTraders(deployer, network, accounts) {
+//   // const perpetualAddress = PerpetualV1.address;
+//   const perpetualAddress = PerpetualProxy.address;
 
-  // set global operators
-  const perpetual = await PerpetualV1.at(PerpetualProxy.address);
-  await Promise.all([
-    perpetual.setGlobalOperator(P1Orders.address, true),
-  ]);
-}
+//   // deploy traders
+//   await Promise.all([
+//     deployer.deploy(
+//       P1Orders,
+//       perpetualAddress,
+//       getChainId(network),
+//     ),
+//   ]);
+//   console.log(`P1Orders: ${P1Orders.address}`);
+
+//   // set global operators
+//   const perpetual = await PerpetualV1.at(perpetualAddress);
+//   console.log('go', (await PerpetualV1.deployed()).address);
+//   await Promise.all([
+//     perpetual.setGlobalOperator(P1Orders.address, true, { from: accounts[0] }),
+//   ]);
+// }

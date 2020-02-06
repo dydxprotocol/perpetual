@@ -34,6 +34,15 @@ contract Adminable {
     bytes32 internal constant ADMIN_SLOT =
     0xb53127684a568b3173ae13b9f8a6016e243e63b6e8ee1178d6a717850b5d6103;
 
+    constructor() public {
+        address sender = msg.sender;
+
+        /* solium-disable-next-line security/no-inline-assembly */
+        assembly {
+            sstore(ADMIN_SLOT, sender)
+        }
+    }
+
     /**
     * @dev Modifier to check whether the `msg.sender` is the admin.
     * If it is, it will run the function. Otherwise, it will revert.

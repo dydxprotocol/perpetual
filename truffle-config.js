@@ -9,8 +9,7 @@ module.exports = {
       parser: 'solcjs',
       settings: {
         optimizer: {
-          enabled: true,
-          runs: 10000,
+          enabled: false,
         },
       },
     },
