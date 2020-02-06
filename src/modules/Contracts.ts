@@ -50,13 +50,6 @@ enum OUTCOMES {
   REJECTED = 2,
 }
 
-// DO NOT MERGE
-function mkContract(web3, name, json) {
-  const c = new web3.eth.Contract(json);
-  c.name = name;
-  return c;
-}
-
 export class Contracts {
   private web3: Web3;
   private contractsList: any = [];
@@ -91,15 +84,15 @@ export class Contracts {
     };
 
     // Contracts
-    this.perpetualProxy = mkContract(this.web3, 'perpetualProxy', perpetualProxyJson.abi);
-    this.perpetualV1 = mkContract(this.web3, 'perpetualV1', perpetualV1Json.abi);
-    this.p1Orders = mkContract(this.web3, 'p1Orders', p1OrdersJson.abi);
+    this.perpetualProxy = new web3.eth.Contract(perpetualProxyJson.abi);
+    this.perpetualV1 = new web3.eth.Contract(perpetualV1Json.abi);
+    this.p1Orders = new web3.eth.Contract(p1OrdersJson.abi);
 
     // Testing contracts
-    this.testP1Funder = mkContract(this.web3, 'testP1Funder', testP1FunderJson.abi);
-    this.testP1Oracle = mkContract(this.web3, 'testP1Oracle', testP1OracleJson.abi);
-    this.testP1Trader = mkContract(this.web3, 'testP1Trader', testP1TraderJson.abi);
-    this.testToken = mkContract(this.web3, 'testToken', testTokenJson.abi);
+    this.testP1Funder = new web3.eth.Contract(testP1FunderJson.abi);
+    this.testP1Oracle = new web3.eth.Contract(testP1OracleJson.abi);
+    this.testP1Trader = new web3.eth.Contract(testP1TraderJson.abi);
+    this.testToken = new web3.eth.Contract(testTokenJson.abi);
 
     this.contractsList = [
       // Contracts
@@ -282,7 +275,6 @@ export class Contracts {
     (contract as any).setProvider(provider);
     contract.options.address = contractJson.networks[networkId]
       && contractJson.networks[networkId].address;
-    // console.log(`contract ${(contract as any).name}: ${contract.options.address}`);
   }
 
   private async estimateGas(
