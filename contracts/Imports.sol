@@ -6,13 +6,12 @@
 
 pragma solidity 0.5.16;
 
-/* solium-disable-next-line */
+// Keep the following commented import--the comment is enough to get sol-trace to include the file,
+//   although the import itself fails.
+// import { Address } from "@openzeppelin/upgrades/contracts/utils/Address.sol";
 import { Proxy } from "@openzeppelin/upgrades/contracts/upgradeability/Proxy.sol";
-/* solium-disable-next-line */
 import { BaseUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/BaseUpgradeabilityProxy.sol";
-/* solium-disable-next-line */
 import { UpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/UpgradeabilityProxy.sol";
-/* solium-disable-next-line */
 import { BaseAdminUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/BaseAdminUpgradeabilityProxy.sol";
 
 
