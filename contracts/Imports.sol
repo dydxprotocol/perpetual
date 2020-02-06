@@ -1,5 +1,5 @@
 /**
- * Empty contract to ensure the necessary contract are imported by sol-trace.
+ * Empty contract to ensure the necessary contracts are imported by sol-trace.
  *
  * TODO(ken): Find a more elegant solution.
  */
