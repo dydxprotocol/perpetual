@@ -1,0 +1,14 @@
+{
+  "solcVersion": "0.5.16",
+  "useDockerisedSolc": true,
+  "compilerSettings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 10000
+    }
+  },
+  "contractsDir": ".",
+  "contracts": [
+    "node_modules/@openzeppelin/upgrades/contracts/upgradeability/BaseAdminUpgradeabilityProxy.sol"
+  ]
+}
