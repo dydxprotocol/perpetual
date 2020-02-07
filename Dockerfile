@@ -6,7 +6,7 @@ WORKDIR /home/dydx/app
 COPY ./package.json ./package-lock.json ./
 RUN npm ci --loglevel warn
 
-COPY ./truffle.js ./truffle.js
+COPY ./truffle-config.js ./truffle-config.js
 COPY ./contracts ./contracts
 RUN DOCKER_COMPILER=false npm run compile -- --all
 
