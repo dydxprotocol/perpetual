@@ -1,23 +1,22 @@
 import BigNumber from 'bignumber.js';
-import { snapshot, resetEVM } from './helpers/EVM';
-import { expectBN, expectThrow } from './helpers/Expect';
-import { getPerpetual } from './helpers/Perpetual';
+
+import { expect, expectBN, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import { INTEGERS } from '../src/lib/Constants';
 import { address } from '../src/lib/types';
-import { Perpetual } from '../src/Perpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { sell } from './helpers/trade';
 
 perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) => {
   let accountOwner;
   let otherUser;
 
   before(() => {
-    accountOwner = ctx.accounts[0];
-    otherUser = ctx.accounts[1];
+    accountOwner = ctx.accounts[1];
+    otherUser = ctx.accounts[2];
   });
 
-  xdescribe('deposit()', () => {
+  describe('deposit()', () => {
     it('Account owner can deposit', async () => {
       // Set initial balances and allowances.
       const amount = new BigNumber(150);
@@ -25,14 +24,23 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
 
       // Execute deposit.
-      await ctx.perpetual.margin.deposit(accountOwner, amount, { from: accountOwner });
+      const txResult = await ctx.perpetual.margin.deposit(
+        accountOwner,
+        amount,
+        { from: accountOwner },
+      );
 
       // Check balances.
       await expectBalances([accountOwner], [amount]);
 
-      // TODO: Fix logs check.
-      // const logs = ctx.perpetual.logs.parseLogs(txResult);
-      // expect(logs.length).to.equal(1);
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      expect(logs.length).to.equal(2);
+      const [indexUpdatedLog, depositLog] = logs;
+      expect(indexUpdatedLog.name).to.equal('LogIndexUpdated');
+      expect(depositLog.name).to.equal('LogDeposit');
+      expect(depositLog.args.account).to.equal(accountOwner);
+      expectBN(depositLog.args.amount).to.eq(amount);
     });
 
     it('Non-owner can deposit', async () => {
@@ -87,83 +95,93 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       await ctx.perpetual.margin.deposit(accountOwner, amount, { from: accountOwner });
     });
 
-    // it('Account owner can withdraw partial amount', async () => {
-    //   await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(100), { from: accountOwner });
+    it('Account owner can withdraw partial amount', async () => {
+      const amount = new BigNumber(100);
+      const txResult = await ctx.perpetual.margin.withdraw(
+        accountOwner,
+        amount,
+        { from: accountOwner },
+      );
 
-    //   // Check balances.
-    //   await expectBalances([accountOwner], [new BigNumber(50)]);
+      // Check balances.
+      await expectBalances([accountOwner], [new BigNumber(50)]);
 
-    //   // TODO: Check logs.
-    // });
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      expect(logs.length).to.equal(2);
+      const [indexUpdatedLog, depositLog] = logs;
+      expect(indexUpdatedLog.name).to.equal('LogIndexUpdated');
+      expect(depositLog.name).to.equal('LogWithdraw');
+      expect(depositLog.args.account).to.equal(accountOwner);
+      expectBN(depositLog.args.amount).to.eq(amount);
+    });
 
-    // it('Account owner can withdraw full amount', async () => {
-    //   await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(150), { from: accountOwner });
+    it('Account owner can withdraw full amount', async () => {
+      await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(150), { from: accountOwner });
 
-    //   // Check balances.
-    //   await expectBalances([accountOwner], [new BigNumber(0)]);
-    // });
+      // Check balances.
+      await expectBalances([accountOwner], [new BigNumber(0)]);
+    });
 
-    // it('Owner can make multiple withdrawals', async () => {
-    //   await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(30), { from: accountOwner });
-    //   await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(50), { from: accountOwner });
-    //   await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(70), { from: accountOwner });
-    //   await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(0), { from: accountOwner });
+    it('Global operator can make a withdrawal', async () => {
+      await ctx.perpetual.admin.setGlobalOperator(otherUser, true, { from: ctx.accounts[0] });
+      await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(150), { from: otherUser });
 
-    //   // Check balances.
-    //   await expectBalances([accountOwner], [new BigNumber(0)]);
-    // });
+      // Check balances.
+      await expectBalances([accountOwner], [new BigNumber(0)]);
+    });
 
-    // it('Account owner cannot withdraw more than the account balance', async () => {
-    //   await expectThrow(
-    //     ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(151), { from: accountOwner }),
-    //     'SafeERC20: ERC20 operation did not succeed',
-    //   );
-    // });
+    it('Local operator can make a withdrawal', async () => {
+      await ctx.perpetual.operator.setLocalOperator(otherUser, true, { from: accountOwner });
+      await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(150), { from: otherUser });
 
-    // it('Non-owner cannot withdraw', async () => {
-    //   await expectThrow(
-    //     ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(100), { from: otherUser }),
-    //     'sender does not have permission to withdraw',
-    //   );
-    // });
+      // Check balances.
+      await expectBalances([accountOwner], [new BigNumber(0)]);
+    });
+
+    it('Owner can make multiple withdrawals', async () => {
+      await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(30), { from: accountOwner });
+      await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(50), { from: accountOwner });
+      await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(70), { from: accountOwner });
+      await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(0), { from: accountOwner });
+
+      // Check balances.
+      await expectBalances([accountOwner], [new BigNumber(0)]);
+    });
+
+    it('Account owner cannot withdraw more than the account balance', async () => {
+      await expectThrow(
+        ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(151), { from: accountOwner }),
+        'SafeERC20: ERC20 operation did not succeed',
+      );
+    });
+
+    it('Non-owner cannot withdraw', async () => {
+      await expectThrow(
+        ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(100), { from: otherUser }),
+        'sender does not have permission to withdraw',
+      );
+    });
 
     it('Fails if it would leave the account undercollateralized', async () => {
-      const marginAmount = new BigNumber(1000);
-
       // Set up test contract behavior.
       await ctx.perpetual.testing.oracle.setPrice(new BigNumber(100).shiftedBy(18));
-      await ctx.perpetual.testing.trader.setTradeResult({
-        marginAmount: new BigNumber(100),
-        positionAmount: new BigNumber(10),
-        isBuy: false,
-      });
 
       // Set initial balances and allowances.
+      // Bring the total deposited to 1000.
+      const marginAmount = new BigNumber(850);
       await mintAndDeposit(accountOwner, marginAmount);
       await mintAndDeposit(otherUser, marginAmount);
 
-      // Open a short position.
+      // Open a short position, bringing the account to 1100 margin and -10 position.
       // This trade should put the account right on the collateralization line.
-      await ctx.perpetual.trade.trade(
-        [accountOwner, otherUser],
-        [
-          {
-            makerIndex: 1,
-            takerIndex: 0,
-            trader: ctx.perpetual.testing.trader.address,
-            data: '0x00',
-          },
-        ],
+      await sell(ctx, accountOwner, otherUser, new BigNumber(10), new BigNumber(100));
+
+      await expectThrow(
+        ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(1), { from: accountOwner }),
+        'account not collateralized',
       );
-
-      ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(100), { from: accountOwner });
-      //   await expectThrow(
-      //   ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(1), { from: accountOwner }),
-      //   'account not collateralized',
-      // );
     });
-
-    // TODO: Test withdrawal as global or local operator.
   });
 
   async function mintAndDeposit(
@@ -192,11 +210,6 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
     // Check that the total margin matches the sum margin of all provided accounts.
     if (fullySettled) {
       const accountSumMargin = actualMarginBalances.reduce((a, b) => a.plus(b), INTEGERS.ZERO);
-
-      // DO NOT MERGE
-      console.log(`actualMarginBalances: ${actualMarginBalances}`);
-      console.log(`accountSumMargin: ${accountSumMargin}`);
-
       expectBN(accountSumMargin, 'sum of account margins').eq(totalMargin);
     }
 

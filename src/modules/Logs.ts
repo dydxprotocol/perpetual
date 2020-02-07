@@ -1,13 +1,18 @@
+import _ from 'lodash';
 import BigNumber from 'bignumber.js';
 import Web3 from 'web3';
 import { Log, EventLog } from 'web3-core';
 import { Contract } from 'web3-eth-contract';
-import { AbiItem } from 'web3-utils';
+import { AbiInput, AbiItem } from 'web3-utils';
 
 import { Contracts } from '../modules/Contracts';
 import { TxResult } from '../lib/types';
 
 type IContractsByAddress = { [address: string]: Contract };
+
+const TUPLE_MAP = {
+  'struct P1Types.Index': ['timestamp', 'isPositive', 'value'],
+};
 
 export class Logs {
   private contracts: Contracts;
@@ -27,7 +32,6 @@ export class Logs {
       this._contractsByAddress = {};
       for (const contract of [
         this.contracts.perpetualV1,
-        this.contracts.perpetualProxy,
       ]) {
         if (!contract.options.address) {
           throw new Error('Contract has not been deployed');
@@ -63,7 +67,7 @@ export class Logs {
     throw new Error('Receipt has no logs');
   }
 
-  private parseEvent(event: EventLog) {
+  private parseEvent(event: EventLog): any {
     return this.parseLog({
       address: event.address,
       data: event.raw.data,
@@ -76,8 +80,12 @@ export class Logs {
     });
   }
 
-  private parseLog(log: Log) {
-    const address = log.address.toLowerCase();
+  private parseLog(log: Log): any {
+    let address = log.address.toLowerCase();
+
+    if (address === this.contracts.perpetualProxy.options.address) {
+      address = this.contracts.perpetualV1.options.address;
+    }
 
     if (address in this.contractsByAddress) {
       return this.parseLogWithContract(this.contractsByAddress[address], log);
@@ -91,8 +99,8 @@ export class Logs {
       (e: AbiItem) => e.type === 'event',
     );
 
-    console.log(`events: ${JSON.stringify(events)}`);
-    console.log(`log.topics: ${log.topics}`);
+    // console.log(`events: ${JSON.stringify(events)}`);
+    // console.log(`log.topics: ${log.topics}`);
     const eventJson = events.find(
       (e: any) => e.signature.toLowerCase() === log.topics[0].toLowerCase(),
     );
@@ -110,36 +118,54 @@ export class Logs {
     return {
       ...log,
       name: eventJson.name,
-      args: this.parseArgs(eventJson, eventArgs),
+      args: this.parseArgs(eventJson.inputs, eventArgs),
     };
   }
 
-  private parseArgs(eventJson: any, eventArgs: any): any {
-    const parsed = {};
-
-    eventJson.inputs.forEach((input: any) => {
-      let val: any;
-
-      if (input.type === 'address') {
-        val = eventArgs[input.name];
-      } else if (input.type === 'bool') {
-        val = eventArgs[input.name];
-      } else if (input.type.match(/^bytes[0-9]*$/)) {
-        val = eventArgs[input.name];
-      } else if (input.type.match(/^uint[0-9]*$/)) {
-        val = new BigNumber(eventArgs[input.name]);
-      } else if (input.type === 'tuple') {
-        val = this.parseTuple(input, eventArgs);
-      } else {
-        throw new Error(`Unknown event arg type ${input.type}`);
-      }
-      parsed[input.name] = val;
-    });
-
-    return parsed;
+  private parseArgs(inputs: AbiInput[], eventArgs: any): any {
+    const parsedObject: any = {};
+    for (const input of inputs) {
+      const { name } = input;
+      parsedObject[name] = this.parseValue(input, eventArgs[name]);
+    }
+    return parsedObject;
   }
 
-  private parseTuple(input: any, eventArgs: any): never {
-    throw new Error('Unknown tuple type in event');
+  private parseValue(input: AbiInput, argValue: any): any {
+    // console.log(`parseValue(${JSON.stringify(input)}, ${argValue}})`);
+    if (input.type === 'address') {
+      return argValue;
+    }
+    if (input.type === 'bool') {
+      return argValue;
+    }
+    if (input.type.match(/^bytes[0-9]*$/)) {
+      return argValue;
+    }
+    if (input.type.match(/^uint[0-9]*$/)) {
+      return new BigNumber(argValue);
+    }
+    if (input.type === 'tuple') {
+      return this.parseTuple(input, argValue);
+    }
+    throw new Error(`Unknown event arg type ${input.type}`);
+  }
+
+  private parseTuple(input: any, argValue: any): any {
+    // console.log(`parseTuple(${JSON.stringify(input)}, ${argValue}})`);
+    const { internalType } = input;
+
+    if (!(internalType in TUPLE_MAP)) {
+      throw new Error('Unknown tuple type in event');
+    }
+
+    const expectedTupleArgs = TUPLE_MAP[internalType];
+    const actualTupleArgs = _.map(input.components, 'name');
+
+    if (!_.isEqual(expectedTupleArgs, actualTupleArgs)) {
+      throw new Error(`Arg name mismatch for tuple ${internalType}`);
+    }
+
+    return this.parseArgs(input.components, argValue);
   }
 }

@@ -33,33 +33,21 @@ contract P1Operator is
 {
     // ============ Events ============
 
-    event LogAddLocalOperator(
+    event LogSetLocalOperator(
         address indexed sender,
-        address operator
-    );
-
-    event LogRemoveLocalOperator(
-        address indexed sender,
-        address operator
+        address operator,
+        bool approved
     );
 
     // ============ Functions ============
 
-    function addLocalOperator(
-        address operator
+    function setLocalOperator(
+        address operator,
+        bool approved
     )
         external
     {
-        _LOCAL_OPERATORS_[msg.sender][operator] = true;
-        emit LogAddLocalOperator(msg.sender, operator);
-    }
-
-    function removeLocalOperator(
-        address operator
-    )
-        external
-    {
-        _LOCAL_OPERATORS_[msg.sender][operator] = false;
-        emit LogRemoveLocalOperator(msg.sender, operator);
+        _LOCAL_OPERATORS_[msg.sender][operator] = approved;
+        emit LogSetLocalOperator(msg.sender, operator, approved);
     }
 }
