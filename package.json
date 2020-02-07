@@ -68,7 +68,7 @@
     "mocha": "^7.0.0",
     "solidity-coverage": "^0.7.1",
     "solium": "^1.2.5",
-    "truffle": "^5.1.10",
+    "truffle": "^5.1.12",
     "ts-node": "^8.6.2",
     "tslint": "^5.20.1",
     "tslint-config-airbnb": "^5.11.2",
