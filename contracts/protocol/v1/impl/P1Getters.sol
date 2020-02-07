@@ -116,4 +116,12 @@ contract P1Getters is
     {
         return _TOTAL_POSITION_;
     }
+
+    function getTotalMargin()
+        external
+        view
+        returns (uint256)
+    {
+        return _TOTAL_MARGIN_;
+    }
 }

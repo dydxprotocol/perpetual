@@ -48,12 +48,14 @@
     "@openzeppelin/upgrades": "2.6.0",
     "bignumber.js": "^9.0.0",
     "es6-promisify": "^6.0.2",
+    "lodash": "^4.17.15",
     "web3": "1.2.4"
   },
   "devDependencies": {
     "@0x/sol-trace": "^3.0.5",
     "@types/chai": "^4.2.7",
     "@types/es6-promisify": "^6.0.0",
+    "@types/lodash": "^4.14.149",
     "@types/mocha": "^5.2.7",
     "babel-cli": "^6.26.0",
     "babel-eslint": "^10.0.3",
@@ -67,6 +69,7 @@
     "ethlint": "^1.2.5",
     "ganache-cli": "6.8.2",
     "mocha": "^7.0.0",
+    "nyc": "^15.0.0",
     "solidity-coverage": "^0.7.1",
     "solium": "^1.2.5",
     "truffle": "^5.1.12",

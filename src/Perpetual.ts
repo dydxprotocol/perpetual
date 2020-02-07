@@ -24,9 +24,12 @@ import {
 } from './lib/types';
 import { Testing } from './testing/Testing';
 import { Contracts } from './modules/Contracts';
+import { Logs } from './modules/Logs';
 import { Proxy } from './modules/Proxy';
+import { Admin } from './modules/Admin';
 import { Getters } from './modules/Getters';
 import { Margin } from './modules/Margin';
+import { Operator } from './modules/Operator';
 import { Orders } from './modules/Orders';
 import { Trade } from './modules/Trade';
 
@@ -36,8 +39,11 @@ export class Perpetual {
   public contracts: Contracts;
   public testing: Testing;
   public proxy: Proxy;
+  public admin: Admin;
   public getters: Getters;
+  public logs: Logs;
   public margin: Margin;
+  public operator: Operator;
   public orders: Orders;
   public trade: Trade;
 
@@ -47,10 +53,13 @@ export class Perpetual {
   ) {
     this.web3 = new Web3(provider);
     this.contracts = new Contracts(provider, networkId, this.web3);
-    this.testing = new Testing(provider);
+    this.testing = new Testing(provider, this.contracts);
     this.proxy = new Proxy(this.contracts);
+    this.admin = new Admin(this.contracts);
     this.getters = new Getters(this.contracts);
+    this.logs = new Logs(this.contracts, this.web3);
     this.margin = new Margin(this.contracts);
+    this.operator = new Operator(this.contracts);
     this.orders = new Orders(this.contracts, this.web3, networkId);
     this.trade = new Trade(this.contracts, this.orders);
   }

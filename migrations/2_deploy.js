@@ -84,5 +84,6 @@ async function deployTraders(deployer, network) {
   const perpetual = await PerpetualV1.at(PerpetualProxy.address);
   await Promise.all([
     perpetual.setGlobalOperator(P1Orders.address, true),
+    perpetual.setGlobalOperator(TestP1Trader.address, true),
   ]);
 }

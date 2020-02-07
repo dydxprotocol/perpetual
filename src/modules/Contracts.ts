@@ -52,7 +52,7 @@ enum OUTCOMES {
 
 export class Contracts {
   private web3: Web3;
-  private contractsList: any = [];
+  private contractsList: { contract: Contract, json: any }[] = [];
 
   private defaultOptions: SendOptions;
 

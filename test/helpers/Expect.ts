@@ -49,6 +49,6 @@ export function expect(item: any): Chai.Assertion {
   return chai.expect(item);
 }
 
-export function expectBN(bn: BigNumber): Chai.Assertion {
-  return (chai.expect(bn) as any).to.be.bignumber as Chai.Assertion;
+export function expectBN(bn: BigNumber, message?: string): Chai.Assertion {
+  return (chai.expect(bn, message) as any).to.be.bignumber;
 }

@@ -36,51 +36,44 @@ contract Test_Token is IERC20 {
     mapping (address => uint256) balances;
     mapping (address => mapping (address => uint256)) allowed;
 
-    event Transfer(address token, address from, address to, uint256 value);
-    event Approval(address token, address owner, address spender, uint256 value);
-    event Issue(address token, address owner, uint256 value);
+    event Mint(address owner, uint256 value);
 
-    // Allow anyone to get new token
-    function mint(uint256 amount) public {
-        mintTo(msg.sender, amount);
-    }
-
-    function mintTo(address who, uint256 amount) public {
+    function mintTo(address who, uint256 amount) external {
         supply = supply.add(amount);
         balances[who] = balances[who].add(amount);
-        emit Issue(address(this), who, amount);
+        emit Mint(who, amount);
+        emit Transfer(address(0), who, amount);
     }
 
-    function totalSupply() public view returns (uint256) {
+    function totalSupply() external view returns (uint256) {
         return supply;
     }
 
-    function balanceOf(address who) public view returns (uint256) {
+    function balanceOf(address who) external view returns (uint256) {
         return balances[who];
     }
 
-    function allowance(address owner, address spender) public view returns (uint256) {
+    function allowance(address owner, address spender) external view returns (uint256) {
         return allowed[owner][spender];
     }
 
-    function symbol() public pure returns (string memory) {
+    function symbol() external pure returns (string memory) {
         return "TEST";
     }
 
-    function name() public pure returns (string memory) {
+    function name() external pure returns (string memory) {
         return "Test Token";
     }
 
-    function decimals() public pure returns (uint8) {
+    function decimals() external pure returns (uint8) {
         return 18;
     }
 
-    function transfer(address to, uint256 value) public returns (bool) {
+    function transfer(address to, uint256 value) external returns (bool) {
         if (balances[msg.sender] >= value) {
             balances[msg.sender] = balances[msg.sender].sub(value);
             balances[to] = balances[to].add(value);
             emit Transfer(
-                address(this),
                 msg.sender,
                 to,
                 value
@@ -91,13 +84,12 @@ contract Test_Token is IERC20 {
         }
     }
 
-    function transferFrom(address from, address to, uint256 value) public returns (bool) {
+    function transferFrom(address from, address to, uint256 value) external returns (bool) {
         if (balances[from] >= value && allowed[from][msg.sender] >= value) {
             balances[to] = balances[to].add(value);
             balances[from] = balances[from].sub(value);
             allowed[from][msg.sender] = allowed[from][msg.sender].sub(value);
             emit Transfer(
-                address(this),
                 from,
                 to,
                 value
@@ -108,10 +100,9 @@ contract Test_Token is IERC20 {
         }
     }
 
-    function approve(address spender, uint256 value) public returns (bool) {
+    function approve(address spender, uint256 value) external returns (bool) {
         allowed[msg.sender][spender] = value;
         emit Approval(
-            address(this),
             msg.sender,
             spender,
             value

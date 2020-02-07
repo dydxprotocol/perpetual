@@ -16,7 +16,6 @@
 
 */
 
-import BigNumber from 'bignumber.js';
 import { Contracts } from './Contracts';
 import {
   address,
@@ -25,7 +24,7 @@ import {
 } from '../lib/types';
 import { Contract } from 'web3-eth-contract';
 
-export class Margin {
+export class Admin {
   private contracts: Contracts;
   private perpetual: Contract;
 
@@ -36,31 +35,39 @@ export class Margin {
     this.perpetual = this.contracts.perpetualV1;
   }
 
-  // ============ Senders ============
-
-  public async deposit(
-    account: address,
-    amount: BigNumber,
+  public async setGlobalOperator(
+    operator: address,
+    approved: boolean,
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
-      this.perpetual.methods.deposit(
-        account,
-        amount.toFixed(0),
+      this.perpetual.methods.setGlobalOperator(
+        operator,
+        approved,
       ),
       options,
     );
   }
 
-  public async withdraw(
-    account: address,
-    amount: BigNumber,
+  public async setOracle(
+    oracle: address,
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
-      this.perpetual.methods.withdraw(
-        account,
-        amount.toFixed(0),
+      this.perpetual.methods.setOracle(
+        oracle,
+      ),
+      options,
+    );
+  }
+
+  public async setFunder(
+    funder: address,
+    options?: SendOptions,
+  ): Promise<TxResult> {
+    return this.contracts.send(
+      this.perpetual.methods.setFunder(
+        funder,
       ),
       options,
     );

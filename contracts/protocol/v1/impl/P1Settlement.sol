@@ -158,9 +158,9 @@ contract P1Settlement is
         // settlement
         signedIndexDiff.value = signedIndexDiff.value.baseMul(balance.position);
         if (signedIndexDiff.isPositive) {
-            _BALANCES_[account] = balance.marginAdd(signedIndexDiff.value);
-        } else {
             _BALANCES_[account] = balance.marginSub(signedIndexDiff.value);
+        } else {
+            _BALANCES_[account] = balance.marginAdd(signedIndexDiff.value);
         }
 
         emit LogAccountSettled(
