@@ -5,8 +5,7 @@ module.exports = {
   compilers: {
     solc: {
       version: '0.5.16',
-      docker: process.env.DOCKER_COMPILER !== undefined
-        ? process.env.DOCKER_COMPILER === 'true' : !process.env.COVERALLS_REPO_TOKEN, // Don't use Docker on CircleCI
+      docker: process.env.DOCKER_COMPILER !== 'false',
       parser: 'solcjs',
       settings: {
         optimizer: {
