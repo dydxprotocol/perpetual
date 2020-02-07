@@ -2,7 +2,7 @@ require('dotenv-flow').config();
 
 import { address } from '../../src/lib/types';
 import { Perpetual } from '../../src/Perpetual';
-import { provider } from './Provider';
+import provider from './Provider';
 
 let defaultAccountSet = false;
 let accounts: address[];

@@ -1,3 +1,4 @@
 node_modules
 contracts/testing
+contracts/Imports.sol
 contracts/Migrations.sol

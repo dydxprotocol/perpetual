@@ -1,0 +1,10 @@
+{
+  "solcVersion": "0.5.16",
+  "useDockerisedSolc": true,
+  "compilerSettings": {
+    "optimizer": {
+      "enabled": true,
+      "runs": 10000
+    }
+  }
+}

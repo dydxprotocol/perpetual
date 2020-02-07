@@ -1,5 +1,6 @@
 .DS_Store
 .idea
+.0x-artifacts/
 build/
 dist/
 node_modules/

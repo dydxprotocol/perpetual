@@ -84,15 +84,15 @@ export class Contracts {
     };
 
     // Contracts
-    this.perpetualProxy = new this.web3.eth.Contract(perpetualProxyJson.abi);
-    this.perpetualV1 = new this.web3.eth.Contract(perpetualV1Json.abi);
-    this.p1Orders = new this.web3.eth.Contract(p1OrdersJson.abi);
+    this.perpetualProxy = new web3.eth.Contract(perpetualProxyJson.abi);
+    this.perpetualV1 = new web3.eth.Contract(perpetualV1Json.abi);
+    this.p1Orders = new web3.eth.Contract(p1OrdersJson.abi);
 
     // Testing contracts
-    this.testP1Funder = new this.web3.eth.Contract(testP1FunderJson.abi);
-    this.testP1Oracle = new this.web3.eth.Contract(testP1OracleJson.abi);
-    this.testP1Trader = new this.web3.eth.Contract(testP1TraderJson.abi);
-    this.testToken = new this.web3.eth.Contract(testTokenJson.abi);
+    this.testP1Funder = new web3.eth.Contract(testP1FunderJson.abi);
+    this.testP1Oracle = new web3.eth.Contract(testP1OracleJson.abi);
+    this.testP1Trader = new web3.eth.Contract(testP1TraderJson.abi);
+    this.testToken = new web3.eth.Contract(testTokenJson.abi);
 
     this.contractsList = [
       // Contracts
@@ -267,12 +267,12 @@ export class Contracts {
   // ============ Helper Functions ============
 
   private setContractProvider(
-    contract: any,
+    contract: Contract,
     contractJson: any,
     provider: Provider,
     networkId: number,
   ): void {
-    contract.setProvider(provider);
+    (contract as any).setProvider(provider);
     contract.options.address = contractJson.networks[networkId]
       && contractJson.networks[networkId].address;
   }

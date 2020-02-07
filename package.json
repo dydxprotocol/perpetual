@@ -50,6 +50,7 @@
     "web3": "1.2.4"
   },
   "devDependencies": {
+    "@0x/sol-trace": "^3.0.5",
     "@types/chai": "^4.2.7",
     "@types/es6-promisify": "^6.0.0",
     "@types/mocha": "^5.2.7",
@@ -72,6 +73,7 @@
     "tslint": "^5.20.1",
     "tslint-config-airbnb": "^5.11.2",
     "tslint-no-focused-test": "^0.5.0",
-    "typescript": "^3.7.4"
+    "typescript": "^3.7.4",
+    "web3-provider-engine": "^15.0.4"
   }
 }
