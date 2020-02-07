@@ -117,7 +117,7 @@ contract P1Orders {
 
     // ============ Events ============
 
-    event ContractStatusSet(
+    event LogContractStatusSet(
         bool operational
     );
 
