@@ -99,8 +99,6 @@ export class Logs {
       (e: AbiItem) => e.type === 'event',
     );
 
-    // console.log(`events: ${JSON.stringify(events)}`);
-    // console.log(`log.topics: ${log.topics}`);
     const eventJson = events.find(
       (e: any) => e.signature.toLowerCase() === log.topics[0].toLowerCase(),
     );
@@ -132,7 +130,6 @@ export class Logs {
   }
 
   private parseValue(input: AbiInput, argValue: any): any {
-    // console.log(`parseValue(${JSON.stringify(input)}, ${argValue}})`);
     if (input.type === 'address') {
       return argValue;
     }
@@ -152,7 +149,6 @@ export class Logs {
   }
 
   private parseTuple(input: any, argValue: any): any {
-    // console.log(`parseTuple(${JSON.stringify(input)}, ${argValue}})`);
     const { internalType } = input;
 
     if (!(internalType in TUPLE_MAP)) {
