@@ -17,8 +17,6 @@ export async function getPerpetual(
   perpetual: Perpetual,
   accounts: address[],
 }> {
-  perpetual.testing.evm.setProvider(provider);
-
   if (!defaultAccountSet) {
     accounts = await perpetual.web3.eth.getAccounts();
     perpetual.setDefaultAccount(accounts[1]);
