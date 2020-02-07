@@ -6,7 +6,7 @@
     "strict": false,
     "sourceMap": true,
     "declaration": true,
-    "noUnusedLocals": false,
+    "noUnusedLocals": true,
     "esModuleInterop": true,
     "outDir": "dist",
     "resolveJsonModule": true,
