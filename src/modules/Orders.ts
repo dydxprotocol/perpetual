@@ -4,10 +4,11 @@ import BigNumber from 'bignumber.js';
 import { Contracts } from './Contracts';
 import {
   addressToBytes32,
-  boolToBytes32,
+  bnToBytes32,
   hashString,
   addressesAreEqual,
   stripHexPrefix,
+  combineHexStrings,
 } from '../lib/BytesHelper';
 import {
   SIGNATURE_TYPES,
@@ -28,28 +29,26 @@ import {
 } from '../lib/types';
 
 const EIP712_ORDER_STRUCT = [
-  { type: 'bool',    name: 'isBuy' },
+  { type: 'bytes32', name: 'flags' },
   { type: 'uint256', name: 'amount' },
   { type: 'uint256', name: 'limitPrice' },
   { type: 'uint256', name: 'stopPrice' },
-  { type: 'uint256', name: 'fee' },
+  { type: 'uint256', name: 'limitFee' },
   { type: 'address', name: 'maker' },
   { type: 'address', name: 'taker' },
   { type: 'uint256', name: 'expiration' },
-  { type: 'uint256', name: 'salt' },
 ];
 
 const EIP712_ORDER_STRUCT_STRING =
   'Order(' +
-  'bool isBuy,' +
+  'bytes32 flags,' +
   'uint256 amount,' +
   'uint256 limitPrice,' +
   'uint256 stopPrice,' +
-  'uint256 fee,' +
+  'uint256 limitFee,' +
   'address maker,' +
   'address taker,' +
-  'uint256 expiration,' +
-  'uint256 salt' +
+  'uint256 expiration' +
   ')';
 
 const EIP712_CANCEL_ORDER_STRUCT = [
@@ -299,15 +298,14 @@ export class Orders {
   ): string {
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_ORDER_STRUCT_STRING) },
-      { t: 'bytes32', v: boolToBytes32(order.isBuy) },
+      { t: 'bytes32', v: this.getOrderFlags(order) },
       { t: 'uint256', v: order.amount.toFixed(0) },
       { t: 'uint256', v: order.limitPrice.toFixed(0) },
       { t: 'uint256', v: order.stopPrice.toFixed(0) },
-      { t: 'uint256', v: order.fee.toFixed(0) },
+      { t: 'uint256', v: order.limitFee.abs().toFixed(0) },
       { t: 'bytes32', v: addressToBytes32(order.maker) },
       { t: 'bytes32', v: addressToBytes32(order.taker) },
       { t: 'uint256', v: order.expiration.toFixed(0) },
-      { t: 'uint256', v: order.salt.toFixed(0) },
     );
     return this.getEIP712Hash(structHash);
   }
@@ -357,12 +355,13 @@ export class Orders {
   public orderToBytes(
     order: Order,
   ): string {
+    const solidityOrder = { ...order, flags: this.getOrderFlags(order) };
     return this.web3.eth.abi.encodeParameters(
       EIP712_ORDER_STRUCT.map(arg => arg.type),
       EIP712_ORDER_STRUCT.map(
-        arg => order[arg.name].toFixed
-          ? order[arg.name].toFixed(0)
-          : order[arg.name],
+        arg => solidityOrder[arg.name].toFixed
+          ? solidityOrder[arg.name].toFixed(0)
+          : solidityOrder[arg.name],
         ),
     );
   }
@@ -376,10 +375,10 @@ export class Orders {
     const orderData = this.orderToBytes(order);
     const signatureData = order.typedSignature + '0'.repeat(60);
     const fillData = this.web3.eth.abi.encodeParameters(
-      ['uint256', 'uint256', 'uint256'],
-      [amount.toFixed(0), price.toFixed(0), fee.toFixed(0)],
+      ['uint256', 'uint256', 'uint256', 'bool'],
+      [amount.toFixed(0), price.toFixed(0), fee.abs().toFixed(0), fee.isNegative()],
     );
-    return `0x${stripHexPrefix(orderData)}${stripHexPrefix(signatureData)}${stripHexPrefix(fillData)}`;
+    return combineHexStrings(orderData, fillData, signatureData);
   }
 
   // ============ Private Helper Functions ============
@@ -410,15 +409,14 @@ export class Orders {
     signingMethod: SigningMethod,
   ): Promise<TypedSignature> {
     const orderData = {
-      isBuy: order.isBuy,
+      flags: this.getOrderFlags(order),
       amount: order.amount.toFixed(0),
       limitPrice: order.limitPrice.toFixed(0),
       stopPrice: order.stopPrice.toFixed(0),
-      fee: order.fee.toFixed(0),
+      limitFee: order.limitFee.abs().toFixed(0),
       maker: order.maker,
       taker: order.taker,
       expiration: order.expiration.toFixed(0),
-      salt: order.salt.toFixed(0),
     };
     const data = {
       types: {
@@ -506,5 +504,16 @@ export class Orders {
       throw new Error(response.error.message);
     }
     return `0x${stripHexPrefix(response.result)}0${SIGNATURE_TYPES.NO_PREPEND}`;
+  }
+
+  private getOrderFlags(
+    order: Order,
+  ): string {
+    const booleanFlag = 0
+      + (order.limitFee.isNegative() ? 4 : 0)
+      + (order.isDecreaseOnly ? 2 : 0)
+      + (order.isBuy ? 1 : 0);
+    const saltBytes = bnToBytes32(order.salt);
+    return `0x${saltBytes.slice(-63)}${booleanFlag}`;
   }
 }

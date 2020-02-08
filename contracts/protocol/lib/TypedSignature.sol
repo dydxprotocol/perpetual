@@ -52,49 +52,33 @@ library TypedSignature {
         Invalid      // Not a valid type. Used for bound-checking.
     }
 
+    // ============ Structs ============
+
+    struct Signature {
+        bytes32 r;
+        bytes32 s;
+        bytes2 vType;
+    }
+
     // ============ Functions ============
 
     /**
      * Gives the address of the signer of a hash. Also allows for the commonly prepended string of
      * '\x19Ethereum Signed Message:\n' + message.length
      *
-     * @param  hash               Hash that was signed (does not include prepended message)
-     * @param  signatureWithType  Type and ECDSA signature with structure: {32:r}{32:s}{1:v}{1:type}
-     * @return                    address of the signer of the hash
+     * @param  hash       Hash that was signed (does not include prepended message)
+     * @param  signature  Type and ECDSA signature with structure: {32:r}{32:s}{1:v}{1:type}
+     * @return            address of the signer of the hash
      */
     function recover(
         bytes32 hash,
-        bytes memory signatureWithType
+        Signature memory signature
     )
         internal
         pure
         returns (address)
     {
-        require(
-            signatureWithType.length == NUM_SIGNATURE_BYTES,
-            "Invalid signature length"
-        );
-
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-        uint8 rawSigType;
-
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            r := mload(add(signatureWithType, 0x20))
-            s := mload(add(signatureWithType, 0x40))
-            let lastSlot := mload(add(signatureWithType, 0x60))
-            v := byte(0, lastSlot)
-            rawSigType := byte(1, lastSlot)
-        }
-
-        require(
-            rawSigType < uint8(SignatureType.Invalid),
-            "Invalid signature type"
-        );
-
-        SignatureType sigType = SignatureType(rawSigType);
+        SignatureType sigType = SignatureType(uint8(bytes1(signature.vType << 8)));
 
         bytes32 signedHash;
         if (sigType == SignatureType.NoPrepend) {
@@ -108,9 +92,9 @@ library TypedSignature {
 
         return ecrecover(
             signedHash,
-            v,
-            r,
-            s
+            uint8(bytes1(signature.vType)),
+            signature.r,
+            signature.s
         );
     }
 }
