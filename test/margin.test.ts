@@ -2,8 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
-import { INTEGERS } from '../src/lib/Constants';
-import { address } from '../src/lib/types';
+import { expectMarginBalances, mintAndDeposit } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { sell } from './helpers/trade';
 
@@ -31,7 +30,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       );
 
       // Check balances.
-      await expectBalances([accountOwner], [amount]);
+      await expectMarginBalances(ctx, [accountOwner], [amount]);
 
       // Check logs.
       const logs = ctx.perpetual.logs.parseLogs(txResult);
@@ -53,7 +52,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       await ctx.perpetual.margin.deposit(accountOwner, amount, { from: otherUser });
 
       // Check balances.
-      await expectBalances([accountOwner], [amount]);
+      await expectMarginBalances(ctx, [accountOwner], [amount]);
     });
 
     it('Can make multiple deposits', async () => {
@@ -70,7 +69,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       await ctx.perpetual.margin.deposit(accountOwner, new BigNumber(300), { from: otherUser });
 
       // Check balances.
-      await expectBalances([accountOwner], [new BigNumber(500)]);
+      await expectMarginBalances(ctx, [accountOwner], [new BigNumber(500)]);
     });
 
     it('Cannot deposit more than the sender\'s balance', async () => {
@@ -104,7 +103,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       );
 
       // Check balances.
-      await expectBalances([accountOwner], [new BigNumber(50)]);
+      await expectMarginBalances(ctx, [accountOwner], [new BigNumber(50)]);
 
       // Check logs.
       const logs = ctx.perpetual.logs.parseLogs(txResult);
@@ -120,7 +119,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(150), { from: accountOwner });
 
       // Check balances.
-      await expectBalances([accountOwner], [new BigNumber(0)]);
+      await expectMarginBalances(ctx, [accountOwner], [new BigNumber(0)]);
     });
 
     it('Global operator can make a withdrawal', async () => {
@@ -128,7 +127,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(150), { from: otherUser });
 
       // Check balances.
-      await expectBalances([accountOwner], [new BigNumber(0)]);
+      await expectMarginBalances(ctx, [accountOwner], [new BigNumber(0)]);
     });
 
     it('Local operator can make a withdrawal', async () => {
@@ -136,7 +135,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(150), { from: otherUser });
 
       // Check balances.
-      await expectBalances([accountOwner], [new BigNumber(0)]);
+      await expectMarginBalances(ctx, [accountOwner], [new BigNumber(0)]);
     });
 
     it('Owner can make multiple withdrawals', async () => {
@@ -146,7 +145,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       await ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(0), { from: accountOwner });
 
       // Check balances.
-      await expectBalances([accountOwner], [new BigNumber(0)]);
+      await expectMarginBalances(ctx, [accountOwner], [new BigNumber(0)]);
     });
 
     it('Account owner cannot withdraw more than the account balance', async () => {
@@ -170,8 +169,8 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       // Set initial balances and allowances.
       // Bring the total deposited to 1000.
       const marginAmount = new BigNumber(850);
-      await mintAndDeposit(accountOwner, marginAmount);
-      await mintAndDeposit(otherUser, marginAmount);
+      await mintAndDeposit(ctx, accountOwner, marginAmount);
+      await mintAndDeposit(ctx, otherUser, marginAmount);
 
       // Open a short position, bringing the account to 1100 margin and -10 position.
       // This trade should put the account right on the collateralization line.
@@ -183,40 +182,4 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       );
     });
   });
-
-  async function mintAndDeposit(
-    account: address,
-    amount: BigNumber,
-  ): Promise<void> {
-    await ctx.perpetual.testing.token.mintTo(amount, account);
-    await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(account);
-    await ctx.perpetual.margin.deposit(account, amount, { from: account });
-  }
-
-  async function expectBalances(
-    accountOwners: address[],
-    expectedMarginBalances: BigNumber[],
-    fullySettled: boolean = true,
-  ): Promise<void> {
-    const actualMarginBalances = await Promise.all(accountOwners.map((owner: address) => {
-      return ctx.perpetual.getters.getAccountBalance(owner).then(balance => balance.margin);
-    }));
-    const totalMargin = await ctx.perpetual.getters.getTotalMargin();
-
-    for (const i in expectedMarginBalances) {
-      expectBN(actualMarginBalances[i], `accounts[${i}] balance`).eq(expectedMarginBalances[i]);
-    }
-
-    // Check that the total margin matches the sum margin of all provided accounts.
-    if (fullySettled) {
-      const accountSumMargin = actualMarginBalances.reduce((a, b) => a.plus(b), INTEGERS.ZERO);
-      expectBN(accountSumMargin, 'sum of account margins').eq(totalMargin);
-    }
-
-    // Contract solvency check.
-    const perpetualTokenBalance = await ctx.perpetual.testing.token.getBalance(
-      ctx.perpetual.contracts.perpetualV1.options.address,
-    );
-    expectBN(perpetualTokenBalance, 'PerpetualV1 token balance').eq(totalMargin);
-  }
 });

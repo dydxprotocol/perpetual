@@ -45,8 +45,8 @@ function assertCertainError(error: Error, expected_error_msg?: string) {
   chai.expect(matchedString).to.eq(expected_error_msg);
 }
 
-export function expect(item: any): Chai.Assertion {
-  return chai.expect(item);
+export function expect(item: any, message?: string): Chai.Assertion {
+  return chai.expect(item, message);
 }
 
 export function expectBN(bn: BigNumber, message?: string): Chai.Assertion {
