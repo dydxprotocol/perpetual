@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
+import { Math } from "../../lib/Math.sol";
 import { P1Getters } from "../impl/P1Getters.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
@@ -32,8 +33,9 @@ import { P1Types } from "../lib/P1Types.sol";
  * P1Deleveraging contract
  */
 contract P1Deleveraging {
-    using BaseMath for uint256;
     using SafeMath for uint256;
+    using BaseMath for uint256;
+    using Math for uint256;
 
     // ============ Events ============
 
@@ -86,12 +88,12 @@ contract P1Deleveraging {
         bool isBuy = makerBalance.positionIsPositive;
 
         // When partially deleveraging the maker, maintain the same position/margin ratio.
-        uint256 numerator = amount.mul(makerBalance.margin);
-        uint256 marginAmount = numerator.div(makerBalance.position);
-
         // Ensure the collateralization of the maker does not decrease.
-        if (isBuy && numerator.mod(makerBalance.position) != 0) {
-            marginAmount = marginAmount.add(1);
+        uint256 marginAmount;
+        if (isBuy) {
+            marginAmount = amount.getFraction(makerBalance.margin, makerBalance.position);
+        } else {
+            marginAmount = amount.getFractionRoundUp(makerBalance.margin, makerBalance.position);
         }
 
         emit LogDeleveraged(
