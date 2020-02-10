@@ -38,10 +38,7 @@ contract P1Deleveraging {
     // ============ Structs ============
 
     struct TradeData {
-        bool isBuy;
         uint256 amount;
-        address maker;
-        address taker;
     }
 
     // ============ Events ============
@@ -82,62 +79,50 @@ contract P1Deleveraging {
         external
         returns(P1Types.TradeResult memory)
     {
-        require(
-            msg.sender == _PERPETUAL_V1_,
-            "Sender must be PerpetualV1"
-        );
-
         TradeData memory tradeData = abi.decode(data, (TradeData));
 
         _verifyTrade(
-            tradeData,
             maker,
             taker,
+            tradeData.amount,
             price
         );
 
-        emit LogDeleveraged(
-            tradeData.maker,
-            tradeData.taker,
-            tradeData.amount,
-            tradeData.isBuy
-        );
+        P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
+        bool isBuy = makerBalance.positionIsPositive;
 
         // When partially deleveraging the maker, maintain the same position/margin ratio.
-        P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
         uint256 numerator = tradeData.amount.mul(makerBalance.margin);
         uint256 marginAmount = numerator.div(makerBalance.position);
 
         // Ensure the collateralization of the maker does not decrease.
-        if (tradeData.isBuy && numerator.mod(makerBalance.position) != 0) {
+        if (isBuy && numerator.mod(makerBalance.position) != 0) {
             marginAmount = marginAmount.add(1);
         }
+
+        emit LogDeleveraged(
+            maker,
+            taker,
+            tradeData.amount,
+            isBuy
+        );
 
         return P1Types.TradeResult({
             marginAmount: marginAmount,
             positionAmount: tradeData.amount,
-            isBuy: tradeData.isBuy
+            isBuy: isBuy
         });
     }
 
     function _verifyTrade(
-        TradeData memory tradeData,
         address maker,
         address taker,
+        uint256 amount,
         uint256 price
     )
         private
         view
     {
-        require(
-            tradeData.maker == maker,
-            "Trade data maker does not match maker"
-        );
-        require(
-            tradeData.taker == taker,
-            "Trade data taker does not match taker"
-        );
-
         P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
 
         require(
@@ -145,22 +130,18 @@ contract P1Deleveraging {
             "Cannot deleverage since maker is not underwater"
         );
         require(
-            makerBalance.positionIsPositive == tradeData.isBuy,
-            "Deleverage operation must reduce maker's position size"
-        );
-        require(
-            makerBalance.position >= tradeData.amount,
+            makerBalance.position >= amount,
             "Maker position is less than the deleverage amount"
         );
 
         P1Types.Balance memory takerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(taker);
 
         require(
-            takerBalance.positionIsPositive != tradeData.isBuy,
+            takerBalance.positionIsPositive != makerBalance.positionIsPositive,
             "Taker position has wrong sign to deleverage this maker"
         );
         require(
-            takerBalance.position >= tradeData.amount,
+            takerBalance.position >= amount,
             "Taker position is less than the deleverage amount"
         );
     }
