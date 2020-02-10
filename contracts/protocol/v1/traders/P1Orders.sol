@@ -329,7 +329,7 @@ contract P1Orders {
     {
         require(
             tradeData.order.maker == maker,
-            "Order maker does not match maker"
+            "Order taker does not match taker"
         );
         require(
             tradeData.order.taker == address(0) || tradeData.order.taker == taker,
