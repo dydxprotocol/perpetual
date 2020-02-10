@@ -35,12 +35,6 @@ contract P1Deleveraging {
     using BaseMath for uint256;
     using SafeMath for uint256;
 
-    // ============ Structs ============
-
-    struct TradeData {
-        uint256 amount;
-    }
-
     // ============ Events ============
 
     event LogContractStatusSet(
@@ -79,12 +73,12 @@ contract P1Deleveraging {
         external
         returns(P1Types.TradeResult memory)
     {
-        TradeData memory tradeData = abi.decode(data, (TradeData));
+        uint256 amount = abi.decode(data, (uint256));
 
         _verifyTrade(
             maker,
             taker,
-            tradeData.amount,
+            amount,
             price
         );
 
@@ -92,7 +86,7 @@ contract P1Deleveraging {
         bool isBuy = makerBalance.positionIsPositive;
 
         // When partially deleveraging the maker, maintain the same position/margin ratio.
-        uint256 numerator = tradeData.amount.mul(makerBalance.margin);
+        uint256 numerator = amount.mul(makerBalance.margin);
         uint256 marginAmount = numerator.div(makerBalance.position);
 
         // Ensure the collateralization of the maker does not decrease.
@@ -103,13 +97,13 @@ contract P1Deleveraging {
         emit LogDeleveraged(
             maker,
             taker,
-            tradeData.amount,
+            amount,
             isBuy
         );
 
         return P1Types.TradeResult({
             marginAmount: marginAmount,
-            positionAmount: tradeData.amount,
+            positionAmount: amount,
             isBuy: isBuy
         });
     }
