@@ -1,12 +1,18 @@
+import BigNumber from 'bignumber.js';
 import Web3 from 'web3';
+
 import { address } from './types';
 
-export function boolToBytes32(b: boolean) {
-  return `0x${ '0'.repeat(63) }${ b ? '1' : 0 }`;
+export function addressToBytes32(input: address): string {
+  return `0x000000000000000000000000${ stripHexPrefix(input) }`;
 }
 
-export function addressToBytes32(input: address) {
-  return `0x000000000000000000000000${ stripHexPrefix(input) }`;
+export function bnToBytes32(bn: BigNumber): string {
+  return `0x${bn.toString(16).padStart(64, '0')}`;
+}
+
+export function boolToBytes32(b: boolean): string {
+  return `0x${ '0'.repeat(63) }${ b ? '1' : 0 }`;
 }
 
 export function hashString(input: string) {

@@ -27,6 +27,7 @@ import { Contracts } from './modules/Contracts';
 import { Logs } from './modules/Logs';
 import { Proxy } from './modules/Proxy';
 import { Admin } from './modules/Admin';
+import { Deleveraging } from './modules/Deleveraging';
 import { Getters } from './modules/Getters';
 import { Margin } from './modules/Margin';
 import { Operator } from './modules/Operator';
@@ -46,6 +47,7 @@ export class Perpetual {
   public operator: Operator;
   public orders: Orders;
   public trade: Trade;
+  public deleveraging: Deleveraging;
 
   constructor(
     provider: Provider,
@@ -62,6 +64,7 @@ export class Perpetual {
     this.operator = new Operator(this.contracts);
     this.orders = new Orders(this.contracts, this.web3, networkId);
     this.trade = new Trade(this.contracts, this.orders);
+    this.deleveraging = new Deleveraging(this.contracts, this.trade);
   }
 
   public setDefaultAccount(

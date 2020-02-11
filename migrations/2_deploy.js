@@ -27,6 +27,7 @@ const {
 const PerpetualProxy = artifacts.require('PerpetualProxy');
 const PerpetualV1 = artifacts.require('PerpetualV1');
 const P1Orders = artifacts.require('P1Orders');
+const P1Deleveraging = artifacts.require('P1Deleveraging');
 
 // Test Contracts
 const TestP1Funder = artifacts.require('Test_P1Funder');
@@ -78,12 +79,17 @@ async function deployTraders(deployer, network) {
       PerpetualProxy.address,
       getChainId(network),
     ),
+    deployer.deploy(
+      P1Deleveraging,
+      PerpetualProxy.address,
+    ),
   ]);
 
   // set global operators
   const perpetual = await PerpetualV1.at(PerpetualProxy.address);
   await Promise.all([
     perpetual.setGlobalOperator(P1Orders.address, true),
+    perpetual.setGlobalOperator(P1Deleveraging.address, true),
     perpetual.setGlobalOperator(TestP1Trader.address, true),
   ]);
 }

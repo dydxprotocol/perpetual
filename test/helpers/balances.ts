@@ -5,6 +5,21 @@ import { expectBN } from './Expect';
 import { INTEGERS } from '../../src/lib/Constants';
 import { address } from '../../src/lib/types';
 
+export async function expectBalances(
+  ctx: ITestContext,
+  accounts: address[],
+  expectedMargins: BigNumber[],
+  expectedPositions: BigNumber[],
+  fullySettled: boolean = true,
+  positionsSumToZero: boolean = true,
+): Promise<void> {
+  if (fullySettled && !positionsSumToZero) {
+    throw new Error('fullySettled implies positionsSumToZero');
+  }
+  await expectMarginBalances(ctx, accounts, expectedMargins, fullySettled);
+  await expectPositions(ctx, accounts, expectedPositions, positionsSumToZero);
+}
+
 /**
  * Verify that the account margin balances match the expected values.
  *
