@@ -39,7 +39,12 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
   describe('trade()', () => {
     it('returns the expected trade result for partial deleveraging', async () => {
       const amount = new BigNumber(5);
-      const tradeResult = await ctx.perpetual.deleveraging.trade(short, long, shortUnderwaterPrice, amount);
+      const tradeResult = await ctx.perpetual.deleveraging.trade(
+        short,
+        long,
+        shortUnderwaterPrice,
+        amount,
+      );
 
       // Partial deleveraging should maintain the ratio of the account being deleveraged.
       expectBN(tradeResult.marginAmount).to.eq(new BigNumber(750));
