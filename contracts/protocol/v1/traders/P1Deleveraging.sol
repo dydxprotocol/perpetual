@@ -91,9 +91,9 @@ contract P1Deleveraging {
         // Ensure the collateralization of the maker does not decrease.
         uint256 marginAmount;
         if (isBuy) {
-            marginAmount = amount.getFraction(makerBalance.margin, makerBalance.position);
+            marginAmount = uint256(makerBalance.margin).getFractionRoundUp(amount, makerBalance.position);
         } else {
-            marginAmount = amount.getFractionRoundUp(makerBalance.margin, makerBalance.position);
+            marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
         }
 
         emit LogDeleveraged(
