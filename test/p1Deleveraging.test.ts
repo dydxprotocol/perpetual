@@ -80,6 +80,12 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     it('Succeeds with all-or-nothing', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
       await ctx.perpetual.trade.initiate().deleverage(long, short, positionSize, true).commit();
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(0), new BigNumber(1000)],
+        [new BigNumber(0), new BigNumber(0)],
+      );
     });
 
     it('Succeeds even if amount is greater than the maker position', async() => {
