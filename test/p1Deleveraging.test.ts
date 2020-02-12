@@ -57,7 +57,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
   it('Succeeds fully deleveraging a long position', async () => {
     await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
 
-    await ctx.perpetual.deleveraging.deleverage(long, short, positionSize);
+    await ctx.perpetual.trade.initiate().deleverage(long, short, positionSize).commit();
 
     await expectBalances(
       ctx,
@@ -71,7 +71,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     it('Succeeds fully deleveraging a short position', async () => {
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
 
-      await ctx.perpetual.deleveraging.deleverage(short, long, positionSize);
+      await ctx.perpetual.trade.initiate().deleverage(short, long, positionSize).commit();
 
       await expectBalances(
         ctx,
@@ -85,7 +85,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       await ctx.perpetual.testing.oracle.setPrice(longBorderlinePrice);
 
       await expectThrow(
-        ctx.perpetual.deleveraging.deleverage(long, short, positionSize),
+        ctx.perpetual.trade.initiate().deleverage(long, short, positionSize).commit(),
         'Cannot deleverage since maker is not underwater',
       );
     });
@@ -94,7 +94,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       await ctx.perpetual.testing.oracle.setPrice(shortBorderlinePrice);
 
       await expectThrow(
-        ctx.perpetual.deleveraging.deleverage(short, long, positionSize),
+        ctx.perpetual.trade.initiate().deleverage(short, long, positionSize).commit(),
         'Cannot deleverage since maker is not underwater',
       );
     });
@@ -104,7 +104,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
       const amount = positionSize.plus(1);
       await expectThrow(
-        ctx.perpetual.deleveraging.deleverage(short, long, amount),
+        ctx.perpetual.trade.initiate().deleverage(short, long, amount).commit(),
         'Maker position is less than the deleverage amount',
       );
     });
@@ -116,7 +116,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
 
       await expectThrow(
-        ctx.perpetual.deleveraging.deleverage(short, long, positionSize),
+        ctx.perpetual.trade.initiate().deleverage(short, long, positionSize).commit(),
         'Taker position is less than the deleverage amount',
       );
     });
@@ -128,7 +128,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
 
       await expectThrow(
-        ctx.perpetual.deleveraging.deleverage(long, short, positionSize),
+        ctx.perpetual.trade.initiate().deleverage(long, short, positionSize).commit(),
         'Taker position has wrong sign to deleverage this maker',
       );
     });
@@ -140,7 +140,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
 
       await expectThrow(
-        ctx.perpetual.deleveraging.deleverage(short, long, positionSize),
+        ctx.perpetual.trade.initiate().deleverage(short, long, positionSize).commit(),
         'Taker position has wrong sign to deleverage this maker',
       );
     });

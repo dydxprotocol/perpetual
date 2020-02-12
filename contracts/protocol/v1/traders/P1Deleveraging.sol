@@ -76,15 +76,16 @@ contract P1Deleveraging {
         returns(P1Types.TradeResult memory)
     {
         uint256 amount = abi.decode(data, (uint256));
+        P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
 
         _verifyTrade(
             maker,
             taker,
             amount,
-            price
+            price,
+            makerBalance
         );
 
-        P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
         bool isBuy = makerBalance.positionIsPositive;
 
         // When partially deleveraging the maker, maintain the same position/margin ratio.
@@ -114,13 +115,12 @@ contract P1Deleveraging {
         address maker,
         address taker,
         uint256 amount,
-        uint256 price
+        uint256 price,
+        P1Types.Balance memory makerBalance
     )
         private
         view
     {
-        P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
-
         require(
             _isUnderwater(makerBalance, price),
             "Cannot deleverage since maker is not underwater"

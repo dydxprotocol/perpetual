@@ -20,27 +20,22 @@ import BigNumber from 'bignumber.js';
 import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from './Contracts';
-import { Trade } from './Trade';
 import { bnToBytes32 } from '../lib/BytesHelper';
 import { ADDRESSES } from '../lib/Constants';
 import {
   address,
-  SendOptions,
-  TxResult,
+  CallOptions,
   TradeResult,
 } from '../lib/types';
 
 export class Deleveraging {
   private contracts: Contracts;
-  private tradeModule: Trade;
   private deleveraging: Contract;
 
   constructor(
     contracts: Contracts,
-    tradeModule: Trade,
   ) {
     this.contracts = contracts;
-    this.tradeModule = tradeModule;
     this.deleveraging = this.contracts.p1Deleveraging;
   }
 
@@ -48,15 +43,12 @@ export class Deleveraging {
     return this.deleveraging.options.address;
   }
 
-  /**
-   * Call trade() directly on the P1Deleveraging contract.
-   */
   public async trade(
     maker: address,
     taker: address,
     price: BigNumber,
     amount: BigNumber,
-    options?: SendOptions,
+    options?: CallOptions,
   ): Promise<TradeResult> {
     return this.contracts.call(
       this.deleveraging.methods.trade(
@@ -66,30 +58,6 @@ export class Deleveraging {
         price.toFixed(0),
         bnToBytes32(amount),
       ),
-      options,
-    );
-  }
-
-  /**
-   * Execute a single deleverage operation via the PerpetualV1 contract.
-   */
-  public async deleverage(
-    maker: address,
-    taker: address,
-    amount: BigNumber,
-    options?: SendOptions,
-  ): Promise<TxResult> {
-    const accounts = [maker, taker].sort();
-    return this.tradeModule.trade(
-      accounts,
-      [
-        {
-          makerIndex: accounts.indexOf(maker),
-          takerIndex: accounts.indexOf(taker),
-          trader: this.deleveraging.options.address,
-          data: bnToBytes32(amount),
-        },
-      ],
       options,
     );
   }

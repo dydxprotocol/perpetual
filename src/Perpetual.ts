@@ -41,13 +41,13 @@ export class Perpetual {
   public testing: Testing;
   public proxy: Proxy;
   public admin: Admin;
+  public deleveraging: Deleveraging;
   public getters: Getters;
   public logs: Logs;
   public margin: Margin;
   public operator: Operator;
   public orders: Orders;
   public trade: Trade;
-  public deleveraging: Deleveraging;
 
   constructor(
     provider: Provider,
@@ -58,13 +58,13 @@ export class Perpetual {
     this.testing = new Testing(provider, this.contracts);
     this.proxy = new Proxy(this.contracts);
     this.admin = new Admin(this.contracts);
+    this.deleveraging = new Deleveraging(this.contracts);
     this.getters = new Getters(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
     this.margin = new Margin(this.contracts);
     this.operator = new Operator(this.contracts);
     this.orders = new Orders(this.contracts, this.web3, networkId);
     this.trade = new Trade(this.contracts, this.orders);
-    this.deleveraging = new Deleveraging(this.contracts, this.trade);
   }
 
   public setDefaultAccount(

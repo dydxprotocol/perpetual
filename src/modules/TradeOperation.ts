@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 import { Contracts } from './Contracts';
 import { Orders } from './Orders';
+import { bnToBytes32 } from '../lib/BytesHelper';
 import {
   SendOptions,
   TxResult,
@@ -44,7 +45,7 @@ export class TradeOperation {
     amount: BigNumber,
     price: BigNumber,
     fee: BigNumber,
-  ): TradeOperation {
+  ): this {
     const tradeData = this.orders.fillToTradeData(
       order,
       amount,
@@ -56,6 +57,21 @@ export class TradeOperation {
       taker: order.taker,
       data: tradeData,
       trader: this.contracts.p1Orders.options.address,
+    });
+    return this;
+  }
+
+  public deleverage(
+    maker: address,
+    taker: address,
+    amount: BigNumber,
+    options?: SendOptions,
+  ): this {
+    this.addTradeArg({
+      maker,
+      taker,
+      data: bnToBytes32(amount),
+      trader: this.contracts.p1Deleveraging.options.address,
     });
     return this;
   }
@@ -84,8 +100,8 @@ export class TradeOperation {
 
     // construct trade args
     const tradeArgs: TradeArg[] = this.trades.map(t => ({
-      makerIndex: accounts.findIndex(a => a === t.maker),
-      takerIndex: accounts.findIndex(a => a === t.taker),
+      makerIndex: accounts.indexOf(t.maker),
+      takerIndex: accounts.indexOf(t.taker),
       trader: t.trader,
       data: t.data,
     }));
