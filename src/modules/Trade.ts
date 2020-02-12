@@ -19,9 +19,9 @@
 import { Contract } from 'web3-eth-contract';
 import { Contracts } from './Contracts';
 import {
-  address,
   SendOptions,
   TradeArg,
+  TxResult,
 } from '../lib/types';
 import { TradeOperation } from './TradeOperation';
 import { Orders } from './Orders';
@@ -55,7 +55,7 @@ export class Trade {
     accounts: string[],
     tradeArgs: TradeArg[],
     options?: SendOptions,
-  ): Promise<address> {
+  ): Promise<TxResult> {
     return this.contracts.send(
       this.perpetual.methods.trade(
         accounts,

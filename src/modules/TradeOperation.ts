@@ -1,5 +1,7 @@
 import BigNumber from 'bignumber.js';
+
 import { Contracts } from './Contracts';
+import { makeDeleverageTradeData } from './Deleveraging';
 import { Orders } from './Orders';
 import {
   SendOptions,
@@ -44,7 +46,7 @@ export class TradeOperation {
     amount: BigNumber,
     price: BigNumber,
     fee: BigNumber,
-  ): TradeOperation {
+  ): this {
     const tradeData = this.orders.fillToTradeData(
       order,
       amount,
@@ -56,6 +58,21 @@ export class TradeOperation {
       taker: order.taker,
       data: tradeData,
       trader: this.contracts.p1Orders.options.address,
+    });
+    return this;
+  }
+
+  public deleverage(
+    maker: address,
+    taker: address,
+    amount: BigNumber,
+    allOrNothing: boolean = false,
+  ): this {
+    this.addTradeArg({
+      maker,
+      taker,
+      data: makeDeleverageTradeData(amount, allOrNothing),
+      trader: this.contracts.p1Deleveraging.options.address,
     });
     return this;
   }
@@ -84,8 +101,8 @@ export class TradeOperation {
 
     // construct trade args
     const tradeArgs: TradeArg[] = this.trades.map(t => ({
-      makerIndex: accounts.findIndex(a => a === t.maker),
-      takerIndex: accounts.findIndex(a => a === t.taker),
+      makerIndex: accounts.indexOf(t.maker),
+      takerIndex: accounts.indexOf(t.taker),
       trader: t.trader,
       data: t.data,
     }));

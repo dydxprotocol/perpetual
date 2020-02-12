@@ -27,6 +27,7 @@ import { Contracts } from './modules/Contracts';
 import { Logs } from './modules/Logs';
 import { Proxy } from './modules/Proxy';
 import { Admin } from './modules/Admin';
+import { Deleveraging } from './modules/Deleveraging';
 import { Getters } from './modules/Getters';
 import { Margin } from './modules/Margin';
 import { Operator } from './modules/Operator';
@@ -40,6 +41,7 @@ export class Perpetual {
   public testing: Testing;
   public proxy: Proxy;
   public admin: Admin;
+  public deleveraging: Deleveraging;
   public getters: Getters;
   public logs: Logs;
   public margin: Margin;
@@ -56,6 +58,7 @@ export class Perpetual {
     this.testing = new Testing(provider, this.contracts);
     this.proxy = new Proxy(this.contracts);
     this.admin = new Admin(this.contracts);
+    this.deleveraging = new Deleveraging(this.contracts);
     this.getters = new Getters(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
     this.margin = new Margin(this.contracts);
