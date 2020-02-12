@@ -37,6 +37,15 @@ contract P1Deleveraging {
     using BaseMath for uint256;
     using Math for uint256;
 
+    // ============ Structs ============
+
+    struct TradeData {
+        uint256 amount;
+
+        // If true, the trade will revert if the maker or taker position is less than the amount.
+        bool allOrNothing;
+    }
+
     // ============ Events ============
 
     event LogContractStatusSet(
@@ -75,17 +84,21 @@ contract P1Deleveraging {
         external
         returns(P1Types.TradeResult memory)
     {
-        uint256 amount = abi.decode(data, (uint256));
+        TradeData memory tradeData = abi.decode(data, (TradeData));
         P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
+        P1Types.Balance memory takerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(taker);
 
         _verifyTrade(
-            maker,
-            taker,
-            amount,
-            price,
-            makerBalance
+            tradeData,
+            makerBalance,
+            takerBalance,
+            price
         );
 
+        uint256 amount = Math.min(
+            tradeData.amount,
+            Math.min(makerBalance.position, takerBalance.position)
+        );
         bool isBuy = makerBalance.positionIsPositive;
 
         // When partially deleveraging the maker, maintain the same position/margin ratio.
@@ -112,11 +125,10 @@ contract P1Deleveraging {
     }
 
     function _verifyTrade(
-        address maker,
-        address taker,
-        uint256 amount,
-        uint256 price,
-        P1Types.Balance memory makerBalance
+        TradeData memory tradeData,
+        P1Types.Balance memory makerBalance,
+        P1Types.Balance memory takerBalance,
+        uint256 price
     )
         private
         view
@@ -126,19 +138,16 @@ contract P1Deleveraging {
             "Cannot deleverage since maker is not underwater"
         );
         require(
-            makerBalance.position >= amount,
-            "Maker position is less than the deleverage amount"
+            !tradeData.allOrNothing || makerBalance.position >= tradeData.amount,
+            "allOrNothing is set and maker position is less than amount"
         );
-
-        P1Types.Balance memory takerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(taker);
-
         require(
             takerBalance.positionIsPositive != makerBalance.positionIsPositive,
             "Taker position has wrong sign to deleverage this maker"
         );
         require(
-            takerBalance.position >= amount,
-            "Taker position is less than the deleverage amount"
+            !tradeData.allOrNothing || takerBalance.position >= tradeData.amount,
+            "allOrNothing is set and taker position is less than amount"
         );
     }
 

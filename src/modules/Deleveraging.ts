@@ -20,13 +20,22 @@ import BigNumber from 'bignumber.js';
 import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from './Contracts';
-import { bnToBytes32 } from '../lib/BytesHelper';
+import { bnToBytes32, boolToBytes32, stripHexPrefix } from '../lib/BytesHelper';
 import { ADDRESSES } from '../lib/Constants';
 import {
   address,
   CallOptions,
   TradeResult,
 } from '../lib/types';
+
+export function makeDeleverageTradeData(
+  amount: BigNumber,
+  allOrNothing: boolean,
+): string {
+  const amountData = bnToBytes32(amount);
+  const allOrNothingData = boolToBytes32(allOrNothing);
+  return `0x${stripHexPrefix(amountData)}${stripHexPrefix(allOrNothingData)}`;
+}
 
 export class Deleveraging {
   private contracts: Contracts;
@@ -48,6 +57,7 @@ export class Deleveraging {
     taker: address,
     price: BigNumber,
     amount: BigNumber,
+    allOrNothing: boolean = false,
     options?: CallOptions,
   ): Promise<TradeResult> {
     return this.contracts.call(
@@ -56,7 +66,7 @@ export class Deleveraging {
         maker,
         taker,
         price.toFixed(0),
-        bnToBytes32(amount),
+        makeDeleverageTradeData(amount, allOrNothing),
       ),
       options,
     );

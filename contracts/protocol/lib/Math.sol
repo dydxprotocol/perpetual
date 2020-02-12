@@ -66,4 +66,26 @@ library Math {
         }
         return target.mul(numerator).sub(1).div(denominator).add(1);
     }
+
+    function min(
+        uint256 a,
+        uint256 b
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return a < b ? a : b;
+    }
+
+    function max(
+        uint256 a,
+        uint256 b
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return a > b ? a : b;
+    }
 }

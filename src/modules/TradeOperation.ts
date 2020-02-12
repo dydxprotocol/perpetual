@@ -1,7 +1,8 @@
 import BigNumber from 'bignumber.js';
+
 import { Contracts } from './Contracts';
+import { makeDeleverageTradeData } from './Deleveraging';
 import { Orders } from './Orders';
-import { bnToBytes32 } from '../lib/BytesHelper';
 import {
   SendOptions,
   TxResult,
@@ -65,12 +66,12 @@ export class TradeOperation {
     maker: address,
     taker: address,
     amount: BigNumber,
-    options?: SendOptions,
+    allOrNothing: boolean = false,
   ): this {
     this.addTradeArg({
       maker,
       taker,
-      data: bnToBytes32(amount),
+      data: makeDeleverageTradeData(amount, allOrNothing),
       trader: this.contracts.p1Deleveraging.options.address,
     });
     return this;
