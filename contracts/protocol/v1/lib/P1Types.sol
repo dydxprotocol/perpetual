@@ -52,5 +52,6 @@ library P1Types {
         uint256 marginAmount;
         uint256 positionAmount;
         bool isBuy;
+        bool deleverageOkay;
     }
 }

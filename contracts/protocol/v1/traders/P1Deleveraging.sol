@@ -79,11 +79,14 @@ contract P1Deleveraging {
         address maker,
         address taker,
         uint256 price,
-        bytes calldata data
+        bytes calldata data,
+        bool deleverageOkay
     )
         external
         returns(P1Types.TradeResult memory)
     {
+        require(deleverageOkay, "deleveraging disallowed by the caller");
+
         TradeData memory tradeData = abi.decode(data, (TradeData));
         P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
         P1Types.Balance memory takerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(taker);
@@ -120,7 +123,8 @@ contract P1Deleveraging {
         return P1Types.TradeResult({
             marginAmount: marginAmount,
             positionAmount: amount,
-            isBuy: isBuy
+            isBuy: isBuy,
+            deleverageOkay: true
         });
     }
 

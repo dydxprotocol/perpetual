@@ -23,6 +23,7 @@ export class TestP1Trader {
         tradeResult.marginAmount.toFixed(0),
         tradeResult.positionAmount.toFixed(0),
         tradeResult.isBuy,
+        tradeResult.deleverageOkay,
       ),
       options,
     );

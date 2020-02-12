@@ -183,7 +183,8 @@ contract P1Orders {
         address maker,
         address taker,
         uint256 price,
-        bytes calldata data
+        bytes calldata data,
+        bool /* deleverageOkay */
     )
         external
         returns(P1Types.TradeResult memory)
@@ -242,7 +243,8 @@ contract P1Orders {
         return P1Types.TradeResult({
             marginAmount: tradeData.amount.baseMul(marginPerPosition),
             positionAmount: tradeData.amount,
-            isBuy: !tradeData.order.isBuy
+            isBuy: !tradeData.order.isBuy,
+            deleverageOkay: false
         });
     }
 

@@ -35,6 +35,7 @@ async function trade(
     isBuy,
     marginAmount: cost,
     positionAmount: position,
+    deleverageOkay: false,
   });
   const accounts = [taker, maker].sort();
   await ctx.perpetual.trade.trade(

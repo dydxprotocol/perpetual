@@ -128,6 +128,7 @@ export interface TradeResult {
   marginAmount: BigNumber;
   positionAmount: BigNumber;
   isBuy: boolean;
+  deleverageOkay: boolean;
 }
 
 export interface Balance {
