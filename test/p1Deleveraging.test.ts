@@ -6,6 +6,7 @@ import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import { address } from '../src';
+import { TRADER_FLAG_DELEVERAGING } from '../src/lib/Constants';
 
 const initialPrice = new BigNumber(100).shiftedBy(18);
 const longBorderlinePrice = new BigNumber(50).shiftedBy(18);
@@ -51,6 +52,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       expectBN(tradeResult.marginAmount).to.eq(new BigNumber(750));
       expectBN(tradeResult.positionAmount).to.eq(amount);
       expect(tradeResult.isBuy).to.equal(false);
+      expectBN(tradeResult.traderFlags).to.eq(TRADER_FLAG_DELEVERAGING);
     });
   });
 

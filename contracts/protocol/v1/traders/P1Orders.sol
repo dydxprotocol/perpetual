@@ -20,9 +20,9 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { P1Constants } from "../P1Constants.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { TypedSignature } from "../../lib/TypedSignature.sol";
-import { P1Constants } from "../P1Constants.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
 
