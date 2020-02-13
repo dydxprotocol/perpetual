@@ -39,7 +39,8 @@ contract Test_P1Trader is
         address, // maker
         address, // taker
         uint256, // price
-        bytes calldata // data
+        bytes calldata, // data
+        bytes32 // traderFlags
     )
         external
         returns(P1Types.TradeResult memory)
@@ -47,21 +48,24 @@ contract Test_P1Trader is
         return P1Types.TradeResult({
             marginAmount: _TRADE_RESULT_.marginAmount,
             positionAmount: _TRADE_RESULT_.positionAmount,
-            isBuy: _TRADE_RESULT_.isBuy
+            isBuy: _TRADE_RESULT_.isBuy,
+            traderFlags: _TRADE_RESULT_.traderFlags
         });
     }
 
     function setTradeResult(
         uint256 marginAmount,
         uint256 positionAmount,
-        bool isBuy
+        bool isBuy,
+        bytes32 traderFlags
     )
         external
     {
         _TRADE_RESULT_ = P1Types.TradeResult({
             marginAmount: marginAmount,
             positionAmount: positionAmount,
-            isBuy: isBuy
+            isBuy: isBuy,
+            traderFlags: traderFlags
         });
     }
 }

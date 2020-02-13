@@ -1,6 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { ITestContext } from './perpetualDescribe';
+import { TRADER_FLAG_ORDERS } from '../../src/lib/Constants';
 import { address } from '../../src/lib/types';
 
 export async function buy(
@@ -35,6 +36,7 @@ async function trade(
     isBuy,
     marginAmount: cost,
     positionAmount: position,
+    traderFlags: TRADER_FLAG_ORDERS,
   });
   const accounts = [taker, maker].sort();
   await ctx.perpetual.trade.trade(

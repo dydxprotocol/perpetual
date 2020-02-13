@@ -34,7 +34,8 @@ interface I_P1Trader {
         address maker,
         address taker,
         uint256 price,
-        bytes calldata data
+        bytes calldata data,
+        bytes32 traderFlags
     )
         external
         returns(P1Types.TradeResult memory);

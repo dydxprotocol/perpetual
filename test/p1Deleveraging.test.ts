@@ -6,6 +6,12 @@ import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import { address } from '../src';
+import { TRADER_FLAG_DELEVERAGING, INTEGERS } from '../src/lib/Constants';
+import {
+  Order,
+  SignedOrder,
+  SigningMethod,
+} from '../src/lib/types';
 
 const initialPrice = new BigNumber(100).shiftedBy(18);
 const longBorderlinePrice = new BigNumber(50).shiftedBy(18);
@@ -51,6 +57,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       expectBN(tradeResult.marginAmount).to.eq(new BigNumber(750));
       expectBN(tradeResult.positionAmount).to.eq(amount);
       expect(tradeResult.isBuy).to.equal(false);
+      expectBN(tradeResult.traderFlags).to.eq(TRADER_FLAG_DELEVERAGING);
     });
   });
 
@@ -187,6 +194,39 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       await expectThrow(
         ctx.perpetual.trade.initiate().deleverage(short, long, positionSize).commit(),
         'Taker position has wrong sign to deleverage this maker',
+      );
+    });
+
+    it('Cannot deleverage after an order has executed in the same tx', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+
+      const defaultOrder: Order = {
+        isBuy: true,
+        amount: new BigNumber(1),
+        limitPrice: initialPrice,
+        stopPrice: INTEGERS.ZERO,
+        fee: INTEGERS.ZERO,
+        maker: long,
+        taker: short,
+        expiration: new BigNumber(888),
+        salt: new BigNumber(444),
+      };
+      const typedSignature = await ctx.perpetual.orders.signOrder(defaultOrder, SigningMethod.Hash);
+      const defaultSignedOrder: SignedOrder = {
+        ...defaultOrder,
+        typedSignature,
+      };
+      await expectThrow(
+        ctx.perpetual.trade.initiate()
+          .fillSignedOrder(
+            defaultSignedOrder,
+            defaultSignedOrder.amount,
+            defaultSignedOrder.limitPrice,
+            defaultSignedOrder.fee,
+          )
+          .deleverage(long, short, positionSize)
+          .commit(),
+        'cannot deleverage after execution of an order, in the same tx',
       );
     });
   });

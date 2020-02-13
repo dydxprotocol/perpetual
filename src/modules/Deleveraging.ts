@@ -21,7 +21,7 @@ import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from './Contracts';
 import { bnToBytes32, boolToBytes32, stripHexPrefix } from '../lib/BytesHelper';
-import { ADDRESSES } from '../lib/Constants';
+import { ADDRESSES, INTEGERS } from '../lib/Constants';
 import {
   address,
   CallOptions,
@@ -67,6 +67,7 @@ export class Deleveraging {
         taker,
         price.toFixed(0),
         makeDeleverageTradeData(amount, allOrNothing),
+        bnToBytes32(INTEGERS.ZERO), // traderFlags
       ),
       options,
     );

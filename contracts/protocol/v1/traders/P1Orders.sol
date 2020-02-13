@@ -20,6 +20,7 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { P1Constants } from "../P1Constants.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { TypedSignature } from "../../lib/TypedSignature.sol";
 import { P1Types } from "../lib/P1Types.sol";
@@ -31,7 +32,9 @@ import { P1Types } from "../lib/P1Types.sol";
  *
  * P1Orders contract
  */
-contract P1Orders {
+contract P1Orders
+    is P1Constants
+{
     using BaseMath for uint256;
     using SafeMath for uint256;
 
@@ -183,7 +186,8 @@ contract P1Orders {
         address maker,
         address taker,
         uint256 price,
-        bytes calldata data
+        bytes calldata data,
+        bytes32 /* traderFlags */
     )
         external
         returns(P1Types.TradeResult memory)
@@ -242,7 +246,8 @@ contract P1Orders {
         return P1Types.TradeResult({
             marginAmount: tradeData.amount.baseMul(marginPerPosition),
             positionAmount: tradeData.amount,
-            isBuy: !tradeData.order.isBuy
+            isBuy: !tradeData.order.isBuy,
+            traderFlags: TRADER_FLAG_ORDERS
         });
     }
 

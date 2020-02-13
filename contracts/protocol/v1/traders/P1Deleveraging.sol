@@ -20,6 +20,7 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { P1Constants } from "../P1Constants.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { Math } from "../../lib/Math.sol";
 import { P1Getters } from "../impl/P1Getters.sol";
@@ -32,7 +33,9 @@ import { P1Types } from "../lib/P1Types.sol";
  *
  * P1Deleveraging contract
  */
-contract P1Deleveraging {
+contract P1Deleveraging is
+    P1Constants
+{
     using SafeMath for uint256;
     using BaseMath for uint256;
     using Math for uint256;
@@ -79,11 +82,17 @@ contract P1Deleveraging {
         address maker,
         address taker,
         uint256 price,
-        bytes calldata data
+        bytes calldata data,
+        bytes32 traderFlags
     )
         external
         returns(P1Types.TradeResult memory)
     {
+        require(
+            traderFlags & TRADER_FLAG_ORDERS == 0,
+            "cannot deleverage after execution of an order, in the same tx"
+        );
+
         TradeData memory tradeData = abi.decode(data, (TradeData));
         P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
         P1Types.Balance memory takerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(taker);
@@ -120,7 +129,8 @@ contract P1Deleveraging {
         return P1Types.TradeResult({
             marginAmount: marginAmount,
             positionAmount: amount,
-            isBuy: isBuy
+            isBuy: isBuy,
+            traderFlags: TRADER_FLAG_DELEVERAGING
         });
     }
 

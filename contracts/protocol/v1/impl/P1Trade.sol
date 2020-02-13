@@ -71,6 +71,7 @@ contract P1Trade is
         P1Types.Context memory context = _loadContext();
         _settleAccounts(context, accounts);
 
+        bytes32 traderFlags = 0;
         uint256 i = 0;
         for (i = 0; i < trades.length; i++) {
             TradeArg memory tradeArg = trades[i];
@@ -88,8 +89,11 @@ contract P1Trade is
                 maker,
                 taker,
                 context.price,
-                tradeArg.data
+                tradeArg.data,
+                traderFlags
             );
+
+            traderFlags |= tradeResult.traderFlags;
 
             // if the accounts are equal no need to update balances
             if (maker == taker) {
