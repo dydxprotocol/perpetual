@@ -131,7 +131,7 @@ contract P1Deleveraging {
         uint256 price
     )
         private
-        view
+        pure
     {
         require(
             _isUnderwater(makerBalance, price),
