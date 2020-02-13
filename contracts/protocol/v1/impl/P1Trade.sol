@@ -71,7 +71,7 @@ contract P1Trade is
         P1Types.Context memory context = _loadContext();
         _settleAccounts(context, accounts);
 
-        bool deleverageOkay = true;
+        bytes32 traderFlags = 0;
         uint256 i = 0;
         for (i = 0; i < trades.length; i++) {
             TradeArg memory tradeArg = trades[i];
@@ -90,10 +90,10 @@ contract P1Trade is
                 taker,
                 context.price,
                 tradeArg.data,
-                deleverageOkay
+                traderFlags
             );
 
-            deleverageOkay = deleverageOkay && tradeResult.deleverageOkay;
+            traderFlags |= tradeResult.traderFlags;
 
             // if the accounts are equal no need to update balances
             if (maker == taker) {

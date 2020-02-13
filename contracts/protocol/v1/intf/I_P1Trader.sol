@@ -35,7 +35,7 @@ interface I_P1Trader {
         address taker,
         uint256 price,
         bytes calldata data,
-        bool deleverageOkay
+        bytes32 traderFlags
     )
         external
         returns(P1Types.TradeResult memory);

@@ -21,37 +21,13 @@ pragma experimental ABIEncoderV2;
 
 
 /**
- * @title P1Types
+ * @title P1Constants
  * @author dYdX
  *
- * Types library
+ * Constants
  */
-library P1Types {
-    // ============ Structs ============
-
-    struct Index {
-        uint32 timestamp;
-        bool isPositive;
-        uint128 value;
-    }
-
-    struct Balance {
-        bool marginIsPositive;
-        bool positionIsPositive;
-        uint120 margin;
-        uint120 position;
-    }
-
-    struct Context {
-        uint256 price;
-        uint256 minCollateral;
-        Index index;
-    }
-
-    struct TradeResult {
-        uint256 marginAmount;
-        uint256 positionAmount;
-        bool isBuy;
-        bytes32 traderFlags;
-    }
+contract P1Constants {
+    bytes32 constant public TRADER_FLAG_ORDERS = bytes32(uint256(1));
+    bytes32 constant public TRADER_FLAG_LIQUIDATION = bytes32(uint256(2));
+    bytes32 constant public TRADER_FLAG_DELEVERAGING = bytes32(uint256(4));
 }

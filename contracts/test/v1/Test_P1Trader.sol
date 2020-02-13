@@ -40,7 +40,7 @@ contract Test_P1Trader is
         address, // taker
         uint256, // price
         bytes calldata, // data
-        bool // deleverageOkay
+        bytes32 // traderFlags
     )
         external
         returns(P1Types.TradeResult memory)
@@ -49,7 +49,7 @@ contract Test_P1Trader is
             marginAmount: _TRADE_RESULT_.marginAmount,
             positionAmount: _TRADE_RESULT_.positionAmount,
             isBuy: _TRADE_RESULT_.isBuy,
-            deleverageOkay: _TRADE_RESULT_.deleverageOkay
+            traderFlags: _TRADE_RESULT_.traderFlags
         });
     }
 
@@ -57,7 +57,7 @@ contract Test_P1Trader is
         uint256 marginAmount,
         uint256 positionAmount,
         bool isBuy,
-        bool deleverageOkay
+        bytes32 traderFlags
     )
         external
     {
@@ -65,7 +65,7 @@ contract Test_P1Trader is
             marginAmount: marginAmount,
             positionAmount: positionAmount,
             isBuy: isBuy,
-            deleverageOkay: deleverageOkay
+            traderFlags: traderFlags
         });
     }
 }

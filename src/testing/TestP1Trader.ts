@@ -1,4 +1,5 @@
 import { Contracts } from '../modules/Contracts';
+import { bnToBytes32 } from '../lib/BytesHelper';
 import { SendOptions, TradeResult, TxResult } from '../lib/types';
 
 export class TestP1Trader {
@@ -23,7 +24,7 @@ export class TestP1Trader {
         tradeResult.marginAmount.toFixed(0),
         tradeResult.positionAmount.toFixed(0),
         tradeResult.isBuy,
-        tradeResult.deleverageOkay,
+        bnToBytes32(tradeResult.traderFlags),
       ),
       options,
     );

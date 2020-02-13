@@ -50,3 +50,9 @@ export const ADDRESSES = {
     '0xaa012c8cf97bead5deae237070f9587f8e7a266d',
   ],
 };
+
+// ============ P1Constants.sol ============
+
+export const TRADER_FLAG_ORDERS = new BigNumber(1);
+export const TRADER_FLAG_LIQUIDATION = new BigNumber(2);
+export const TRADER_FLAG_DELEVERAGING = new BigNumber(4);
