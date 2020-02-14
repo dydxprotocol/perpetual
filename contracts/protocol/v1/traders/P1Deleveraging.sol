@@ -74,7 +74,7 @@ contract P1Deleveraging is
     // address of the perpetual contract
     address public _PERPETUAL_V1_;
 
-    // Waiting period for non-owner to deleverage an account after marking it.
+    // Waiting period for non-admin to deleverage an account after marking it.
     uint256 constant public _DELEVERAGING_TIMELOCK_S = 1800; // 30 minutes
 
     // ============ Mutable Storage ============
@@ -82,7 +82,7 @@ contract P1Deleveraging is
     // account => timestamp at which an account was marked as underwater
     //
     // After an account has been marked for the timelock period, it can be deleveraged by anybody.
-    // The contract owner can deleverage underwater accounts at any time.
+    // The contract admin can deleverage underwater accounts at any time.
     mapping (address => uint256) public _MARKED_TIMESTAMP_;
 
     // ============ Constructor ============
@@ -168,7 +168,7 @@ contract P1Deleveraging is
     /**
      * Mark an account as underwater.
      *
-     * An account must be marked for a period of time before any non-owner is allowed to
+     * An account must be marked for a period of time before any non-admin is allowed to
      * deleverage that account.
      */
     function mark(
@@ -222,7 +222,7 @@ contract P1Deleveraging is
         private
         view
     {
-        // The contract owner may deleverage underwater accounts at any time.
+        // The contract admin may deleverage underwater accounts at any time.
         if (sender != owner()) {
             require(
                 _MARKED_TIMESTAMP_[maker] != 0,

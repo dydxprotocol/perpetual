@@ -21,13 +21,13 @@ const shortBorderlinePrice = new BigNumber(150).shiftedBy(18);
 const shortUnderwaterPrice = new BigNumber(150.1).shiftedBy(18);
 const positionSize = new BigNumber(10);
 
-let owner: address;
+let admin: address;
 let long: address;
 let short: address;
 let thirdParty: address;
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
-  owner = ctx.accounts[0];
+  admin = ctx.accounts[0];
   long = ctx.accounts[1];
   short = ctx.accounts[2];
   thirdParty = ctx.accounts[3];
@@ -248,6 +248,6 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     return ctx.perpetual.trade
       .initiate()
       .deleverage(maker, taker, amount, allOrNothing)
-      .commit({ from: owner });
+      .commit({ from: admin });
   }
 });
