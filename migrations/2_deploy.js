@@ -96,6 +96,8 @@ async function deployTraders(deployer, network) {
     perpetual.setGlobalOperator(P1Orders.address, true),
     perpetual.setGlobalOperator(P1Deleveraging.address, true),
     perpetual.setGlobalOperator(P1Liquidation.address, true),
-    perpetual.setGlobalOperator(TestP1Trader.address, true),
   ]);
+  if (isDevNetwork(network)) {
+    await perpetual.setGlobalOperator(TestP1Trader.address, true);
+  }
 }
