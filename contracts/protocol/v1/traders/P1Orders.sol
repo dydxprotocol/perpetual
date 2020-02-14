@@ -204,6 +204,7 @@ contract P1Orders
         );
 
         TradeData memory tradeData = abi.decode(data, (TradeData));
+        bool isBuyOrder = _isBuy(tradeData.order);
         bytes32 orderHash = _getOrderHash(tradeData.order);
 
         // sanity checking
@@ -230,18 +231,18 @@ contract P1Orders
         emit LogOrderFilled(
             orderHash,
             tradeData.order.maker,
-            _isBuy(tradeData.order),
+            isBuyOrder,
             tradeData.fill
         );
 
-        uint256 marginPerPosition = (_isBuy(tradeData.order) == tradeData.fill.isNegativeFee)
+        uint256 marginPerPosition = (isBuyOrder == tradeData.fill.isNegativeFee)
             ? tradeData.fill.price.sub(tradeData.fill.fee)
             : tradeData.fill.price.add(tradeData.fill.fee);
 
         return P1Types.TradeResult({
             marginAmount: tradeData.fill.amount.baseMul(marginPerPosition),
             positionAmount: tradeData.fill.amount,
-            isBuy: !_isBuy(tradeData.order),
+            isBuy: !isBuyOrder,
             traderFlags: TRADER_FLAG_ORDERS
         });
     }
@@ -335,7 +336,8 @@ contract P1Orders
             "Order taker does not match taker"
         );
 
-        bool validPrice = _isBuy(tradeData.order)
+        bool isBuyOrder = _isBuy(tradeData.order);
+        bool validPrice = isBuyOrder
             ? tradeData.fill.price <= tradeData.order.limitPrice
             : tradeData.fill.price >= tradeData.order.limitPrice;
         require(
@@ -352,7 +354,7 @@ contract P1Orders
         );
 
         if (tradeData.order.stopPrice != 0) {
-            bool validStopPrice = _isBuy(tradeData.order)
+            bool validStopPrice = isBuyOrder
                 ? tradeData.order.stopPrice <= price
                 : tradeData.order.stopPrice >= price;
             require(
@@ -364,7 +366,7 @@ contract P1Orders
         if (_isDecreaseOnly(tradeData.order)) {
             P1Types.Balance memory balance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
             require(
-                _isBuy(tradeData.order) != balance.positionIsPositive
+                isBuyOrder != balance.positionIsPositive
                 && tradeData.fill.amount <= balance.position,
                 "Fill does not decrease position"
             );

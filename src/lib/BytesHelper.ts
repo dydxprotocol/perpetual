@@ -4,9 +4,7 @@ import Web3 from 'web3';
 import { address } from './types';
 
 export function combineHexStrings(...args: string[]): string {
-  let result = '0x';
-  args.forEach(arg => result += stripHexPrefix(arg));
-  return result;
+  return `0x${args.map(stripHexPrefix).join('')}`;
 }
 
 export function addressToBytes32(input: address): string {
