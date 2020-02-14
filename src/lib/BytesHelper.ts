@@ -3,6 +3,10 @@ import Web3 from 'web3';
 
 import { address } from './types';
 
+export function combineHexStrings(...args: string[]): string {
+  return `0x${args.map(stripHexPrefix).join('')}`;
+}
+
 export function addressToBytes32(input: address): string {
   return `0x000000000000000000000000${ stripHexPrefix(input) }`;
 }

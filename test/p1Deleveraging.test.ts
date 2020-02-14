@@ -211,10 +211,11 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
       const defaultOrder: Order = {
         isBuy: true,
+        isDecreaseOnly: false,
         amount: new BigNumber(1),
         limitPrice: initialPrice,
         stopPrice: INTEGERS.ZERO,
-        fee: INTEGERS.ZERO,
+        limitFee: INTEGERS.ZERO,
         maker: long,
         taker: short,
         expiration: new BigNumber(888),
@@ -231,10 +232,10 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
             defaultSignedOrder,
             defaultSignedOrder.amount,
             defaultSignedOrder.limitPrice,
-            defaultSignedOrder.fee,
+            defaultSignedOrder.limitFee,
           )
           .deleverage(long, short, positionSize)
-          .commit(),
+          .commit({ from: short }),
         'cannot deleverage after execution of an order, in the same tx',
       );
     });

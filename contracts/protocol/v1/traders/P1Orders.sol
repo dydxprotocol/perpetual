@@ -23,6 +23,7 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { P1Constants } from "../P1Constants.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { TypedSignature } from "../../lib/TypedSignature.sol";
+import { P1Getters } from "../impl/P1Getters.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
 
@@ -64,17 +65,22 @@ contract P1Orders
     /* solium-disable-next-line indentation */
     bytes32 constant private EIP712_ORDER_STRUCT_SCHEMA_HASH = keccak256(abi.encodePacked(
         "Order(",
-        "bool isBuy,",
+        "bytes32 flags,",
         "uint256 amount,",
         "uint256 limitPrice,",
         "uint256 stopPrice,",
-        "uint256 fee,",
+        "uint256 limitFee,",
         "address maker,",
         "address taker,",
-        "uint256 expiration,",
-        "uint256 salt",
+        "uint256 expiration",
         ")"
     ));
+
+    // Bitmasks for the flags field
+    bytes32 constant FLAG_MASK_NULL = bytes32(uint256(0));
+    bytes32 constant FLAG_MASK_IS_BUY = bytes32(uint256(1));
+    bytes32 constant FLAG_MASK_IS_DECREASE_ONLY = bytes32(uint256(1 << 1));
+    bytes32 constant FLAG_MASK_IS_NEGATIVE_FEES = bytes32(uint256(1 << 2));
 
     // ============ Enums ============
 
@@ -87,30 +93,27 @@ contract P1Orders
     // ============ Structs ============
 
     struct Order {
-        bool isBuy;
+        bytes32 flags;
         uint256 amount;
         uint256 limitPrice;
         uint256 stopPrice;
-        uint256 fee;
+        uint256 limitFee;
         address maker;
         address taker;
         uint256 expiration;
-        uint256 salt;
     }
 
-    struct OrderInfo {
-        Order order;
-        bytes32 orderHash;
+    struct Fill {
+        uint256 amount;
+        uint256 price;
+        uint256 fee;
+        bool isNegativeFee;
     }
 
     struct TradeData {
         Order order;
-        bytes32 r;
-        bytes32 s;
-        bytes32 v;
-        uint256 amount;
-        uint256 price;
-        uint256 fee;
+        Fill fill;
+        TypedSignature.Signature signature;
     }
 
     struct OrderQueryOutput {
@@ -133,10 +136,8 @@ contract P1Orders
     event LogOrderFilled(
         bytes32 indexed orderHash,
         address indexed orderMaker,
-        uint256 amount,
-        uint256 price,
-        uint256 fee,
-        bool isBuy
+        bool isBuy,
+        Fill fill
     );
 
     // ============ Immutable Storage ============
@@ -178,7 +179,7 @@ contract P1Orders
     // ============ Public Functions ============
 
     function trade(
-        address /* sender */,
+        address sender,
         address maker,
         address taker,
         uint256 price,
@@ -190,22 +191,22 @@ contract P1Orders
     {
         require(
             msg.sender == _PERPETUAL_V1_,
-            "Sender must be PerpetualV1"
+            "msg.sender must be PerpetualV1"
+        );
+
+        require(
+            sender == taker,
+            "Sender must equal taker"
         );
 
         TradeData memory tradeData = abi.decode(data, (TradeData));
+        bool isBuyOrder = _isBuy(tradeData.order);
         bytes32 orderHash = _getOrderHash(tradeData.order);
-        bytes memory signature = abi.encodePacked(
-            tradeData.r,
-            tradeData.s,
-            bytes2(tradeData.v)
-        );
 
         // sanity checking
         _verifyOrderStateAndSignature(
-            tradeData.order.maker,
-            orderHash,
-            signature
+            tradeData,
+            orderHash
         );
         _verifyOrderRequest(
             tradeData,
@@ -216,7 +217,7 @@ contract P1Orders
 
         // set _FILLED_AMOUNT_
         uint256 oldFilledAmount = _FILLED_AMOUNT_[orderHash];
-        uint256 newFilledAmount = oldFilledAmount.add(tradeData.amount);
+        uint256 newFilledAmount = oldFilledAmount.add(tradeData.fill.amount);
         require(
             newFilledAmount <= tradeData.order.amount,
             "Cannot overfill order"
@@ -226,23 +227,18 @@ contract P1Orders
         emit LogOrderFilled(
             orderHash,
             tradeData.order.maker,
-            tradeData.amount,
-            tradeData.price,
-            tradeData.fee,
-            tradeData.order.isBuy
+            isBuyOrder,
+            tradeData.fill
         );
 
-        uint256 marginPerPosition = 0;
-        if (tradeData.order.isBuy) {
-            marginPerPosition = tradeData.price.add(tradeData.fee);
-        } else {
-            marginPerPosition = tradeData.price.sub(tradeData.fee);
-        }
+        uint256 marginPerPosition = (isBuyOrder == tradeData.fill.isNegativeFee)
+            ? tradeData.fill.price.sub(tradeData.fill.fee)
+            : tradeData.fill.price.add(tradeData.fill.fee);
 
         return P1Types.TradeResult({
-            marginAmount: tradeData.amount.baseMul(marginPerPosition),
-            positionAmount: tradeData.amount,
-            isBuy: !tradeData.order.isBuy,
+            marginAmount: tradeData.fill.amount.baseMul(marginPerPosition),
+            positionAmount: tradeData.fill.amount,
+            isBuy: !isBuyOrder,
             traderFlags: TRADER_FLAG_ORDERS
         });
     }
@@ -296,9 +292,8 @@ contract P1Orders
     // ============ Helper Functions ============
 
     function _verifyOrderStateAndSignature(
-        address maker,
-        bytes32 orderHash,
-        bytes memory signature
+        TradeData memory tradeData,
+        bytes32 orderHash
     )
         private
         view
@@ -307,7 +302,7 @@ contract P1Orders
 
         if (orderStatus == OrderStatus.Open) {
             require(
-                maker == TypedSignature.recover(orderHash, signature),
+                tradeData.order.maker == TypedSignature.recover(orderHash, tradeData.signature),
                 "Order invalid signature"
             );
         } else {
@@ -326,7 +321,7 @@ contract P1Orders
         uint256 price
     )
         private
-        pure
+        view
     {
         require(
             tradeData.order.maker == maker,
@@ -337,26 +332,39 @@ contract P1Orders
             "Order taker does not match taker"
         );
 
-        bool validPrice = tradeData.order.isBuy
-            ? tradeData.price <= tradeData.order.limitPrice
-            : tradeData.price >= tradeData.order.limitPrice;
+        bool isBuyOrder = _isBuy(tradeData.order);
+        bool validPrice = isBuyOrder
+            ? tradeData.fill.price <= tradeData.order.limitPrice
+            : tradeData.fill.price >= tradeData.order.limitPrice;
         require(
             validPrice,
-            "Cannot take worse price than approved"
+            "Fill invalid price"
         );
 
+        bool validFee = _isNegativeLimitFee(tradeData.order)
+            ? tradeData.fill.isNegativeFee && tradeData.fill.fee >= tradeData.order.limitFee
+            : tradeData.fill.isNegativeFee || tradeData.fill.fee <= tradeData.order.limitFee;
         require(
-            tradeData.fee <= tradeData.order.fee,
-            "Cannot take more fee than approved"
+            validFee,
+            "Fill invalid fee"
         );
 
         if (tradeData.order.stopPrice != 0) {
-            bool validStopPrice = tradeData.order.isBuy
+            bool validStopPrice = isBuyOrder
                 ? tradeData.order.stopPrice <= price
                 : tradeData.order.stopPrice >= price;
             require(
                 validStopPrice,
                 "Stop price untriggered"
+            );
+        }
+
+        if (_isDecreaseOnly(tradeData.order)) {
+            P1Types.Balance memory balance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
+            require(
+                isBuyOrder != balance.positionIsPositive
+                && tradeData.fill.amount <= balance.position,
+                "Fill does not decrease position"
             );
         }
     }
@@ -385,5 +393,35 @@ contract P1Orders
             EIP712_DOMAIN_HASH,
             structHash
         ));
+    }
+
+    function _isBuy(
+        Order memory order
+    )
+        private
+        pure
+        returns (bool)
+    {
+        return (order.flags & FLAG_MASK_IS_BUY) != FLAG_MASK_NULL;
+    }
+
+    function _isDecreaseOnly(
+        Order memory order
+    )
+        private
+        pure
+        returns (bool)
+    {
+        return (order.flags & FLAG_MASK_IS_DECREASE_ONLY) != FLAG_MASK_NULL;
+    }
+
+    function _isNegativeLimitFee(
+        Order memory order
+    )
+        private
+        pure
+        returns (bool)
+    {
+        return (order.flags & FLAG_MASK_IS_NEGATIVE_FEES) != FLAG_MASK_NULL;
     }
 }

@@ -11,10 +11,11 @@ import { ADDRESSES } from '../src/lib/Constants';
 
 const defaultOrder: Order = {
   isBuy: true,
+  isDecreaseOnly: false,
   amount: new BigNumber('1e18'),
   limitPrice: new BigNumber('987654320'),
   stopPrice: new BigNumber(0),
-  fee: new BigNumber('330'),
+  limitFee: new BigNumber('330'),
   maker: ADDRESSES.ZERO,
   taker: ADDRESSES.ZERO,
   expiration: new BigNumber('888'),
@@ -100,6 +101,10 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       // TODO
     });
 
+    it('fails for sender not equal to taker', async () => {
+      // TODO
+    });
+
     it('fails for expired orders', async () => {
       // TODO
     });
@@ -128,6 +133,10 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       // TODO
     });
 
+    it('fails if not decreasing position for decrease-only order', async () => {
+      // TODO
+    });
+
     it('TODO', async () => {
       // TODO
     });
@@ -141,7 +150,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
           defaultSignedOrder,
           defaultSignedOrder.amount.div(2),
           defaultSignedOrder.limitPrice.div(2),
-          defaultSignedOrder.fee.div(2),
+          defaultSignedOrder.limitFee.div(2),
         ).commit({ from: defaultSignedOrder.taker }),
         'account is undercollateralized',
       );

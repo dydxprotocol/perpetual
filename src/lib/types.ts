@@ -143,10 +143,11 @@ export interface Index {
 
 export interface Order {
   isBuy: boolean;
+  isDecreaseOnly: boolean;
   amount: BigNumber;
   limitPrice: BigNumber;
   stopPrice: BigNumber;
-  fee: BigNumber;
+  limitFee: BigNumber;
   maker: address;
   taker: address;
   expiration: BigNumber;
