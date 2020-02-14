@@ -4,9 +4,9 @@ import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import { expectBalances, mintAndDeposit, expectPositions } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
-import { expect, expectBN, expectThrow } from './helpers/Expect';
+import { expectThrow } from './helpers/Expect';
 import { address } from '../src';
-import { INTEGERS, TRADER_FLAG_LIQUIDATION } from '../src/lib/Constants';
+import { INTEGERS } from '../src/lib/Constants';
 import {
   Order,
   SignedOrder,
@@ -48,21 +48,16 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
   });
 
   describe('trade()', () => {
-    it('returns the expected trade result for partial liquidation', async () => {
-      const amount = positionSize.div(2);
-      const tradeResult = await ctx.perpetual.liquidation.trade(
-        long,
-        short,
-        long,
-        shortUndercollateralizedPrice,
-        amount,
+    it('Fails if the caller is not the perpetual contract', async () => {
+      await expectThrow(
+        ctx.perpetual.liquidation.trade(
+          long,
+          short,
+          long,
+          shortUndercollateralizedPrice,
+          positionSize,
+        ),
       );
-
-      // Partial liquidation should maintain the ratio of the account being liquidated.
-      expectBN(tradeResult.marginAmount).to.eq(new BigNumber(750));
-      expectBN(tradeResult.positionAmount).to.eq(amount);
-      expect(tradeResult.isBuy).to.equal(false);
-      expectBN(tradeResult.traderFlags).to.eq(TRADER_FLAG_LIQUIDATION);
     });
   });
 
