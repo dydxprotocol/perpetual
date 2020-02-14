@@ -59,7 +59,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     });
   });
 
-  describe('trade(), via PerpetualV1', () => {
+  describe('trade(), via PerpetualV1, as the deleveraging admin', () => {
     it('Succeeds fully deleveraging a long position', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
       await deleverage(long, short, positionSize);
@@ -236,6 +236,52 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
           .commit({ from: short }),
         'cannot deleverage after execution of an order, in the same tx',
       );
+    });
+  });
+
+  describe('trade(), via PerpetualV1, as a non-admin', () => {
+    it('Can mark an account and then deleverage it', async () => {
+
+    });
+
+    it('Cannot deleverage an unmarked account', async () => {
+
+    });
+
+    it('Cannot deleverage an account that was not marked for the timelock period', async () => {
+
+    });
+
+    it('Can deleverage partially, and then fully, after waiting one timelock period', async () => {
+
+    });
+
+    it('Cannot deleverage fully, and then deleverage again, after waiting only once', async () => {
+      // Check logs.
+    });
+  });
+
+  describe('mark()', () => {
+    it('Can mark an account which is underwater', async () => {
+      // Check logs.
+    });
+
+    it('Cannot mark an account which is not underwater', async () => {
+
+    });
+  });
+
+  describe('unmark()', () => {
+    beforeEach(async () => {
+
+    });
+
+    it('Can unmark an account which is not underwater', async () => {
+      // Check logs.
+    });
+
+    it('Cannot unmark an account which is underwater', async () => {
+
     });
   });
 
