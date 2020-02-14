@@ -146,7 +146,7 @@ contract P1Deleveraging is
             marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
         }
 
-        if (amount == makerBalance.position) {
+        if (_isMarked(maker) && amount == makerBalance.position) {
             _unmark(maker);
         }
 
@@ -194,6 +194,16 @@ contract P1Deleveraging is
             "Cannot unmark since account is underwater"
         );
         _unmark(account);
+    }
+
+    function _isMarked(
+        address account
+    )
+        private
+        view
+        returns (bool)
+    {
+        return _MARKED_TIMESTAMP_[account] == 0;
     }
 
     function _unmark(
