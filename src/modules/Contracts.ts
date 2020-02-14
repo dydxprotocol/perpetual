@@ -80,7 +80,7 @@ export class Contracts {
       gasPrice: 1000000000,
       value: 0,
       from: null,
-      confirmations: 1,
+      confirmations: 0,
       confirmationType: ConfirmationType.Confirmed,
       gasMultiplier: 1.5,
     };
