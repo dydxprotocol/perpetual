@@ -120,10 +120,6 @@ contract P1Orders
 
     // ============ Events ============
 
-    event LogContractStatusSet(
-        bool operational
-    );
-
     event LogOrderCanceled(
         bytes32 indexed orderHash,
         address indexed canceler

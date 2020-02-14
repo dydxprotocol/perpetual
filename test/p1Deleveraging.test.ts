@@ -6,7 +6,7 @@ import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import { address } from '../src';
-import { TRADER_FLAG_DELEVERAGING, INTEGERS } from '../src/lib/Constants';
+import { INTEGERS, TRADER_FLAG_DELEVERAGING } from '../src/lib/Constants';
 import {
   Order,
   SignedOrder,
@@ -96,9 +96,11 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     });
 
     it('Succeeds even if amount is greater than the maker position', async() => {
+      // Cover some of the short position.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
       await buy(ctx, short, thirdParty, new BigNumber(1), new BigNumber(150));
-      // Balances:
+
+      // New balances:
       // | account | margin | position |
       // |---------+--------+----------|
       // | long    |   -500 |       10 |
@@ -119,9 +121,11 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     // TODO: Enable after we've updated the collateralization check to allow partial deleveraging.
     xit('Succeeds even if amount is greater than the taker position', async() => {
+      // Sell off some of the long position.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
       await sell(ctx, long, thirdParty, new BigNumber(1), new BigNumber(150));
-      // Balances:
+
+      // New balances:
       // | account | margin | position |
       // |---------+--------+----------|
       // | long    |   -350 |        9 |
@@ -157,6 +161,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     });
 
     it('With all-or-nothing, fails if amount is greater than the maker position', async () => {
+      // Attempt to liquidate the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
       await expectThrow(
         ctx.perpetual.trade.initiate().deleverage(short, long, positionSize.plus(1), true).commit(),
@@ -165,9 +170,11 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     });
 
     it('With all-or-nothing, fails if amount is greater than the taker position', async () => {
+      // Sell off some of the long position.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
       await sell(ctx, long, thirdParty, new BigNumber(1), new BigNumber(100));
 
+      // Attempt to liquidate the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
       await expectThrow(
         ctx.perpetual.trade.initiate().deleverage(short, long, positionSize, true).commit(),
@@ -176,6 +183,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     });
 
     it('Cannot deleverage a long against a long', async () => {
+      // Turn the short into a long.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
       await buy(ctx, short, thirdParty, new BigNumber(20), new BigNumber(500));
 
@@ -187,6 +195,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     });
 
     it('Cannot deleverage a short against a short', async () => {
+      // Turn the long into a short.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
       await sell(ctx, long, thirdParty, new BigNumber(20), new BigNumber(2500));
 

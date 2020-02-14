@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { P1Constants } from "../P1Constants.sol";
+import { BaseMath } from "../../lib/BaseMath.sol";
 import { Math } from "../../lib/Math.sol";
 import { P1Getters } from "../impl/P1Getters.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
@@ -28,12 +29,12 @@ import { P1Types } from "../lib/P1Types.sol";
 
 
 /**
- * @title P1Deleveraging
+ * @title P1Liquidation
  * @author dYdX
  *
- * P1Deleveraging contract
+ * P1Liquidation contract
  */
-contract P1Deleveraging is
+contract P1Liquidation is
     P1Constants
 {
     using SafeMath for uint256;
@@ -45,13 +46,13 @@ contract P1Deleveraging is
     struct TradeData {
         uint256 amount;
 
-        // If true, the trade will revert if the maker or taker position is less than the amount.
+        // If true, the trade will revert if the maker position is less than the amount.
         bool allOrNothing;
     }
 
     // ============ Events ============
 
-    event LogDeleveraged(
+    event LogLiquidated(
         address indexed maker,
         address indexed taker,
         uint256 amount,
@@ -74,39 +75,30 @@ contract P1Deleveraging is
     }
 
     function trade(
-        address /* sender */,
+        address sender,
         address maker,
         address taker,
         uint256 price,
         bytes calldata data,
-        bytes32 traderFlags
+        bytes32 /* traderFlags */
     )
         external
         returns(P1Types.TradeResult memory)
     {
         require(
-            traderFlags & TRADER_FLAG_ORDERS == 0,
-            "cannot deleverage after execution of an order, in the same tx"
+            sender == taker,
+            "Cannot liquidate since the sender is not the taker (i.e. liquidator)"
         );
 
         TradeData memory tradeData = abi.decode(data, (TradeData));
         P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
-        P1Types.Balance memory takerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(taker);
 
-        _verifyTrade(
-            tradeData,
-            makerBalance,
-            takerBalance,
-            price
-        );
+        _verifyTrade(tradeData, makerBalance, price);
 
-        uint256 amount = Math.min(
-            tradeData.amount,
-            Math.min(makerBalance.position, takerBalance.position)
-        );
+        uint256 amount = Math.min(tradeData.amount, makerBalance.position);
         bool isBuy = makerBalance.positionIsPositive;
 
-        // When partially deleveraging the maker, maintain the same position/margin ratio.
+        // When partially liquidating the maker, maintain the same position/margin ratio.
         // Ensure the collateralization of the maker does not decrease.
         uint256 marginAmount;
         if (isBuy) {
@@ -115,7 +107,7 @@ contract P1Deleveraging is
             marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
         }
 
-        emit LogDeleveraged(
+        emit LogLiquidated(
             maker,
             taker,
             amount,
@@ -126,46 +118,38 @@ contract P1Deleveraging is
             marginAmount: marginAmount,
             positionAmount: amount,
             isBuy: isBuy,
-            traderFlags: TRADER_FLAG_DELEVERAGING
+            traderFlags: TRADER_FLAG_LIQUIDATION
         });
     }
 
     function _verifyTrade(
         TradeData memory tradeData,
         P1Types.Balance memory makerBalance,
-        P1Types.Balance memory takerBalance,
         uint256 price
     )
         private
-        pure
+        view
     {
         require(
-            _isUnderwater(makerBalance, price),
-            "Cannot deleverage since maker is not underwater"
+            _isUndercollateralized(makerBalance, price),
+            "Cannot liquidate since maker is not undercollateralized"
         );
         require(
             !tradeData.allOrNothing || makerBalance.position >= tradeData.amount,
             "allOrNothing is set and maker position is less than amount"
         );
-        require(
-            takerBalance.positionIsPositive != makerBalance.positionIsPositive,
-            "Taker position has wrong sign to deleverage this maker"
-        );
-        require(
-            !tradeData.allOrNothing || takerBalance.position >= tradeData.amount,
-            "allOrNothing is set and taker position is less than amount"
-        );
     }
 
-    function _isUnderwater(
+    function _isUndercollateralized(
         P1Types.Balance memory balance,
         uint256 price
     )
         private
-        pure
+        view
         returns (bool)
     {
         (uint256 positive, uint256 negative) = balance.getPositiveAndNegativeValue(price);
-        return positive < negative;
+        uint256 minCollateral = P1Getters(_PERPETUAL_V1_).getMinCollateral();
+        return positive.mul(BaseMath.base()) < negative.mul(minCollateral);
     }
 }

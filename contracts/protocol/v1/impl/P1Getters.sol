@@ -124,4 +124,12 @@ contract P1Getters is
     {
         return _TOTAL_MARGIN_;
     }
+
+    function getMinCollateral()
+        external
+        view
+        returns (uint256)
+    {
+        return _MIN_COLLATERAL_;
+    }
 }

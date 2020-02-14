@@ -32,6 +32,7 @@ const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 const p1OrdersJson = require(`${jsonFolder}P1Orders.json`);
 const p1DeleveragingJson = require(`${jsonFolder}P1Deleveraging.json`);
+const p1LiquidationJson = require(`${jsonFolder}P1Liquidation.json`);
 const testP1FunderJson = require(`${jsonFolder}Test_P1Funder.json`);
 const testP1OracleJson = require(`${jsonFolder}Test_P1Oracle.json`);
 const testP1TraderJson = require(`${jsonFolder}Test_P1Trader.json`);
@@ -62,6 +63,7 @@ export class Contracts {
   public perpetualV1: Contract;
   public p1Orders: Contract;
   public p1Deleveraging: Contract;
+  public p1Liquidation: Contract;
 
   // Testing contract instances
   public testP1Funder: Contract;
@@ -90,6 +92,7 @@ export class Contracts {
     this.perpetualV1 = new web3.eth.Contract(perpetualV1Json.abi);
     this.p1Orders = new web3.eth.Contract(p1OrdersJson.abi);
     this.p1Deleveraging = new web3.eth.Contract(p1DeleveragingJson.abi);
+    this.p1Liquidation = new web3.eth.Contract(p1LiquidationJson.abi);
 
     // Testing contracts
     this.testP1Funder = new web3.eth.Contract(testP1FunderJson.abi);
@@ -103,6 +106,7 @@ export class Contracts {
       { contract: this.perpetualV1, json: perpetualProxyJson },
       { contract: this.p1Orders, json: p1OrdersJson },
       { contract: this.p1Deleveraging, json: p1DeleveragingJson },
+      { contract: this.p1Liquidation, json: p1LiquidationJson },
 
       // Testing contracts
       { contract: this.testP1Funder, json: testP1FunderJson },
