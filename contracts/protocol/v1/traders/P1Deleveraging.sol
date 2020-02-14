@@ -51,10 +51,6 @@ contract P1Deleveraging is
 
     // ============ Events ============
 
-    event LogContractStatusSet(
-        bool operational
-    );
-
     event LogDeleveraged(
         address indexed maker,
         address indexed taker,

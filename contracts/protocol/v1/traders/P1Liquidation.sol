@@ -52,10 +52,6 @@ contract P1Liquidation is
 
     // ============ Events ============
 
-    event LogContractStatusSet(
-        bool operational
-    );
-
     event LogLiquidated(
         address indexed maker,
         address indexed taker,
