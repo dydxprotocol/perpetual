@@ -2,6 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { Contracts } from './Contracts';
 import { makeDeleverageTradeData } from './Deleveraging';
+import { makeLiquidateTradeData } from './Liquidation';
 import { Orders } from './Orders';
 import {
   SendOptions,
@@ -58,6 +59,21 @@ export class TradeOperation {
       taker: order.taker,
       data: tradeData,
       trader: this.contracts.p1Orders.options.address,
+    });
+    return this;
+  }
+
+  public liquidate(
+    maker: address,
+    taker: address,
+    amount: BigNumber,
+    allOrNothing: boolean = false,
+  ): this {
+    this.addTradeArg({
+      maker,
+      taker,
+      data: makeLiquidateTradeData(amount, allOrNothing),
+      trader: this.contracts.p1Liquidation.options.address,
     });
     return this;
   }

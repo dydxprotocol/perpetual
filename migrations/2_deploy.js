@@ -28,6 +28,7 @@ const PerpetualProxy = artifacts.require('PerpetualProxy');
 const PerpetualV1 = artifacts.require('PerpetualV1');
 const P1Orders = artifacts.require('P1Orders');
 const P1Deleveraging = artifacts.require('P1Deleveraging');
+const P1Liquidation = artifacts.require('P1Liquidation');
 
 // Test Contracts
 const TestP1Funder = artifacts.require('Test_P1Funder');
@@ -83,6 +84,10 @@ async function deployTraders(deployer, network) {
       P1Deleveraging,
       PerpetualProxy.address,
     ),
+    deployer.deploy(
+      P1Liquidation,
+      PerpetualProxy.address,
+    ),
   ]);
 
   // set global operators
@@ -90,6 +95,7 @@ async function deployTraders(deployer, network) {
   await Promise.all([
     perpetual.setGlobalOperator(P1Orders.address, true),
     perpetual.setGlobalOperator(P1Deleveraging.address, true),
+    perpetual.setGlobalOperator(P1Liquidation.address, true),
     perpetual.setGlobalOperator(TestP1Trader.address, true),
   ]);
 }

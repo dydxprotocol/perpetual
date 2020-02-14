@@ -19,7 +19,9 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { P1Types } from "./P1Types.sol";
+import { BaseMath } from "../../lib/BaseMath.sol";
 import { SafeCast } from "../../lib/SafeCast.sol";
 import { SignedMath } from "../../lib/SignedMath.sol";
 
@@ -31,7 +33,9 @@ import { SignedMath } from "../../lib/SignedMath.sol";
  * BalanceMath library
  */
 library P1BalanceMath {
+    using BaseMath for uint256;
     using SafeCast for uint256;
+    using SafeMath for uint256;
     using SignedMath for SignedMath.Int;
 
     // ============ Functions ============
@@ -86,6 +90,35 @@ library P1BalanceMath {
         SignedMath.Int memory signedPosition = positionToSignedInt(balance);
         signedPosition = signedPosition.sub(amount);
         return signedIntToPosition(balance, signedPosition);
+    }
+
+    function getPositiveAndNegativeValue(
+        P1Types.Balance memory balance,
+        uint256 price
+    )
+        internal
+        pure
+        returns (uint256, uint256)
+    {
+        uint256 positiveValue = 0;
+        uint256 negativeValue = 0;
+
+        // add value of margin
+        if (balance.marginIsPositive) {
+            positiveValue = balance.margin;
+        } else {
+            negativeValue = balance.margin;
+        }
+
+        // add value of position
+        uint256 positionValue = uint256(balance.position).baseMul(price);
+        if (balance.positionIsPositive) {
+            positiveValue = positiveValue.add(positionValue);
+        } else {
+            negativeValue = negativeValue.add(positionValue);
+        }
+
+        return (positiveValue, negativeValue);
     }
 
     // ============ Helper Functions ============

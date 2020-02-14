@@ -21,10 +21,10 @@ import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from './Contracts';
 import { bnToBytes32, boolToBytes32, stripHexPrefix } from '../lib/BytesHelper';
-import { ADDRESSES, INTEGERS } from '../lib/Constants';
+import { INTEGERS } from '../lib/Constants';
 import { address, CallOptions, TradeResult } from '../lib/types';
 
-export function makeDeleverageTradeData(
+export function makeLiquidateTradeData(
   amount: BigNumber,
   allOrNothing: boolean,
 ): string {
@@ -33,22 +33,23 @@ export function makeDeleverageTradeData(
   return `0x${stripHexPrefix(amountData)}${stripHexPrefix(allOrNothingData)}`;
 }
 
-export class Deleveraging {
+export class Liquidation {
   private contracts: Contracts;
-  private deleveraging: Contract;
+  private liquidation: Contract;
 
   constructor(
     contracts: Contracts,
   ) {
     this.contracts = contracts;
-    this.deleveraging = this.contracts.p1Deleveraging;
+    this.liquidation = this.contracts.p1Liquidation;
   }
 
   public get address(): string {
-    return this.deleveraging.options.address;
+    return this.liquidation.options.address;
   }
 
   public async trade(
+    sender: address,
     maker: address,
     taker: address,
     price: BigNumber,
@@ -58,12 +59,12 @@ export class Deleveraging {
     options?: CallOptions,
   ): Promise<TradeResult> {
     return this.contracts.call(
-      this.deleveraging.methods.trade(
-        ADDRESSES.ZERO, // sender (unused)
+      this.liquidation.methods.trade(
+        sender,
         maker,
         taker,
         price.toFixed(0),
-        makeDeleverageTradeData(amount, allOrNothing),
+        makeLiquidateTradeData(amount, allOrNothing),
         bnToBytes32(traderFlags),
       ),
       options,

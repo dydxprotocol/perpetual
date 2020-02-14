@@ -179,25 +179,7 @@ contract P1Settlement is
         returns (bool)
     {
         P1Types.Balance memory balance = _BALANCES_[account];
-
-        uint256 positiveValue = 0;
-        uint256 negativeValue = 0;
-
-        // add value of margin
-        if (balance.marginIsPositive) {
-            positiveValue = balance.margin;
-        } else {
-            negativeValue = balance.margin;
-        }
-
-        // add value of position
-        uint256 positionValue = uint256(balance.position).baseMul(context.price);
-        if (balance.positionIsPositive) {
-            positiveValue = positiveValue.add(positionValue);
-        } else {
-            negativeValue = negativeValue.add(positionValue);
-        }
-
-        return positiveValue.mul(BaseMath.base()) >= negativeValue.mul(context.minCollateral);
+        (uint256 positive, uint256 negative) = balance.getPositiveAndNegativeValue(context.price);
+        return positive.mul(BaseMath.base()) >= negative.mul(context.minCollateral);
     }
 }
