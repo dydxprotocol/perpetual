@@ -34,9 +34,11 @@ async function init(ctx: ITestContext): Promise<void> {
 
 perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
   beforeEach(async () => {
-    await ctx.perpetual.testing.oracle.setPrice(initialPrice);
-    await mintAndDeposit(ctx, long, new BigNumber(500));
-    await mintAndDeposit(ctx, short, new BigNumber(500));
+    await Promise.all([
+      ctx.perpetual.testing.oracle.setPrice(initialPrice),
+      mintAndDeposit(ctx, long, new BigNumber(500)),
+      mintAndDeposit(ctx, short, new BigNumber(500)),
+    ]);
     await buy(ctx, long, short, positionSize, new BigNumber(1000));
     // Starting balances:
     // | account | margin | position | collateralization |
