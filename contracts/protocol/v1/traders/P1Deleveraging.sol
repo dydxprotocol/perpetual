@@ -58,7 +58,7 @@ contract P1Deleveraging is
         bool isBuy
     );
 
-    // ============ Mutable Storage ============
+    // ============ Immutable Storage ============
 
     // address of the perpetual contract
     address public _PERPETUAL_V1_;
@@ -84,6 +84,10 @@ contract P1Deleveraging is
         external
         returns(P1Types.TradeResult memory)
     {
+        require(
+            msg.sender == _PERPETUAL_V1_,
+            "Sender must be PerpetualV1"
+        );
         require(
             traderFlags & TRADER_FLAG_ORDERS == 0,
             "cannot deleverage after execution of an order, in the same tx"

@@ -59,7 +59,7 @@ contract P1Liquidation is
         bool isBuy
     );
 
-    // ============ Mutable Storage ============
+    // ============ Immutable Storage ============
 
     // address of the perpetual contract
     address public _PERPETUAL_V1_;
@@ -85,6 +85,10 @@ contract P1Liquidation is
         external
         returns(P1Types.TradeResult memory)
     {
+        require(
+            msg.sender == _PERPETUAL_V1_,
+            "Sender must be PerpetualV1"
+        );
         require(
             sender == taker,
             "Cannot liquidate since the sender is not the taker (i.e. liquidator)"
