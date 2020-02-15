@@ -1,18 +1,23 @@
 import BigNumber from 'bignumber.js';
+import _ from 'lodash';
 
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
-import { expectThrow } from './helpers/Expect';
+import { fastForward } from './helpers/EVM';
+import { expectThrow, expect } from './helpers/Expect';
 import { address } from '../src';
 import { INTEGERS } from '../src/lib/Constants';
 import {
   Order,
+  SendOptions,
   SignedOrder,
   SigningMethod,
   TxResult,
 } from '../src/lib/types';
+
+const DELEVERAGING_TIMELOCK_S = 1800;
 
 const initialPrice = new BigNumber(100).shiftedBy(18);
 const longBorderlinePrice = new BigNumber(50).shiftedBy(18);
@@ -240,48 +245,115 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
   });
 
   describe('trade(), via PerpetualV1, as a non-admin', () => {
-    it('Can mark an account and then deleverage it', async () => {
+    beforeEach(async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+    });
 
+    it('Can mark an account and deleverage it after waiting the timelock period', async () => {
+      await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
+      await fastForward(DELEVERAGING_TIMELOCK_S);
+      await deleverage(long, short, positionSize, false, { from: thirdParty });
+
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(0), new BigNumber(1000)],
+        [new BigNumber(0), new BigNumber(0)],
+      );
     });
 
     it('Cannot deleverage an unmarked account', async () => {
-
+      await expectThrow(
+        deleverage(long, short, positionSize, false, { from: thirdParty }),
+        'Cannot deleverage since account is not marked',
+      );
     });
 
     it('Cannot deleverage an account that was not marked for the timelock period', async () => {
-
+      await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
+      await fastForward(DELEVERAGING_TIMELOCK_S - 1);
+      await expectThrow(
+        deleverage(long, short, positionSize, false, { from: thirdParty }),
+        'Cannot deleverage since account has not been marked for the timelock period',
+      );
     });
 
-    it('Can deleverage partially, and then fully, after waiting one timelock period', async () => {
-
+    // TODO: Enable after we've updated the collateralization check to allow partial deleveraging.
+    xit('Can deleverage partially, and then fully, after waiting one timelock period', async () => {
+      await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
+      await fastForward(DELEVERAGING_TIMELOCK_S);
+      await deleverage(long, short, positionSize.div(2), false, { from: thirdParty });
+      await deleverage(long, short, positionSize.div(2), false, { from: thirdParty });
     });
 
     it('Cannot deleverage fully, and then deleverage again, after waiting only once', async () => {
+      await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
+      await fastForward(DELEVERAGING_TIMELOCK_S);
+      const txResult = await deleverage(long, short, positionSize, false, { from: thirdParty });
+
       // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      const filteredLogs = _.filter(logs, { name: 'LogUnmarked' });
+      expect(filteredLogs.length).to.equal(1);
+      expect(filteredLogs[0].args.account).to.equal(long);
+
+      // Set up a new underwater position.
+      await ctx.perpetual.testing.oracle.setPrice(initialPrice);
+      await mintAndDeposit(ctx, long, new BigNumber(500));
+      await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
+      await buy(ctx, long, thirdParty, positionSize, new BigNumber(1000));
+      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+
+      // Try to deleverage the same account again.
+      await expectThrow(
+        deleverage(long, short, positionSize, false, { from: thirdParty }),
+        'Cannot deleverage since account is not marked',
+      );
     });
   });
 
   describe('mark()', () => {
     it('Can mark an account which is underwater', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+      const txResult = await ctx.perpetual.deleveraging.mark(long);
+
       // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      expect(logs.length).to.equal(1);
+      expect(logs[0].name).to.equal('LogMarked');
+      expect(logs[0].args.account).to.equal(long);
     });
 
     it('Cannot mark an account which is not underwater', async () => {
-
+      await expectThrow(
+        ctx.perpetual.deleveraging.mark(long),
+        'Cannot mark since account is not underwater',
+      );
     });
   });
 
   describe('unmark()', () => {
     beforeEach(async () => {
-
+      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+      await ctx.perpetual.deleveraging.mark(long);
     });
 
     it('Can unmark an account which is not underwater', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longBorderlinePrice);
+      const txResult = await ctx.perpetual.deleveraging.unmark(long);
+
       // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      expect(logs.length).to.equal(1);
+      expect(logs[0].name).to.equal('LogUnmarked');
+      expect(logs[0].args.account).to.equal(long);
     });
 
     it('Cannot unmark an account which is underwater', async () => {
-
+      await expectThrow(
+        ctx.perpetual.deleveraging.unmark(long),
+        'Cannot unmark since account is underwater',
+      );
     });
   });
 
@@ -290,10 +362,11 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     taker: address,
     amount: BigNumber,
     allOrNothing: boolean = false,
+    options: SendOptions = { from: admin },
   ): Promise<TxResult> {
     return ctx.perpetual.trade
       .initiate()
       .deleverage(maker, taker, amount, allOrNothing)
-      .commit({ from: admin });
+      .commit(options);
   }
 });

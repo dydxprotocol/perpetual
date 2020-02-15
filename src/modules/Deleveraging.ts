@@ -22,7 +22,7 @@ import { Contract } from 'web3-eth-contract';
 import { Contracts } from './Contracts';
 import { bnToBytes32, boolToBytes32, stripHexPrefix } from '../lib/BytesHelper';
 import { ADDRESSES, INTEGERS } from '../lib/Constants';
-import { address, CallOptions, TradeResult } from '../lib/types';
+import { address, CallOptions, SendOptions, TradeResult, TxResult } from '../lib/types';
 
 export function makeDeleverageTradeData(
   amount: BigNumber,
@@ -65,6 +65,30 @@ export class Deleveraging {
         price.toFixed(0),
         makeDeleverageTradeData(amount, allOrNothing),
         bnToBytes32(traderFlags),
+      ),
+      options,
+    );
+  }
+
+  public async mark(
+    account: address,
+    options?: SendOptions,
+  ): Promise<TxResult> {
+    return this.contracts.send(
+      this.deleveraging.methods.mark(
+        account,
+      ),
+      options,
+    );
+  }
+
+  public async unmark(
+    account: address,
+    options?: SendOptions,
+  ): Promise<TxResult> {
+    return this.contracts.send(
+      this.deleveraging.methods.unmark(
+        account,
       ),
       options,
     );
