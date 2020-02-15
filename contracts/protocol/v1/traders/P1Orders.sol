@@ -142,13 +142,13 @@ contract P1Orders
 
     // ============ Immutable Storage ============
 
+    // address of the perpetual contract
+    address public _PERPETUAL_V1_;
+
     // Hash of the EIP712 Domain Separator data
     bytes32 public EIP712_DOMAIN_HASH;
 
     // ============ Mutable Storage ============
-
-    // address of the perpetual contract
-    address public _PERPETUAL_V1_;
 
     // order hash => filled amount (in position amount)
     mapping (bytes32 => uint256) public _FILLED_AMOUNT_;
