@@ -75,7 +75,7 @@ contract P1Deleveraging is
     address public _PERPETUAL_V1_;
 
     // Waiting period for non-admin to deleverage an account after marking it.
-    uint256 constant public _DELEVERAGING_TIMELOCK_S = 1800; // 30 minutes
+    uint256 constant public _DELEVERAGING_TIMELOCK_S_ = 1800; // 30 minutes
 
     // ============ Mutable Storage ============
 
@@ -230,7 +230,7 @@ contract P1Deleveraging is
             );
             uint256 timeDelta = block.timestamp.sub(_MARKED_TIMESTAMP_[maker]);
             require(
-                timeDelta >= _DELEVERAGING_TIMELOCK_S,
+                timeDelta >= _DELEVERAGING_TIMELOCK_S_,
                 "Cannot deleverage since account has not been marked for the timelock period"
             );
         }
