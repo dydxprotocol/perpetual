@@ -203,7 +203,7 @@ contract P1Deleveraging is
         view
         returns (bool)
     {
-        return _MARKED_TIMESTAMP_[account] == 0;
+        return _MARKED_TIMESTAMP_[account] != 0;
     }
 
     function _unmark(
