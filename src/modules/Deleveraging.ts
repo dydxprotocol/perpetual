@@ -93,4 +93,14 @@ export class Deleveraging {
       options,
     );
   }
+
+  public async getDeleveragingTimelockSeconds(
+    options?: CallOptions,
+  ): Promise<number> {
+    const timelockSeconds: string = await this.contracts.call(
+      this.deleveraging.methods._DELEVERAGING_TIMELOCK_S_(),
+      options,
+    );
+    return Number.parseInt(timelockSeconds, 10);
+  }
 }

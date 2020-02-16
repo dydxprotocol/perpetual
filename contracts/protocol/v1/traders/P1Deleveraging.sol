@@ -61,11 +61,11 @@ contract P1Deleveraging is
         bool isBuy
     );
 
-    event LogMarked(
+    event LogMarkedForDeleveraging(
         address indexed account
     );
 
-    event LogUnmarked(
+    event LogUnmarkedForDeleveraging(
         address indexed account
     );
 
@@ -181,7 +181,7 @@ contract P1Deleveraging is
             "Cannot mark since account is not underwater"
         );
         _MARKED_TIMESTAMP_[account] = block.timestamp;
-        emit LogMarked(account);
+        emit LogMarkedForDeleveraging(account);
     }
 
     function unmark(
@@ -212,7 +212,7 @@ contract P1Deleveraging is
         private
     {
         _MARKED_TIMESTAMP_[account] = 0;
-        emit LogUnmarked(account);
+        emit LogUnmarkedForDeleveraging(account);
     }
 
     function _verifyPermissions(

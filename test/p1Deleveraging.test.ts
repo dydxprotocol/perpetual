@@ -17,8 +17,6 @@ import {
   TxResult,
 } from '../src/lib/types';
 
-const DELEVERAGING_TIMELOCK_S = 1800;
-
 const initialPrice = new BigNumber(100).shiftedBy(18);
 const longBorderlinePrice = new BigNumber(50).shiftedBy(18);
 const longUnderwaterPrice = new BigNumber(49.9).shiftedBy(18);
@@ -30,12 +28,14 @@ let admin: address;
 let long: address;
 let short: address;
 let thirdParty: address;
+let deleveragingTimelockSeconds: number;
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
   admin = ctx.accounts[0];
   long = ctx.accounts[1];
   short = ctx.accounts[2];
   thirdParty = ctx.accounts[3];
+  deleveragingTimelockSeconds = await ctx.perpetual.deleveraging.getDeleveragingTimelockSeconds();
 }
 
 perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
@@ -251,7 +251,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Can mark an account and deleverage it after waiting the timelock period', async () => {
       await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
-      await fastForward(DELEVERAGING_TIMELOCK_S);
+      await fastForward(deleveragingTimelockSeconds);
       await deleverage(long, short, positionSize, false, { from: thirdParty });
 
       await expectBalances(
@@ -271,7 +271,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Cannot deleverage an account that was not marked for the timelock period', async () => {
       await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
-      await fastForward(DELEVERAGING_TIMELOCK_S - 1);
+      await fastForward(deleveragingTimelockSeconds - 1);
       await expectThrow(
         deleverage(long, short, positionSize, false, { from: thirdParty }),
         'Cannot deleverage since account has not been marked for the timelock period',
@@ -281,19 +281,19 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     // TODO: Enable after we've updated the collateralization check to allow partial deleveraging.
     xit('Can deleverage partially, and then fully, after waiting one timelock period', async () => {
       await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
-      await fastForward(DELEVERAGING_TIMELOCK_S);
+      await fastForward(deleveragingTimelockSeconds);
       await deleverage(long, short, positionSize.div(2), false, { from: thirdParty });
       await deleverage(long, short, positionSize.div(2), false, { from: thirdParty });
     });
 
     it('Cannot deleverage fully, and then deleverage again, after waiting only once', async () => {
       await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
-      await fastForward(DELEVERAGING_TIMELOCK_S);
+      await fastForward(deleveragingTimelockSeconds);
       const txResult = await deleverage(long, short, positionSize, false, { from: thirdParty });
 
       // Check logs.
       const logs = ctx.perpetual.logs.parseLogs(txResult);
-      const filteredLogs = _.filter(logs, { name: 'LogUnmarked' });
+      const filteredLogs = _.filter(logs, { name: 'LogUnmarkedForDeleveraging' });
       expect(filteredLogs.length).to.equal(1);
       expect(filteredLogs[0].args.account).to.equal(long);
 
@@ -320,7 +320,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       // Check logs.
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       expect(logs.length).to.equal(1);
-      expect(logs[0].name).to.equal('LogMarked');
+      expect(logs[0].name).to.equal('LogMarkedForDeleveraging');
       expect(logs[0].args.account).to.equal(long);
     });
 
@@ -345,7 +345,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       // Check logs.
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       expect(logs.length).to.equal(1);
-      expect(logs[0].name).to.equal('LogUnmarked');
+      expect(logs[0].name).to.equal('LogUnmarkedForDeleveraging');
       expect(logs[0].args.account).to.equal(long);
     });
 
