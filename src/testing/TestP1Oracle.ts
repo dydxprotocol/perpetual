@@ -21,7 +21,7 @@ export class TestP1Oracle {
   ): Promise<TxResult> {
     return this.contracts.send(
       this.contracts.testP1Oracle.methods.setPrice(
-        newPrice.toFixed(0),
+        newPrice.shiftedBy(18).toFixed(0),
       ),
       options,
     );

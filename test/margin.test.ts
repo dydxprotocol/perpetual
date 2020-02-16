@@ -169,7 +169,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
 
     it('Fails if it would leave the account undercollateralized', async () => {
       // Set up test contract behavior.
-      await ctx.perpetual.testing.oracle.setPrice(new BigNumber(100).shiftedBy(18));
+      await ctx.perpetual.testing.oracle.setPrice(new BigNumber(100));
 
       // Set initial balances and allowances.
       // Bring the total deposited to 1000.

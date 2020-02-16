@@ -23,6 +23,8 @@ const ONE_HOUR_IN_SECONDS = ONE_MINUTE_IN_SECONDS.times(60);
 const ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS.times(24);
 const ONE_YEAR_IN_SECONDS = ONE_DAY_IN_SECONDS.times(365);
 
+export const ONE_BIP = new BigNumber('1e-4');
+
 export const INTEGERS = {
   ONE_MINUTE_IN_SECONDS,
   ONE_HOUR_IN_SECONDS,

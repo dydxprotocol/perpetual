@@ -146,7 +146,7 @@ export interface Order {
   isDecreaseOnly: boolean;
   amount: BigNumber;
   limitPrice: BigNumber;
-  stopPrice: BigNumber;
+  triggerPrice: BigNumber;
   limitFee: BigNumber;
   maker: address;
   taker: address;

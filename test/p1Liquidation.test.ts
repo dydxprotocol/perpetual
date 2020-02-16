@@ -13,13 +13,13 @@ import {
   SigningMethod,
 } from '../src/lib/types';
 
-const initialPrice = new BigNumber(100).shiftedBy(18);
-const longBorderlinePrice = new BigNumber(55).shiftedBy(18);
-const longUndercollateralizedPrice = new BigNumber(54.9).shiftedBy(18);
-const longUnderwaterPrice = new BigNumber(49.9).shiftedBy(18);
-const shortBorderlinePrice = new BigNumber(136.37).shiftedBy(18);
-const shortUndercollateralizedPrice = new BigNumber(136.5).shiftedBy(18);
-const shortUnderwaterPrice = new BigNumber(150.1).shiftedBy(18);
+const initialPrice = new BigNumber(100);
+const longBorderlinePrice = new BigNumber(55);
+const longUndercollateralizedPrice = new BigNumber(54.9);
+const longUnderwaterPrice = new BigNumber(49.9);
+const shortBorderlinePrice = new BigNumber(136.37);
+const shortUndercollateralizedPrice = new BigNumber(136.5);
+const shortUnderwaterPrice = new BigNumber(150.1);
 const positionSize = new BigNumber(10);
 
 let long: address;
@@ -253,7 +253,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
         isDecreaseOnly: false,
         amount: new BigNumber(1),
         limitPrice: initialPrice,
-        stopPrice: INTEGERS.ZERO,
+        triggerPrice: INTEGERS.ZERO,
         limitFee: INTEGERS.ZERO,
         maker: long,
         taker: short,

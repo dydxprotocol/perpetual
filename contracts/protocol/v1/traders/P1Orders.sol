@@ -68,7 +68,7 @@ contract P1Orders
         "bytes32 flags,",
         "uint256 amount,",
         "uint256 limitPrice,",
-        "uint256 stopPrice,",
+        "uint256 triggerPrice,",
         "uint256 limitFee,",
         "address maker,",
         "address taker,",
@@ -96,7 +96,7 @@ contract P1Orders
         bytes32 flags;
         uint256 amount;
         uint256 limitPrice;
-        uint256 stopPrice;
+        uint256 triggerPrice;
         uint256 limitFee;
         address maker;
         address taker;
@@ -349,12 +349,12 @@ contract P1Orders
             "Fill invalid fee"
         );
 
-        if (tradeData.order.stopPrice != 0) {
-            bool validStopPrice = isBuyOrder
-                ? tradeData.order.stopPrice <= price
-                : tradeData.order.stopPrice >= price;
+        if (tradeData.order.triggerPrice != 0) {
+            bool validTriggerPrice = isBuyOrder
+                ? tradeData.order.triggerPrice <= price
+                : tradeData.order.triggerPrice >= price;
             require(
-                validStopPrice,
+                validTriggerPrice,
                 "Stop price untriggered"
             );
         }

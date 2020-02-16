@@ -7,15 +7,18 @@ import {
   SignedOrder,
   SigningMethod,
 } from '../src/lib/types';
-import { ADDRESSES } from '../src/lib/Constants';
+import {
+  ADDRESSES,
+  ONE_BIP,
+} from '../src/lib/Constants';
 
 const defaultOrder: Order = {
   isBuy: true,
   isDecreaseOnly: false,
   amount: new BigNumber('1e18'),
-  limitPrice: new BigNumber('987654320'),
-  stopPrice: new BigNumber(0),
-  limitFee: new BigNumber('330'),
+  limitPrice: new BigNumber('987.654320'),
+  triggerPrice: new BigNumber(0),
+  limitFee: ONE_BIP.times(20),
   maker: ADDRESSES.ZERO,
   taker: ADDRESSES.ZERO,
   expiration: new BigNumber('888'),
