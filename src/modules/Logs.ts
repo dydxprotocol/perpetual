@@ -32,6 +32,7 @@ export class Logs {
       this._contractsByAddress = {};
       for (const contract of [
         this.contracts.perpetualV1,
+        this.contracts.p1Deleveraging,
       ]) {
         if (!contract.options.address) {
           throw new Error('Contract has not been deployed');
