@@ -272,7 +272,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
         limitFee: FEES.ZERO,
         maker: long,
         taker: short,
-        expiration: new BigNumber(888),
+        expiration: INTEGERS.ZERO,
         salt: new BigNumber(444),
       };
       const typedSignature = await ctx.perpetual.orders.signOrder(defaultOrder, SigningMethod.Hash);

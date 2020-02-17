@@ -1,5 +1,5 @@
 import BigNumber from 'bignumber.js';
-import { expect, expectThrow } from './helpers/Expect';
+import { expect, expectBN, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import {
@@ -8,11 +8,18 @@ import {
   Price,
   SignedOrder,
   SigningMethod,
+  OrderStatus,
+  TxResult,
+  address,
 } from '../src/lib/types';
 import {
   ADDRESSES,
+  INTEGERS,
   PRICES,
 } from '../src/lib/Constants';
+import {
+  boolToBytes32,
+} from '../src/lib/BytesHelper';
 
 const defaultOrder: Order = {
   isBuy: true,
@@ -23,16 +30,28 @@ const defaultOrder: Order = {
   limitFee: Fee.fromBips(20),
   maker: ADDRESSES.ZERO,
   taker: ADDRESSES.ZERO,
-  expiration: new BigNumber('888'),
+  expiration: INTEGERS.ONE_YEAR_IN_SECONDS.times(100),
   salt: new BigNumber('425'),
 };
+let fullFlagOrder: Order;
 let defaultSignedOrder: SignedOrder;
+let rando: address;
+let admin: address;
 
 async function init(ctx: ITestContext) {
   await initializeWithTestContracts(ctx);
 
   defaultOrder.maker = ctx.accounts[5];
   defaultOrder.taker = ctx.accounts[1];
+  rando = ctx.accounts[8];
+  admin = ctx.accounts[0];
+
+  fullFlagOrder = {
+    ...defaultOrder,
+    isBuy: true,
+    isDecreaseOnly: true,
+    limitFee: defaultOrder.limitFee.abs().negated(),
+  };
 
   const typedSignature = await ctx.perpetual.orders.signOrder(defaultOrder, SigningMethod.Hash);
   defaultSignedOrder = {
@@ -68,66 +87,125 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       expect(validSignature).to.be.true;
     });
 
-    it('TODO', async () => {
-      // TODO
+    it('Recognizes invalid signatures', async () => {
+      const badSignatures = [
+        `0x${'00'.repeat(63)}00`,
+        `0x${'ab'.repeat(63)}01`,
+        `0x${'01'.repeat(70)}01`,
+      ];
+      badSignatures.map((sig) => {
+        const validSignature = ctx.perpetual.orders.orderHasValidSignature({
+          ...defaultOrder,
+          typedSignature: sig,
+        });
+        expect(validSignature).to.be.false;
+      });
     });
   });
 
   describe('Approve', () => {
     it('Succeeds', async () => {
-      // TODO
+      await ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await expectStatus(fullFlagOrder, OrderStatus.Approved);
+    });
+
+    it('Succeeds in double-approving order', async () => {
+      await ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await expectStatus(fullFlagOrder, OrderStatus.Approved);
     });
 
     it('Fails if caller is not the maker', async () => {
-      // TODO
+      await expectThrow(
+        ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.taker }),
+        'Order cannot be approved by non-maker',
+      );
     });
 
-    it('TODO', async () => {
-      // TODO
+    it('Fails to approve canceled order', async () => {
+      await ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await expectThrow(
+        ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker }),
+        'Canceled order cannot be approved',
+      );
     });
   });
 
   describe('Cancel', () => {
     it('Succeeds', async () => {
-      // TODO
+      await ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await expectStatus(fullFlagOrder, OrderStatus.Canceled);
+    });
+
+    it('Succeeds in double-canceling order', async () => {
+      await ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await expectStatus(fullFlagOrder, OrderStatus.Canceled);
     });
 
     it('Fails if caller is not the maker', async () => {
-      // TODO
+      await expectThrow(
+        ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.taker }),
+        'Order cannot be canceled by non-maker',
+      );
     });
 
-    it('TODO', async () => {
-      // TODO
+    it('Succeeds in canceling approved order', async () => {
+      await ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await expectStatus(fullFlagOrder, OrderStatus.Canceled);
     });
   });
 
   describe('Error Cases', () => {
     it('fails for calls not from the perpetual', async () => {
-      // TODO
+      await expectThrow(
+        ctx.perpetual.contracts.send(
+          ctx.perpetual.contracts.p1Orders.methods.trade(
+            admin,
+            admin,
+            admin,
+            '0',
+            '0x',
+            boolToBytes32(false),
+          ),
+          { from: admin },
+        ),
+        'msg.sender must be PerpetualV1',
+      );
     });
 
     it('fails for sender not equal to taker', async () => {
-      // TODO
+      await expectThrow(
+        fillOrder(defaultSignedOrder, { sender: rando }),
+        'Sender must equal taker',
+      );
     });
 
-    it('fails for expired orders', async () => {
-      // TODO
+    it('fails for expired order', async () => {
+      const order = await getModifiedOrder({ expiration: new BigNumber(1) });
+      await expectThrow(
+        fillOrder(order),
+        'Order is expired',
+      );
     });
 
     it('fails for bad signature', async () => {
-      // TODO
+      const order = {
+        ...defaultSignedOrder,
+        typedSignature: `0xff${defaultSignedOrder.typedSignature.substr(4)}`,
+      };
+      await expectThrow(
+        fillOrder(order),
+        'Order invalid signature',
+      );
     });
 
     it('fails for overfilling order', async () => {
-      // TODO
-    });
-
-    it('fails for bad price', async () => {
-      // TODO
-    });
-
-    it('fails for bad fees', async () => {
-      // TODO
+      await expectThrow(
+        fillOrder(defaultSignedOrder, { amount: defaultSignedOrder.amount.plus(1) }),
+        'Cannot overfill order',
+      );
     });
 
     it('fails for wrong taker', async () => {
@@ -135,28 +213,41 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     });
 
     it('fails for canceled order', async () => {
-      // TODO
+      await ctx.perpetual.orders.cancelOrder(defaultOrder, { from: defaultOrder.maker });
+      await expectThrow(
+        fillOrder(defaultSignedOrder),
+        'Order already canceled',
+      );
     });
 
+    // TODO
+  });
+
+  describe('Fill.price', () => {
+    // TODO
+  });
+
+  describe('Fill.fees', () => {
+    // TODO
+  });
+
+  describe('isDecreaseOnly', () => {
     it('fails if not decreasing position for decrease-only order', async () => {
       // TODO
     });
 
-    it('TODO', async () => {
-      // TODO
-    });
+    // TODO
+  });
+
+  describe('triggerPrice', () => {
+    // TODO
   });
 
   describe('Trade', () => {
     it('Succeeds for simple case', async () => {
       // TODO: change to success
       await expectThrow(
-        ctx.perpetual.trade.initiate().fillSignedOrder(
-          defaultSignedOrder,
-          defaultSignedOrder.amount.div(2),
-          defaultSignedOrder.limitPrice.div(2),
-          defaultSignedOrder.limitFee.div(2),
-        ).commit({ from: defaultSignedOrder.taker }),
+        fillOrder(defaultSignedOrder),
         'account is undercollateralized',
       );
     });
@@ -165,4 +256,46 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       // TODO
     });
   });
+
+  // ============ Helper Functions ============
+
+  async function getModifiedOrder(
+    args: any,
+  ): Promise<SignedOrder> {
+    const newOrder = {
+      ...defaultOrder,
+      ...args,
+    };
+    newOrder.typedSignature = await ctx.perpetual.orders.signOrder(newOrder, SigningMethod.Hash);
+    return newOrder;
+  }
+
+  async function fillOrder(
+    order: SignedOrder,
+    args: {
+      amount?: BigNumber,
+      price?: Price,
+      fee?: Fee,
+      sender?: address,
+    } = {},
+  ): Promise<TxResult> {
+    return ctx.perpetual.trade.initiate().fillSignedOrder(
+      order,
+      args.amount || order.amount,
+      args.price || order.limitPrice,
+      args.fee || order.limitFee,
+    ).commit({ from: args.sender || order.taker });
+  }
+
+  async function expectStatus(
+    order: Order,
+    status: OrderStatus,
+    filledAmount?: BigNumber,
+  ) {
+    const statuses = await ctx.perpetual.orders.getOrdersStatus([order]);
+    expect(statuses[0].status).to.equal(status);
+    if (filledAmount) {
+      expectBN(statuses[0].filledAmount).to.equal(filledAmount);
+    }
+  }
 });

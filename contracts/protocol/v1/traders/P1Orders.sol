@@ -248,10 +248,14 @@ contract P1Orders
     )
         external
     {
-        bytes32 orderHash = _getOrderHash(order);
         require(
             msg.sender == order.maker,
             "Order cannot be approved by non-maker"
+        );
+        bytes32 orderHash = _getOrderHash(order);
+        require(
+            _STATUS_[orderHash] != OrderStatus.Canceled,
+            "Canceled order cannot be approved"
         );
         _STATUS_[orderHash] = OrderStatus.Approved;
         emit LogOrderApproved(orderHash, msg.sender);
@@ -262,11 +266,11 @@ contract P1Orders
     )
         external
     {
-        bytes32 orderHash = _getOrderHash(order);
         require(
             msg.sender == order.maker,
             "Order cannot be canceled by non-maker"
         );
+        bytes32 orderHash = _getOrderHash(order);
         _STATUS_[orderHash] = OrderStatus.Canceled;
         emit LogOrderCanceled(orderHash, msg.sender);
     }
@@ -330,6 +334,10 @@ contract P1Orders
         require(
             tradeData.order.taker == address(0) || tradeData.order.taker == taker,
             "Order taker does not match taker"
+        );
+        require(
+            tradeData.order.expiration >= block.timestamp || tradeData.order.expiration == 0,
+            "Order is expired"
         );
 
         bool isBuyOrder = _isBuy(tradeData.order);

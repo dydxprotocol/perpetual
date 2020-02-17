@@ -42,7 +42,7 @@ export function ecRecoverTypedSignature(
   typedSignature: string,
 ): address {
   if (stripHexPrefix(typedSignature).length !== 66 * 2) {
-    throw new Error(`Unable to ecrecover signature: ${typedSignature}`);
+    return '0x'; // return invalid address instead of throwing error
   }
 
   const sigType = parseInt(typedSignature.slice(-2), 16);
@@ -65,7 +65,7 @@ export function ecRecoverTypedSignature(
       );
       break;
     default:
-      throw new Error(`Invalid signature type: ${sigType}`);
+      return '0x'; // return invalid address instead of throwing error
   }
 
   const signature = typedSignature.slice(0, -2);
