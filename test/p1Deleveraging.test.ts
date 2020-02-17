@@ -271,7 +271,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Cannot deleverage an account that was not marked for the timelock period', async () => {
       await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
-      await fastForward(deleveragingTimelockSeconds - 1);
+      await fastForward(deleveragingTimelockSeconds - 5);
       await expectThrow(
         deleverage(long, short, positionSize, false, { from: thirdParty }),
         'Cannot deleverage since account has not been marked for the timelock period',
