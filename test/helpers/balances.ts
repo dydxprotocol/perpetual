@@ -42,7 +42,7 @@ export async function expectMarginBalances(
   const totalMargin = await ctx.perpetual.getters.getTotalMargin();
 
   for (const i in expectedMargins) {
-    expectBN(actualMargins[i], `accounts[${i}] balance`).eq(expectedMargins[i]);
+    expectBN(actualMargins[i], `accounts[${i}] margin balance`).eq(expectedMargins[i]);
   }
 
   // Check that the total margin matches the sum margin of all provided accounts.
@@ -76,7 +76,7 @@ export async function expectPositions(
   }));
 
   for (const i in expectedPositions) {
-    expectBN(actualPositions[i], `accounts[${i}] balance`).eq(expectedPositions[i]);
+    expectBN(actualPositions[i], `accounts[${i}] position balance`).eq(expectedPositions[i]);
   }
 
   if (sumToZero) {
