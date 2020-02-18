@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { P1Getters } from "./P1Getters.sol";
 import { P1Settlement } from "./P1Settlement.sol";
 import { P1Storage } from "./P1Storage.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
@@ -35,6 +36,7 @@ import { P1Types } from "../lib/P1Types.sol";
  */
 contract P1Margin is
     P1Storage,
+    P1Getters,
     P1Settlement
 {
     using P1BalanceMath for P1Types.Balance;
@@ -83,9 +85,7 @@ contract P1Margin is
         nonReentrant
     {
         require(
-            account == msg.sender
-            || _GLOBAL_OPERATORS_[msg.sender]
-            || _LOCAL_OPERATORS_[account][msg.sender],
+            hasAccountPermissions(account, msg.sender),
             "sender does not have permission to withdraw"
         );
 

@@ -57,6 +57,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
           shortUndercollateralizedPrice,
           positionSize,
         ),
+        'msg.sender must be PerpetualV1',
       );
     });
   });
@@ -172,7 +173,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
           .initiate()
           .liquidate(long, short, positionSize)
           .commit({ from: long }),
-        'Cannot liquidate since the sender is not the taker (i.e. liquidator)',
+        'sender does not have permissions for the taker (i.e. liquidator)',
       );
     });
 

@@ -108,7 +108,7 @@ contract P1Deleveraging is
     {
         require(
             msg.sender == _PERPETUAL_V1_,
-            "Sender must be PerpetualV1"
+            "msg.sender must be PerpetualV1"
         );
         require(
             traderFlags & TRADER_FLAG_ORDERS == 0,
