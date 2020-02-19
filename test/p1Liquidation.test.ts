@@ -270,7 +270,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
         .commit({ from: short });
     });
 
-    describe.only('sent by a third party', () => {
+    describe('sent by a third party', () => {
       beforeEach(async () => {
         await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
       });
