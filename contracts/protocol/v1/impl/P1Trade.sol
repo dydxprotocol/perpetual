@@ -71,8 +71,13 @@ contract P1Trade is
         P1Types.Context memory context = _loadContext();
         _settleAccounts(context, accounts);
 
+        P1Types.Balance[] memory initialBalances = new P1Types.Balance[](accounts.length);
+        uint256 i;
+        for (i = 0; i < accounts.length; i++) {
+            initialBalances[i] = _BALANCES_[accounts[i]];
+        }
+
         bytes32 traderFlags = 0;
-        uint256 i = 0;
         for (i = 0; i < trades.length; i++) {
             TradeArg memory tradeArg = trades[i];
 
@@ -128,11 +133,20 @@ contract P1Trade is
             );
         }
 
+        // Verify for each account that either:
+        // 1. The account meets the collateralization requirement; OR
+        // 2. The account's collateralizaion ratio has not decreased.
         for (i = 0; i < accounts.length; i++) {
-            require(
-                _isCollateralized(context, accounts[i]),
-                "account is undercollateralized"
-            );
+            if (!_isCollateralized(context, accounts[i])) {
+                (uint256 initialPositive, uint256 initialNegative) =
+                    initialBalances[i].getPositiveAndNegativeValue(context.price);
+                (uint256 positive, uint256 negative) =
+                    _BALANCES_[accounts[i]].getPositiveAndNegativeValue(context.price);
+                require(
+                    positive.mul(initialNegative) >= negative.mul(initialPositive),
+                    "account is undercollateralized and collateralizaion ratio decreased"
+                );
+            }
         }
     }
 
