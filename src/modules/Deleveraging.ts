@@ -22,7 +22,14 @@ import { Contract } from 'web3-eth-contract';
 import { Contracts } from './Contracts';
 import { bnToBytes32, boolToBytes32, stripHexPrefix } from '../lib/BytesHelper';
 import { ADDRESSES, INTEGERS } from '../lib/Constants';
-import { address, CallOptions, SendOptions, TradeResult, TxResult } from '../lib/types';
+import {
+  address,
+  CallOptions,
+  SendOptions,
+  Price,
+  TradeResult,
+  TxResult,
+} from '../lib/types';
 
 export function makeDeleverageTradeData(
   amount: BigNumber,
@@ -51,7 +58,7 @@ export class Deleveraging {
   public async trade(
     maker: address,
     taker: address,
-    price: BigNumber,
+    price: Price,
     amount: BigNumber,
     allOrNothing: boolean = false,
     traderFlags: BigNumber = INTEGERS.ZERO,
@@ -62,7 +69,7 @@ export class Deleveraging {
         ADDRESSES.ZERO, // sender (unused)
         maker,
         taker,
-        price.toFixed(0),
+        price.toSolidity(),
         makeDeleverageTradeData(amount, allOrNothing),
         bnToBytes32(traderFlags),
       ),

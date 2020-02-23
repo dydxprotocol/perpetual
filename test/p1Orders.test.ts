@@ -4,21 +4,23 @@ import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import {
   Order,
+  Price,
   SignedOrder,
   SigningMethod,
 } from '../src/lib/types';
 import {
   ADDRESSES,
-  ONE_BIP,
+  FEES,
+  PRICES,
 } from '../src/lib/Constants';
 
 const defaultOrder: Order = {
   isBuy: true,
   isDecreaseOnly: false,
   amount: new BigNumber('1e18'),
-  limitPrice: new BigNumber('987.654320'),
-  triggerPrice: new BigNumber(0),
-  limitFee: ONE_BIP.times(20),
+  limitPrice: new Price('987.654320'),
+  triggerPrice: PRICES.NONE,
+  limitFee: FEES.ONE_BIP.times(20),
   maker: ADDRESSES.ZERO,
   taker: ADDRESSES.ZERO,
   expiration: new BigNumber('888'),

@@ -5,12 +5,14 @@ import { makeDeleverageTradeData } from './Deleveraging';
 import { makeLiquidateTradeData } from './Liquidation';
 import { Orders } from './Orders';
 import {
-  SendOptions,
-  TxResult,
-  ConfirmationType,
   address,
+  ConfirmationType,
+  Fee,
+  Price,
+  SendOptions,
   SignedOrder,
   TradeArg,
+  TxResult,
 } from '../lib/types';
 
 interface TempTradeArg {
@@ -45,8 +47,8 @@ export class TradeOperation {
   public fillSignedOrder(
     order: SignedOrder,
     amount: BigNumber,
-    price: BigNumber,
-    fee: BigNumber,
+    price: Price,
+    fee: Fee,
   ): this {
     const tradeData = this.orders.fillToTradeData(
       order,

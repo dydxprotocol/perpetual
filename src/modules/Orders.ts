@@ -26,6 +26,8 @@ import {
   OrderState,
   SigningMethod,
   TypedSignature,
+  Price,
+  Fee,
 } from '../lib/types';
 
 const EIP712_ORDER_STRUCT = [
@@ -300,9 +302,9 @@ export class Orders {
       { t: 'bytes32', v: hashString(EIP712_ORDER_STRUCT_STRING) },
       { t: 'bytes32', v: this.getOrderFlags(order) },
       { t: 'uint256', v: order.amount.toFixed(0) },
-      { t: 'uint256', v: this.valueToSolidity(order.limitPrice).toFixed(0) },
-      { t: 'uint256', v: this.valueToSolidity(order.triggerPrice).toFixed(0) },
-      { t: 'uint256', v: this.valueToSolidity(order.limitFee.abs()).toFixed(0) },
+      { t: 'uint256', v: order.limitPrice.toSolidity() },
+      { t: 'uint256', v: order.triggerPrice.toSolidity() },
+      { t: 'uint256', v: order.limitFee.toSolidity() },
       { t: 'bytes32', v: addressToBytes32(order.maker) },
       { t: 'bytes32', v: addressToBytes32(order.taker) },
       { t: 'uint256', v: order.expiration.toFixed(0) },
@@ -365,8 +367,8 @@ export class Orders {
   public fillToTradeData(
     order: SignedOrder,
     amount: BigNumber,
-    price: BigNumber,
-    fee: BigNumber,
+    price: Price,
+    fee: Fee,
   ): string {
     const orderData = this.orderToBytes(order);
     const signatureData = order.typedSignature + '0'.repeat(60);
@@ -379,8 +381,8 @@ export class Orders {
       ],
       [
         amount.toFixed(0),
-        this.valueToSolidity(price).toFixed(0),
-        this.valueToSolidity(fee.abs()).toFixed(0),
+        price.toSolidity(),
+        fee.toSolidity(),
         fee.isNegative(),
       ],
     );
@@ -389,21 +391,15 @@ export class Orders {
 
   // ============ Private Helper Functions ============
 
-  private valueToSolidity(
-    price: BigNumber,
-  ): BigNumber {
-    return price.shiftedBy(18).integerValue();
-  }
-
   private orderToSolidity(
     order: Order,
   ): any {
     return {
       flags: this.getOrderFlags(order),
       amount: order.amount.toFixed(0),
-      limitPrice: this.valueToSolidity(order.limitPrice).toFixed(0),
-      triggerPrice: this.valueToSolidity(order.triggerPrice).toFixed(0),
-      limitFee: this.valueToSolidity(order.limitFee.abs()).toFixed(0),
+      limitPrice: order.limitPrice.toSolidity(),
+      triggerPrice: order.triggerPrice.toSolidity(),
+      limitFee: order.limitFee.toSolidity(),
       maker: order.maker,
       taker: order.taker,
       expiration: order.expiration.toFixed(0),
@@ -426,9 +422,9 @@ export class Orders {
     const orderData = {
       flags: this.getOrderFlags(order),
       amount: order.amount.toFixed(0),
-      limitPrice: this.valueToSolidity(order.limitPrice).toFixed(0),
-      triggerPrice: this.valueToSolidity(order.triggerPrice).toFixed(0),
-      limitFee: this.valueToSolidity(order.limitFee.abs()).toFixed(0),
+      limitPrice: order.limitPrice.toSolidity(),
+      triggerPrice: order.triggerPrice.toSolidity(),
+      limitFee: order.limitFee.toSolidity(),
       maker: order.maker,
       taker: order.taker,
       expiration: order.expiration.toFixed(0),
