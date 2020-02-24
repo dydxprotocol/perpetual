@@ -60,6 +60,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
           shortUnderwaterPrice,
           positionSize,
         ),
+        'msg.sender must be PerpetualV1',
       );
     });
   });

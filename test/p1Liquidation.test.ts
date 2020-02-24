@@ -22,11 +22,13 @@ const shortUndercollateralizedPrice = new BigNumber(136.5).shiftedBy(18);
 const shortUnderwaterPrice = new BigNumber(150.1).shiftedBy(18);
 const positionSize = new BigNumber(10);
 
+let admin: address;
 let long: address;
 let short: address;
 let thirdParty: address;
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
+  admin = ctx.accounts[0];
   long = ctx.accounts[1];
   short = ctx.accounts[2];
   thirdParty = ctx.accounts[3];
@@ -57,6 +59,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
           shortUndercollateralizedPrice,
           positionSize,
         ),
+        'msg.sender must be PerpetualV1',
       );
     });
   });
@@ -165,17 +168,6 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
       );
     });
 
-    it('Cannot liquidate if the sender is not the taker', async () => {
-      await ctx.perpetual.testing.oracle.setPrice(longBorderlinePrice);
-      await expectThrow(
-        ctx.perpetual.trade
-          .initiate()
-          .liquidate(long, short, positionSize)
-          .commit({ from: long }),
-        'Cannot liquidate since the sender is not the taker (i.e. liquidator)',
-      );
-    });
-
     it('Cannot liquidate a long position that is not undercollateralized', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longBorderlinePrice);
       await expectThrow(
@@ -276,6 +268,50 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
         )
         .liquidate(long, short, positionSize.plus(new BigNumber(1)))
         .commit({ from: short });
+    });
+
+    describe('sent by a third party', () => {
+      beforeEach(async () => {
+        await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+      });
+
+      it('Succeeds liquidating if the sender is a global operator', async () => {
+        await ctx.perpetual.admin.setGlobalOperator(thirdParty, true, { from: admin });
+        await ctx.perpetual.trade
+          .initiate()
+          .liquidate(long, short, positionSize)
+          .commit({ from: thirdParty });
+        await expectBalances(
+          ctx,
+          [long, short],
+          [new BigNumber(0), new BigNumber(1000)],
+          [new BigNumber(0), new BigNumber(0)],
+        );
+      });
+
+      it('Succeeds liquidating if the sender is a local operator', async () => {
+        await ctx.perpetual.operator.setLocalOperator(thirdParty, true, { from: short });
+        await ctx.perpetual.trade
+          .initiate()
+          .liquidate(long, short, positionSize)
+          .commit({ from: thirdParty });
+        await expectBalances(
+          ctx,
+          [long, short],
+          [new BigNumber(0), new BigNumber(1000)],
+          [new BigNumber(0), new BigNumber(0)],
+        );
+      });
+
+      it('Cannot liquidate if the sender is not the taker or an authorized operator', async () => {
+        await expectThrow(
+          ctx.perpetual.trade
+            .initiate()
+            .liquidate(long, short, positionSize)
+            .commit({ from: thirdParty }),
+          'sender does not have permissions for the taker (i.e. liquidator)',
+        );
+      });
     });
   });
 

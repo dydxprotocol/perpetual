@@ -87,11 +87,11 @@ contract P1Liquidation is
     {
         require(
             msg.sender == _PERPETUAL_V1_,
-            "Sender must be PerpetualV1"
+            "msg.sender must be PerpetualV1"
         );
         require(
-            sender == taker,
-            "Cannot liquidate since the sender is not the taker (i.e. liquidator)"
+            P1Getters(_PERPETUAL_V1_).hasAccountPermissions(taker, sender),
+            "sender does not have permissions for the taker (i.e. liquidator)"
         );
 
         TradeData memory tradeData = abi.decode(data, (TradeData));

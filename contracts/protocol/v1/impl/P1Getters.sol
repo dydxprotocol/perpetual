@@ -132,4 +132,19 @@ contract P1Getters is
     {
         return _MIN_COLLATERAL_;
     }
+
+    // ============ Public Getters ============
+
+    function hasAccountPermissions(
+        address account,
+        address operator
+    )
+        public
+        view
+        returns (bool)
+    {
+        return account == operator
+            || _GLOBAL_OPERATORS_[operator]
+            || _LOCAL_OPERATORS_[account][operator];
+    }
 }
