@@ -90,7 +90,7 @@ export async function mintAndDeposit(
   account: address,
   amount: BigNumber,
 ): Promise<void> {
-  await ctx.perpetual.testing.token.mintTo(amount, account);
+  await ctx.perpetual.testing.token.mint(account, amount);
   await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(account);
   await ctx.perpetual.margin.deposit(account, amount, { from: account });
 }

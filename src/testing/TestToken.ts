@@ -35,26 +35,13 @@ export class TestToken extends Token {
   }
 
   public mint(
+    account: address,
     amount: BigNumber,
-    from: address,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.contracts.send(
       this.token.methods.mint(
-        amount.toFixed(0),
-      ),
-      { ...options, from },
-    );
-  }
-
-  public mintTo(
-    amount: BigNumber,
-    who: address,
-    options: SendOptions = {},
-  ): Promise<TxResult> {
-    return this.contracts.send(
-      this.token.methods.mintTo(
-        who,
+        account,
         amount.toFixed(0),
       ),
       { ...options },
