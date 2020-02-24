@@ -3,6 +3,7 @@ import { expect, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import {
+  Fee,
   Order,
   Price,
   SignedOrder,
@@ -10,7 +11,6 @@ import {
 } from '../src/lib/types';
 import {
   ADDRESSES,
-  FEES,
   PRICES,
 } from '../src/lib/Constants';
 
@@ -20,7 +20,7 @@ const defaultOrder: Order = {
   amount: new BigNumber('1e18'),
   limitPrice: new Price('987.654320'),
   triggerPrice: PRICES.NONE,
-  limitFee: FEES.ONE_BIP.times(20),
+  limitFee: Fee.fromBips(20),
   maker: ADDRESSES.ZERO,
   taker: ADDRESSES.ZERO,
   expiration: new BigNumber('888'),

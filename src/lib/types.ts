@@ -197,4 +197,8 @@ export class Price {
   }
 }
 
-export class Fee extends Price {}
+export class Fee extends Price {
+  static fromBips(value: BigNumberable): Fee {
+    return new Fee(new BigNumber('1e-4').times(value));
+  }
+}
