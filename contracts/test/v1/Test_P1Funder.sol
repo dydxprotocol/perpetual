@@ -44,7 +44,10 @@ contract Test_P1Funder is
         return (_FUNDING_IS_POSITIVE_, _FUNDING_);
     }
 
-    function setFunding(bool isPositive, uint256 newFunding)
+    function setFunding(
+        bool isPositive,
+        uint256 newFunding
+    )
         external
     {
         _FUNDING_IS_POSITIVE_ = isPositive;

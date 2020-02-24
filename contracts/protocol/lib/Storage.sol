@@ -29,7 +29,9 @@ pragma experimental ABIEncoderV2;
 library Storage {
 
     /* solium-disable-next-line security/no-named-returns */
-    function load(bytes32 slot)
+    function load(
+        bytes32 slot
+    )
         internal
         view
         returns (bytes32 result)
@@ -40,7 +42,10 @@ library Storage {
         }
     }
 
-    function store(bytes32 slot, bytes32 value)
+    function store(
+        bytes32 slot,
+        bytes32 value
+    )
         internal
     {
         /* solium-disable-next-line security/no-inline-assembly */
