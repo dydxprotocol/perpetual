@@ -86,7 +86,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
 
       await expectThrow(
         ctx.perpetual.margin.deposit(accountOwner, amount.plus(1), { from: accountOwner }),
-        'SafeERC20: ERC20 operation did not succeed',
+        'SafeERC20: low-level call failed',
       );
     });
   });
@@ -160,7 +160,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
     it('Account owner cannot withdraw more than the account balance', async () => {
       await expectThrow(
         ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(151), { from: accountOwner }),
-        'SafeERC20: ERC20 operation did not succeed',
+        'SafeERC20: low-level call failed',
       );
     });
 
