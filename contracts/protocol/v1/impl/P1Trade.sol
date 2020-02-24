@@ -19,6 +19,7 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { P1Settlement } from "./P1Settlement.sol";
 import { P1Storage } from "./P1Storage.sol";
 import { I_P1Trader } from "../intf/I_P1Trader.sol";
@@ -36,6 +37,7 @@ contract P1Trade is
     P1Storage,
     P1Settlement
 {
+    using SafeMath for uint120;
     using P1BalanceMath for P1Types.Balance;
 
     // ============ Structs ============
@@ -135,17 +137,50 @@ contract P1Trade is
 
         // Verify for each account that either:
         // 1. The account meets the collateralization requirement; OR
-        // 2. The account's collateralizaion ratio has not decreased.
+        // 2. All of the following are true:
+        //   c) The account's collateralization ratio has not worsened;
+        //   b) The absolute value of the account position has not increased;
+        //   a) The sign of the account position has not flipped positive to negative or vice-versa.
+        //
+        // Note: We avoid making use of P1BalanceMath.getPositiveAndNegativeValue here to avoid
+        // errors stemming from rounding errors when determining position value.
         for (i = 0; i < accounts.length; i++) {
             if (!_isCollateralized(context, accounts[i])) {
-                (uint256 initialPositive, uint256 initialNegative) =
-                    initialBalances[i].getPositiveAndNegativeValue(context.price);
-                (uint256 positive, uint256 negative) =
-                    _BALANCES_[accounts[i]].getPositiveAndNegativeValue(context.price);
+                P1Types.Balance memory initialBalance = initialBalances[i];
+                P1Types.Balance memory finalBalance = _BALANCES_[accounts[i]];
                 require(
-                    positive.mul(initialNegative) >= negative.mul(initialPositive),
-                    "account is undercollateralized and collateralizaion ratio decreased"
+                    finalBalance.marginIsPositive ||
+                        (finalBalance.positionIsPositive && finalBalance.position > 0),
+                    "account has no positive value"
                 );
+                // Note: Final margin/position is now either -/+, +/-, or 0/-.
+                require(
+                    finalBalance.position <= initialBalance.position,
+                    "account is undercollateralized and absolute position size increased"
+                );
+                // Note: Initial margin/position is now one of +/+, 0/+, -/+, or +/-.
+                // Note: Both finalBalance.position and initialBalance.position are now nonzero.
+                require(
+                    finalBalance.positionIsPositive == initialBalance.positionIsPositive,
+                    "account is undercollateralized and position changed signs"
+                );
+                if (finalBalance.positionIsPositive) {
+                    require(
+                        !initialBalance.marginIsPositive,
+                        "account is undercollateralized and was not previously"
+                    );
+                    require(
+                        finalBalance.position.mul(initialBalance.margin) >=
+                            finalBalance.margin.mul(initialBalance.position),
+                        "account is undercollateralized and collateralization decreased"
+                    );
+                } else {
+                    require(
+                        finalBalance.margin.mul(initialBalance.position) >=
+                            finalBalance.position.mul(initialBalance.margin),
+                        "account is undercollateralized and collateralization decreased"
+                    );
+                }
             }
         }
     }
