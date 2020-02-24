@@ -8,20 +8,21 @@ import { buy, sell } from './helpers/trade';
 import { fastForward } from './helpers/EVM';
 import { expectThrow, expect } from './helpers/Expect';
 import { address } from '../src';
-import { INTEGERS } from '../src/lib/Constants';
+import { FEES, PRICES } from '../src/lib/Constants';
 import {
   Order,
+  Price,
   SendOptions,
   SignedOrder,
   SigningMethod,
   TxResult,
 } from '../src/lib/types';
 
-const initialPrice = new BigNumber(100).shiftedBy(18);
-const longBorderlinePrice = new BigNumber(50).shiftedBy(18);
-const longUnderwaterPrice = new BigNumber(49.9).shiftedBy(18);
-const shortBorderlinePrice = new BigNumber(150).shiftedBy(18);
-const shortUnderwaterPrice = new BigNumber(150.1).shiftedBy(18);
+const initialPrice = new Price(100);
+const longBorderlinePrice = new Price(50);
+const longUnderwaterPrice = new Price(49.9);
+const shortBorderlinePrice = new Price(150);
+const shortUnderwaterPrice = new Price(150.1);
 const positionSize = new BigNumber(10);
 
 let admin: address;
@@ -111,7 +112,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       // | short   |   1350 |       -9 |
 
       // Deleverage the short position.
-      await ctx.perpetual.testing.oracle.setPrice(new BigNumber(150.2).shiftedBy(18));
+      await ctx.perpetual.testing.oracle.setPrice(new Price(150.2));
       await deleverage(short, long, positionSize);
 
       // The actual amount executed should be bounded by the maker position.
@@ -218,8 +219,8 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
         isDecreaseOnly: false,
         amount: new BigNumber(1),
         limitPrice: initialPrice,
-        stopPrice: INTEGERS.ZERO,
-        limitFee: INTEGERS.ZERO,
+        triggerPrice: PRICES.NONE,
+        limitFee: FEES.ZERO,
         maker: long,
         taker: short,
         expiration: new BigNumber(888),

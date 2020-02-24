@@ -1,6 +1,9 @@
-import BigNumber from 'bignumber.js';
 import { Contracts } from '../modules/Contracts';
-import { SendOptions, TxResult } from '../lib/types';
+import {
+  Price,
+  TxResult,
+  SendOptions,
+} from '../lib/types';
 
 export class TestP1Oracle {
   private contracts: Contracts;
@@ -16,21 +19,21 @@ export class TestP1Oracle {
   }
 
   public async setPrice(
-    newPrice: BigNumber,
+    newPrice: Price,
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
       this.contracts.testP1Oracle.methods.setPrice(
-        newPrice.toFixed(0),
+        newPrice.toSolidity(),
       ),
       options,
     );
   }
 
-  public async getPrice(): Promise<BigNumber> {
+  public async getPrice(): Promise<Price> {
     const price = await this.contracts.call(
       this.contracts.testP1Oracle.methods.getPrice(),
     );
-    return new BigNumber(price.value);
+    return Price.fromSolidity(price);
   }
 }

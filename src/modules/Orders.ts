@@ -26,13 +26,15 @@ import {
   OrderState,
   SigningMethod,
   TypedSignature,
+  Price,
+  Fee,
 } from '../lib/types';
 
 const EIP712_ORDER_STRUCT = [
   { type: 'bytes32', name: 'flags' },
   { type: 'uint256', name: 'amount' },
   { type: 'uint256', name: 'limitPrice' },
-  { type: 'uint256', name: 'stopPrice' },
+  { type: 'uint256', name: 'triggerPrice' },
   { type: 'uint256', name: 'limitFee' },
   { type: 'address', name: 'maker' },
   { type: 'address', name: 'taker' },
@@ -44,7 +46,7 @@ const EIP712_ORDER_STRUCT_STRING =
   'bytes32 flags,' +
   'uint256 amount,' +
   'uint256 limitPrice,' +
-  'uint256 stopPrice,' +
+  'uint256 triggerPrice,' +
   'uint256 limitFee,' +
   'address maker,' +
   'address taker,' +
@@ -89,7 +91,7 @@ export class Orders {
     order: Order,
     options?: SendOptions,
   ): Promise<any> {
-    const stringifiedOrder = this.stringifyOrder(order);
+    const stringifiedOrder = this.orderToSolidity(order);
     return this.contracts.send(
       this.contracts.p1Orders.methods.approveOrder(stringifiedOrder),
       options,
@@ -103,7 +105,7 @@ export class Orders {
     order: Order,
     options?: SendOptions,
   ): Promise<any> {
-    const stringifiedOrder = this.stringifyOrder(order);
+    const stringifiedOrder = this.orderToSolidity(order);
     return this.contracts.send(
       this.contracts.p1Orders.methods.cancelOrder(stringifiedOrder),
       options,
@@ -300,9 +302,9 @@ export class Orders {
       { t: 'bytes32', v: hashString(EIP712_ORDER_STRUCT_STRING) },
       { t: 'bytes32', v: this.getOrderFlags(order) },
       { t: 'uint256', v: order.amount.toFixed(0) },
-      { t: 'uint256', v: order.limitPrice.toFixed(0) },
-      { t: 'uint256', v: order.stopPrice.toFixed(0) },
-      { t: 'uint256', v: order.limitFee.abs().toFixed(0) },
+      { t: 'uint256', v: order.limitPrice.toSolidity() },
+      { t: 'uint256', v: order.triggerPrice.toSolidity() },
+      { t: 'uint256', v: order.limitFee.toSolidity() },
       { t: 'bytes32', v: addressToBytes32(order.maker) },
       { t: 'bytes32', v: addressToBytes32(order.taker) },
       { t: 'uint256', v: order.expiration.toFixed(0) },
@@ -332,7 +334,7 @@ export class Orders {
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
       { t: 'bytes32', v: hashString('P1Orders') },
       { t: 'bytes32', v: hashString('1.0') },
-      { t: 'uint256', v: this.networkId.toString(10) },
+      { t: 'uint256', v: `${this.networkId}` },
       { t: 'bytes32', v: addressToBytes32(this.contracts.p1Orders.options.address) },
     );
   }
@@ -355,44 +357,53 @@ export class Orders {
   public orderToBytes(
     order: Order,
   ): string {
-    const solidityOrder = { ...order, flags: this.getOrderFlags(order) };
+    const solidityOrder = this.orderToSolidity(order);
     return this.web3.eth.abi.encodeParameters(
       EIP712_ORDER_STRUCT.map(arg => arg.type),
-      EIP712_ORDER_STRUCT.map(
-        arg => solidityOrder[arg.name].toFixed
-          ? solidityOrder[arg.name].toFixed(0)
-          : solidityOrder[arg.name],
-        ),
+      EIP712_ORDER_STRUCT.map(arg => solidityOrder[arg.name]),
     );
   }
 
   public fillToTradeData(
     order: SignedOrder,
     amount: BigNumber,
-    price: BigNumber,
-    fee: BigNumber,
+    price: Price,
+    fee: Fee,
   ): string {
     const orderData = this.orderToBytes(order);
     const signatureData = order.typedSignature + '0'.repeat(60);
     const fillData = this.web3.eth.abi.encodeParameters(
-      ['uint256', 'uint256', 'uint256', 'bool'],
-      [amount.toFixed(0), price.toFixed(0), fee.abs().toFixed(0), fee.isNegative()],
+      [
+        'uint256',
+        'uint256',
+        'uint256',
+        'bool',
+      ],
+      [
+        amount.toFixed(0),
+        price.toSolidity(),
+        fee.toSolidity(),
+        fee.isNegative(),
+      ],
     );
     return combineHexStrings(orderData, fillData, signatureData);
   }
 
   // ============ Private Helper Functions ============
 
-  private stringifyOrder(
+  private orderToSolidity(
     order: Order,
   ): any {
-    const stringifiedOrder = { ... order };
-    for (const [key, value] of Object.entries(order)) {
-      if (typeof value !== 'string' && typeof value !== 'boolean') {
-        stringifiedOrder[key] = new BigNumber(value).toFixed(0);
-      }
-    }
-    return stringifiedOrder;
+    return {
+      flags: this.getOrderFlags(order),
+      amount: order.amount.toFixed(0),
+      limitPrice: order.limitPrice.toSolidity(),
+      triggerPrice: order.triggerPrice.toSolidity(),
+      limitFee: order.limitFee.toSolidity(),
+      maker: order.maker,
+      taker: order.taker,
+      expiration: order.expiration.toFixed(0),
+    };
   }
 
   private getDomainData() {
@@ -411,9 +422,9 @@ export class Orders {
     const orderData = {
       flags: this.getOrderFlags(order),
       amount: order.amount.toFixed(0),
-      limitPrice: order.limitPrice.toFixed(0),
-      stopPrice: order.stopPrice.toFixed(0),
-      limitFee: order.limitFee.abs().toFixed(0),
+      limitPrice: order.limitPrice.toSolidity(),
+      triggerPrice: order.triggerPrice.toSolidity(),
+      limitFee: order.limitFee.toSolidity(),
       maker: order.maker,
       taker: order.taker,
       expiration: order.expiration.toFixed(0),

@@ -3,19 +3,24 @@ import { expect, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import {
+  Fee,
   Order,
+  Price,
   SignedOrder,
   SigningMethod,
 } from '../src/lib/types';
-import { ADDRESSES } from '../src/lib/Constants';
+import {
+  ADDRESSES,
+  PRICES,
+} from '../src/lib/Constants';
 
 const defaultOrder: Order = {
   isBuy: true,
   isDecreaseOnly: false,
   amount: new BigNumber('1e18'),
-  limitPrice: new BigNumber('987654320'),
-  stopPrice: new BigNumber(0),
-  limitFee: new BigNumber('330'),
+  limitPrice: new Price('987.654320'),
+  triggerPrice: PRICES.NONE,
+  limitFee: Fee.fromBips(20),
   maker: ADDRESSES.ZERO,
   taker: ADDRESSES.ZERO,
   expiration: new BigNumber('888'),

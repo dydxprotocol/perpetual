@@ -33,6 +33,7 @@ import {
 export type address = string;
 export type TypedSignature = string;
 export type Provider = HttpProvider | IpcProvider | WebsocketProvider;
+export type BigNumberable = BigNumber | number | string;
 
 // ============ Enums ============
 
@@ -145,9 +146,9 @@ export interface Order {
   isBuy: boolean;
   isDecreaseOnly: boolean;
   amount: BigNumber;
-  limitPrice: BigNumber;
-  stopPrice: BigNumber;
-  limitFee: BigNumber;
+  limitPrice: Price;
+  triggerPrice: Price;
+  limitFee: Fee;
   maker: address;
   taker: address;
   expiration: BigNumber;
@@ -156,4 +157,48 @@ export interface Order {
 
 export interface SignedOrder extends Order {
   typedSignature: string;
+}
+
+// ============ Classees ============
+
+export class Price {
+  readonly value: BigNumber;
+
+  constructor(value: BigNumberable) {
+    this.value = new BigNumber(value);
+  }
+
+  static fromSolidity(value: BigNumberable): Price {
+    return new Price(new BigNumber(value).shiftedBy(-18));
+  }
+
+  public toSolidity(): string {
+    return this.value.abs().shiftedBy(18).toFixed(0);
+  }
+
+  public times(value: BigNumberable): Price {
+    return new Price(this.value.times(value));
+  }
+
+  public div(value: BigNumberable): Price {
+    return new Price(this.value.div(value));
+  }
+
+  public plus(value: BigNumberable): Price {
+    return new Price(this.value.plus(value));
+  }
+
+  public minus(value: BigNumberable): Price {
+    return new Price(this.value.minus(value));
+  }
+
+  public isNegative(): boolean {
+    return this.value.isNegative();
+  }
+}
+
+export class Fee extends Price {
+  static fromBips(value: BigNumberable): Fee {
+    return new Fee(new BigNumber('1e-4').times(value));
+  }
 }

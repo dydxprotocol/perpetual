@@ -6,10 +6,14 @@ import { expectMarginBalances, mintAndDeposit } from './helpers/balances';
 import { mineAvgBlock } from './helpers/EVM';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { sell } from './helpers/trade';
+import {
+  address,
+  Price,
+} from '../src/lib/types';
 
 perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) => {
-  let accountOwner;
-  let otherUser;
+  let accountOwner: address;
+  let otherUser: address;
 
   before(() => {
     accountOwner = ctx.accounts[1];
@@ -169,7 +173,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
 
     it('Fails if it would leave the account undercollateralized', async () => {
       // Set up test contract behavior.
-      await ctx.perpetual.testing.oracle.setPrice(new BigNumber(100).shiftedBy(18));
+      await ctx.perpetual.testing.oracle.setPrice(new Price(100));
 
       // Set initial balances and allowances.
       // Bring the total deposited to 1000.

@@ -22,7 +22,12 @@ import { Contract } from 'web3-eth-contract';
 import { Contracts } from './Contracts';
 import { bnToBytes32, boolToBytes32, stripHexPrefix } from '../lib/BytesHelper';
 import { INTEGERS } from '../lib/Constants';
-import { address, CallOptions, TradeResult } from '../lib/types';
+import {
+  address,
+  CallOptions,
+  Price,
+  TradeResult,
+} from '../lib/types';
 
 export function makeLiquidateTradeData(
   amount: BigNumber,
@@ -52,7 +57,7 @@ export class Liquidation {
     sender: address,
     maker: address,
     taker: address,
-    price: BigNumber,
+    price: Price,
     amount: BigNumber,
     allOrNothing: boolean = false,
     traderFlags: BigNumber = INTEGERS.ZERO,
@@ -63,7 +68,7 @@ export class Liquidation {
         sender,
         maker,
         taker,
-        price.toFixed(0),
+        price.toSolidity(),
         makeLiquidateTradeData(amount, allOrNothing),
         bnToBytes32(traderFlags),
       ),

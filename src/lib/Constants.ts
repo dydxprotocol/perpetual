@@ -17,11 +17,23 @@
 */
 
 import BigNumber from 'bignumber.js';
+import { Fee, Price } from './types';
 
 const ONE_MINUTE_IN_SECONDS = new BigNumber(60);
 const ONE_HOUR_IN_SECONDS = ONE_MINUTE_IN_SECONDS.times(60);
 const ONE_DAY_IN_SECONDS = ONE_HOUR_IN_SECONDS.times(24);
 const ONE_YEAR_IN_SECONDS = ONE_DAY_IN_SECONDS.times(365);
+
+export const PRICES = {
+  NONE: new Price(0),
+  ONE: new Price(1),
+};
+
+export const FEES = {
+  ZERO: new Fee(0),
+  ONE_BIP: new Fee('1e-4'),
+  ONE_PERCENT: new Fee('1e-2'),
+};
 
 export const INTEGERS = {
   ONE_MINUTE_IN_SECONDS,
