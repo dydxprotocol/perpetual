@@ -52,6 +52,7 @@
     "web3": "1.2.4"
   },
   "devDependencies": {
+    "@0x/sol-profiler": "^4.0.7",
     "@0x/sol-trace": "^3.0.5",
     "@types/chai": "^4.2.7",
     "@types/es6-promisify": "^6.0.0",
