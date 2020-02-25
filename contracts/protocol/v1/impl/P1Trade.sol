@@ -135,7 +135,7 @@ contract P1Trade is
             );
         }
 
-        _verifyAccountFinalBalances(context, accounts, initialBalances);
+        _verifyAccountsFinalBalances(context, accounts, initialBalances);
     }
 
     function _verifyAccounts(
@@ -172,7 +172,7 @@ contract P1Trade is
      * Note: We avoid making use of P1BalanceMath.getPositiveAndNegativeValue here to avoid
      * errors stemming from rounding errors when determining position value.
      */
-    function _verifyAccountFinalBalances(
+    function _verifyAccountsFinalBalances(
         P1Types.Context memory context,
         address[] memory accounts,
         P1Types.Balance[] memory initialBalances
