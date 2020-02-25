@@ -24,7 +24,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
     it('Account owner can deposit', async () => {
       // Set initial balances and allowances.
       const amount = new BigNumber(150);
-      await ctx.perpetual.testing.token.mintTo(amount, accountOwner);
+      await ctx.perpetual.testing.token.mint(accountOwner, amount);
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
 
       // Execute deposit.
@@ -51,7 +51,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
     it('Non-owner can deposit', async () => {
       // Set initial balances and allowances.
       const amount = new BigNumber(150);
-      await ctx.perpetual.testing.token.mintTo(amount, otherUser);
+      await ctx.perpetual.testing.token.mint(otherUser, amount);
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(otherUser);
 
       // Execute deposit.
@@ -63,8 +63,8 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
 
     it('Can make multiple deposits', async () => {
       // Set initial balances and allowances.
-      await ctx.perpetual.testing.token.mintTo(new BigNumber(1000), accountOwner);
-      await ctx.perpetual.testing.token.mintTo(new BigNumber(1000), otherUser);
+      await ctx.perpetual.testing.token.mint(accountOwner, new BigNumber(1000));
+      await ctx.perpetual.testing.token.mint(otherUser, new BigNumber(1000));
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(otherUser);
 
@@ -81,12 +81,12 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
     it('Cannot deposit more than the sender\'s balance', async () => {
       // Set initial balances and allowances.
       const amount = new BigNumber(1000);
-      await ctx.perpetual.testing.token.mintTo(amount, accountOwner);
+      await ctx.perpetual.testing.token.mint(accountOwner, amount);
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(otherUser);
 
       await expectThrow(
         ctx.perpetual.margin.deposit(accountOwner, amount.plus(1), { from: accountOwner }),
-        'SafeERC20: ERC20 operation did not succeed',
+        'SafeERC20: low-level call failed',
       );
     });
   });
@@ -95,7 +95,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
     beforeEach(async () => {
       // Deposit.
       const amount = new BigNumber(150);
-      await ctx.perpetual.testing.token.mintTo(amount, accountOwner);
+      await ctx.perpetual.testing.token.mint(accountOwner, amount);
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
       await ctx.perpetual.margin.deposit(accountOwner, amount, { from: accountOwner });
     });
@@ -160,7 +160,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
     it('Account owner cannot withdraw more than the account balance', async () => {
       await expectThrow(
         ctx.perpetual.margin.withdraw(accountOwner, new BigNumber(151), { from: accountOwner }),
-        'SafeERC20: ERC20 operation did not succeed',
+        'SafeERC20: low-level call failed',
       );
     });
 
