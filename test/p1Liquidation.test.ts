@@ -110,6 +110,28 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
       );
     });
 
+    it('Succeeds partially liquidating a long position', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+      await liquidate(long, short, positionSize.div(2));
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(-250), new BigNumber(1250)],
+        [new BigNumber(5), new BigNumber(-5)],
+      );
+    });
+
+    it('Succeeds partially liquidating a short position', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
+      await liquidate(short, long, positionSize.div(2));
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(250), new BigNumber(750)],
+        [new BigNumber(5), new BigNumber(-5)],
+      );
+    });
+
     it('Succeeds with all-or-nothing', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
       await liquidate(long, short, positionSize, true);

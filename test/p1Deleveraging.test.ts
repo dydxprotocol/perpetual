@@ -89,6 +89,28 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       );
     });
 
+    it('Succeeds partially deleveraging a long position', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+      await deleverage(long, short, positionSize.div(2));
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(-250), new BigNumber(1250)],
+        [new BigNumber(5), new BigNumber(-5)],
+      );
+    });
+
+    it('Succeeds partially deleveraging a short position', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
+      await deleverage(short, long, positionSize.div(2));
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(250), new BigNumber(750)],
+        [new BigNumber(5), new BigNumber(-5)],
+      );
+    });
+
     it('Succeeds with all-or-nothing', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
       await deleverage(long, short, positionSize, true);
@@ -124,8 +146,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       );
     });
 
-    // TODO: Enable after we've updated the collateralization check to allow partial deleveraging.
-    xit('Succeeds even if amount is greater than the taker position', async() => {
+    it('Succeeds even if amount is greater than the taker position', async() => {
       // Sell off some of the long position.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
       await sell(ctx, long, thirdParty, new BigNumber(1), new BigNumber(150));
@@ -280,8 +301,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       );
     });
 
-    // TODO: Enable after we've updated the collateralization check to allow partial deleveraging.
-    xit('Can deleverage partially, and then fully, after waiting one timelock period', async () => {
+    it('Can deleverage partially, and then fully, after waiting one timelock period', async () => {
       await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
       await fastForward(deleveragingTimelockSeconds);
       await deleverage(long, short, positionSize.div(2), false, { from: thirdParty });
