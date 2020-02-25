@@ -117,6 +117,14 @@ export class TradeOperation {
     });
     const accounts: address[] = Array.from(accountSet).sort();
 
+    let currentAddress = '0x0000000000000000000000000000000000000000';
+    for (let i = 0; i < accounts.length; i += 1) {
+      if (accounts[i] <= currentAddress) {
+        console.log(accounts);
+      }
+      currentAddress = accounts[i];
+    }
+
     // construct trade args
     const tradeArgs: TradeArg[] = this.trades.map(t => ({
       makerIndex: accounts.indexOf(t.maker),
