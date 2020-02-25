@@ -30,15 +30,27 @@ contract Migrations {
         }
     }
 
-    constructor() public {
+    constructor()
+        public
+    {
         owner = msg.sender;
     }
 
-    function setCompleted(uint256 completed) public restricted {
+    function setCompleted(
+        uint256 completed
+    )
+        public
+        restricted
+    {
         last_completed_migration = completed;
     }
 
-    function upgrade(address newAddress) public restricted {
+    function upgrade(
+        address newAddress
+    )
+        public
+        restricted
+    {
         Migrations upgraded = Migrations(newAddress);
         upgraded.setCompleted(last_completed_migration);
     }

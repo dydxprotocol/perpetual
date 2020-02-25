@@ -27,7 +27,9 @@ pragma experimental ABIEncoderV2;
  * Funder interface
  */
 interface I_P1Funder {
-    function getFunding(uint256 timestamp)
+    function getFunding(
+        uint256 timestamp
+    )
         external
         view
         returns (bool, uint256);
