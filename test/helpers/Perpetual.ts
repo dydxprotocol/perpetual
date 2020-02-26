@@ -1,29 +1,23 @@
-require('dotenv-flow').config();
-
-import { address } from '../../src/lib/types';
+import { Provider, address } from '../../src/lib/types';
 import { Perpetual } from '../../src/Perpetual';
-import provider from './Provider';
+import web3 from '../web3';
 
-let defaultAccountSet = false;
+let initialized = false;
+let perpetual: Perpetual;
 let accounts: address[];
 
-export const perpetual = new Perpetual(
-  provider,
-  Number(process.env.NETWORK_ID),
-);
-
-export async function getPerpetual(
-): Promise<{
-  perpetual: Perpetual,
-  accounts: address[],
-}> {
-  if (!defaultAccountSet) {
-    accounts = await perpetual.web3.eth.getAccounts();
+/**
+ * Returns the Perpetual singleton object for use in tests.
+ */
+export async function getPerpetual(): Promise<Perpetual> {
+  if (!initialized) {
+    initialized = true;
+    perpetual = new Perpetual(
+      web3.currentProvider as Provider,
+      await web3.eth.net.getId(),
+    );
+    accounts = await web3.eth.getAccounts();
     perpetual.setDefaultAccount(accounts[1]);
-    defaultAccountSet = true;
   }
-  return {
-    perpetual,
-    accounts,
-  };
+  return perpetual;
 }

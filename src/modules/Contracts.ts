@@ -26,8 +26,10 @@ import {
   Contract,
 } from 'web3-eth-contract';
 
+import config from '../config';
+
 // JSON
-const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
+const jsonFolder = `../../${config.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
 const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 const p1OrdersJson = require(`${jsonFolder}P1Orders.json`);
@@ -193,7 +195,7 @@ export class Contracts {
         txOptions.confirmationType === ConfirmationType.Both) {
       const gasUsed = (result as TxResult).gasUsed;
       this._cumulativeGasUsed += gasUsed;
-      if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
+      if (config.DEBUG_GAS_USAGE_BY_FUNCTION) {
         this._gasUsedByFunction.push(gasUsed);
       }
     }

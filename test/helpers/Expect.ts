@@ -1,11 +1,14 @@
 import chai from 'chai';
 import BigNumber from 'bignumber.js';
+
+import config from '../config';
+
 chai.use(require('chai-bignumber')(BigNumber));
 
 let REQUIRE_MSG = 'VM Exception while processing transaction: revert';
 let ASSERT_MSG = 'VM Exception while processing transaction: invalid opcode';
 
-if (process.env.ENABLE_SOL_TRACE !== 'true') {
+if (config.enableDebugTools) {
   REQUIRE_MSG = `Returned error: ${REQUIRE_MSG}`;
   ASSERT_MSG = `Returned error: ${ASSERT_MSG}`;
 }
@@ -17,7 +20,7 @@ export async function expectThrow(promise: Promise<any>, reason?: string) {
     throw new Error('Did not throw');
   } catch (e) {
     assertCertainError(e, REQUIRE_MSG);
-    if (reason && process.env.COVERAGE !== 'true') {
+    if (reason && config.COVERAGE) {
       assertCertainError(e, `${REQUIRE_MSG} ${reason}`);
     }
   }

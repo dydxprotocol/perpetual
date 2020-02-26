@@ -1,6 +1,11 @@
 require('ts-node/register'); // eslint-disable-line
 require('dotenv-flow').config(); // eslint-disable-line
 
+const Web3 = require('web3');
+const { getDevProvider } = require('./provider');
+const enableTrace = process.env.ENABLE_SOL_TRACE === 'true';
+const devProvider = getDevProvider(enableTrace);
+
 module.exports = {
   compilers: {
     solc: {
@@ -22,6 +27,12 @@ module.exports = {
       port: 8545,
       gasPrice: 1,
       network_id: '1001',
+      provider: function () {
+        if (enableTrace) {
+          return devProvider;
+        }
+        return new Web3.providers.HttpProvider(process.env.RPC_NODE_URI);
+      },
     },
     coverage: {
       host: '127.0.0.1',

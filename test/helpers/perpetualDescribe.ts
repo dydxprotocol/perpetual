@@ -20,6 +20,8 @@ import { snapshot, resetEVM } from './EVM';
 import { getPerpetual } from './Perpetual';
 import { address } from '../../src/lib/types';
 import { Perpetual } from '../../src/Perpetual';
+import config from '../config';
+import web3 from '../web3';
 
 export interface ITestContext {
   perpetual?: Perpetual;
@@ -43,9 +45,8 @@ export default function perpetualDescribe(
 
     // Runs before any before() calls made within the perpetualDescribe() call.
     before(async () => {
-      const { perpetual, accounts } = await getPerpetual();
-      ctx.perpetual = perpetual;
-      ctx.accounts = accounts;
+      ctx.perpetual = await getPerpetual();
+      ctx.accounts = await web3.eth.getAccounts();
 
       preInitSnapshotId = await snapshot();
       await init(ctx);
@@ -66,7 +67,7 @@ export default function perpetualDescribe(
     // Runs before any afterEach() calls made within the perpetualDescribe() call.
     afterEach(() => {
       // Output the gas used in each test case.
-      if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
+      if (config.DEBUG_GAS_USAGE_BY_FUNCTION) {
         let i = 0;
         for (const gasUsed of ctx.perpetual.contracts.getGasUsedByFunction()) {
           printGasUsage(`Gas used [${i}]:`, gasUsed);
