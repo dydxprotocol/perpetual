@@ -138,6 +138,7 @@ export class Contracts {
    * Empty unless DEBUG_GAS_USAGE_BY_FUNCTION was set.
    */
   public * getGasUsedByFunction(): Iterable<number> {
+    // TODO: We should know the name of each function called.
     for (const gasUsed of this._gasUsedByFunction) {
       yield gasUsed;
     }
