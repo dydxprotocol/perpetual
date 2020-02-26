@@ -44,6 +44,7 @@ import {
   ConfirmationType,
   Provider,
   SendOptions,
+  TxResult,
 } from '../lib/types';
 
 enum OUTCOMES {
@@ -57,6 +58,9 @@ export class Contracts {
   private contractsList: { contract: Contract, json: any }[] = [];
 
   private defaultOptions: SendOptions;
+
+  private _cumulativeGasUsed: number = 0;
+  private _gasUsedByFunction: number[] = [];
 
   // Contract instances
   public perpetualProxy: Contract;
@@ -119,6 +123,27 @@ export class Contracts {
     this.setDefaultAccount(this.web3.eth.defaultAccount);
   }
 
+  public getCumulativeGasUsed(): number {
+    return this._cumulativeGasUsed;
+  }
+
+  public resetGasUsed(): void {
+    this._cumulativeGasUsed = 0;
+    this._gasUsedByFunction = []; // leave work for garbage collector
+  }
+
+  /**
+   * Get a list of gas used by function since last call to resetGasUsed().
+   *
+   * Empty unless DEBUG_GAS_USAGE_BY_FUNCTION was set.
+   */
+  public * getGasUsedByFunction(): Iterable<number> {
+    // TODO: We should know the name of each function called.
+    for (const gasUsed of this._gasUsedByFunction) {
+      yield gasUsed;
+    }
+  }
+
   public setProvider(
     provider: Provider,
     networkId: number,
@@ -141,6 +166,20 @@ export class Contracts {
     );
   }
 
+  public async call(
+    method: ContractSendMethod,
+    specificOptions: CallOptions = {},
+  ): Promise<any> {
+    const {
+      blockNumber,
+      ...otherOptions
+    } = {
+      ...this.defaultOptions,
+      ...specificOptions,
+    };
+    return (method as any).call(otherOptions);
+  }
+
   public async send(
     method: ContractSendMethod,
     specificOptions: SendOptions = {},
@@ -149,6 +188,27 @@ export class Contracts {
       ...this.defaultOptions,
       ...specificOptions,
     };
+    const result = await this._send(method, txOptions);
+    if (txOptions.confirmationType === ConfirmationType.Confirmed ||
+        txOptions.confirmationType === ConfirmationType.Both) {
+      const gasUsed = (result as TxResult).gasUsed;
+      this._cumulativeGasUsed += gasUsed;
+      if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
+        this._gasUsedByFunction.push(gasUsed);
+      }
+    }
+    return result;
+  }
+
+  // ============ Helper Functions ============
+
+  private async _send( // tslint:disable-line:function-name
+    method: ContractSendMethod,
+    txOptions: SendOptions = {},
+  ): Promise<any> {
+    if (!Object.values(ConfirmationType).includes(txOptions.confirmationType)) {
+      throw new Error(`Invalid confirmation type: ${txOptions.confirmationType}`);
+    }
 
     if (txOptions.confirmationType === ConfirmationType.Simulate || !txOptions.gas) {
       const gasEstimate = await this.estimateGas(method, txOptions);
@@ -166,10 +226,6 @@ export class Contracts {
 
     let hashOutcome = OUTCOMES.INITIAL;
     let confirmationOutcome = OUTCOMES.INITIAL;
-
-    if (!Object.values(ConfirmationType).includes(txOptions.confirmationType)) {
-      throw new Error(`Invalid confirmation type: ${txOptions.confirmationType}`);
-    }
 
     let transactionHash: string;
     let hashPromise: Promise<string>;
@@ -257,22 +313,6 @@ export class Contracts {
       confirmation: confirmationPromise,
     };
   }
-
-  public async call(
-    method: ContractSendMethod,
-    specificOptions: CallOptions = {},
-  ): Promise<any> {
-    const {
-      blockNumber,
-      ...otherOptions
-    } = {
-      ...this.defaultOptions,
-      ...specificOptions,
-    };
-    return (method as any).call(otherOptions);
-  }
-
-  // ============ Helper Functions ============
 
   private setContractProvider(
     contract: Contract,

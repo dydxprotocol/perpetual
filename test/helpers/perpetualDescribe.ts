@@ -55,6 +55,7 @@ export default function perpetualDescribe(
     // Runs before any beforeEach() calls made within the perpetualDescribe() call.
     beforeEach(async () => {
       await resetEVM(postInitSnapshotId);
+      ctx.perpetual.contracts.resetGasUsed();
     });
 
     // Runs before any after() calls made within the perpetualDescribe() call.
@@ -62,6 +63,24 @@ export default function perpetualDescribe(
       await resetEVM(preInitSnapshotId);
     });
 
+    // Runs before any afterEach() calls made within the perpetualDescribe() call.
+    afterEach(() => {
+      // Output the gas used in each test case.
+      if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
+        let i = 0;
+        for (const gasUsed of ctx.perpetual.contracts.getGasUsedByFunction()) {
+          printGasUsage(`Gas used [${i}]:`, gasUsed);
+          i += 1;
+        }
+      } else {
+        printGasUsage('Gas used:', ctx.perpetual.contracts.getCumulativeGasUsed());
+      }
+    });
+
     tests(ctx);
   });
+}
+
+function printGasUsage(label: string, value: number): void {
+  console.log(`\t\t\x1b[33m${label} \x1b[93m${value}\x1b[0m`);
 }

@@ -6,6 +6,7 @@
     "strict": false,
     "sourceMap": true,
     "declaration": true,
+    "downlevelIteration": true,
     "noUnusedLocals": true,
     "esModuleInterop": true,
     "outDir": "dist",
