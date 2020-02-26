@@ -307,12 +307,12 @@ contract P1Orders
         if (orderStatus == OrderStatus.Open) {
             require(
                 tradeData.order.maker == TypedSignature.recover(orderHash, tradeData.signature),
-                "Order invalid signature"
+                "Order has an invalid signature"
             );
         } else {
             require(
                 orderStatus != OrderStatus.Canceled,
-                "Order already canceled"
+                "Order was already canceled"
             );
             assert(orderStatus == OrderStatus.Approved);
         }
@@ -346,7 +346,7 @@ contract P1Orders
             : tradeData.fill.price >= tradeData.order.limitPrice;
         require(
             validPrice,
-            "Fill invalid price"
+            "Fill price is invalid"
         );
 
         bool validFee = _isNegativeLimitFee(tradeData.order)
@@ -354,7 +354,7 @@ contract P1Orders
             : tradeData.fill.isNegativeFee || tradeData.fill.fee <= tradeData.order.limitFee;
         require(
             validFee,
-            "Fill invalid fee"
+            "Fill fee is invalid"
         );
 
         if (tradeData.order.triggerPrice != 0) {
@@ -363,7 +363,7 @@ contract P1Orders
                 : tradeData.order.triggerPrice >= price;
             require(
                 validTriggerPrice,
-                "Stop price untriggered"
+                "Trigger price has not been reached"
             );
         }
 
