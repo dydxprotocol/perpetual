@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
@@ -33,31 +34,29 @@ const defaultOrder: Order = {
   expiration: INTEGERS.ONE_YEAR_IN_SECONDS.times(100),
   salt: new BigNumber('425'),
 };
-let fullFlagOrder: Order;
+const fullFlagOrder: Order = {
+  ...defaultOrder,
+  isBuy: true,
+  isDecreaseOnly: true,
+  limitFee: new Fee(defaultOrder.limitFee.value.abs().negated()),
+};
 let defaultSignedOrder: SignedOrder;
-let rando: address;
 let admin: address;
+let otherUser: address;
 
 async function init(ctx: ITestContext) {
   await initializeWithTestContracts(ctx);
-
-  defaultOrder.maker = ctx.accounts[5];
-  defaultOrder.taker = ctx.accounts[1];
-  rando = ctx.accounts[8];
-  admin = ctx.accounts[0];
-
-  fullFlagOrder = {
-    ...defaultOrder,
-    isBuy: true,
-    isDecreaseOnly: true,
-    limitFee: defaultOrder.limitFee.abs().negated(),
-  };
 
   const typedSignature = await ctx.perpetual.orders.signOrder(defaultOrder, SigningMethod.Hash);
   defaultSignedOrder = {
     ...defaultOrder,
     typedSignature,
   };
+
+  defaultOrder.maker = ctx.accounts[5];
+  defaultOrder.taker = ctx.accounts[1];
+  admin = ctx.accounts[0];
+  otherUser = ctx.accounts[8];
 }
 
 perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
@@ -177,7 +176,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
     it('fails for sender not equal to taker', async () => {
       await expectThrow(
-        fillOrder(defaultSignedOrder, { sender: rando }),
+        fillOrder(defaultSignedOrder, { sender: otherUser }),
         'Sender must equal taker',
       );
     });
@@ -186,7 +185,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       const order = await getModifiedOrder({ expiration: new BigNumber(1) });
       await expectThrow(
         fillOrder(order),
-        'Order is expired',
+        'Order has expired',
       );
     });
 

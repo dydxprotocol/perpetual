@@ -337,7 +337,7 @@ contract P1Orders
         );
         require(
             tradeData.order.expiration >= block.timestamp || tradeData.order.expiration == 0,
-            "Order is expired"
+            "Order has expired"
         );
 
         bool isBuyOrder = _isBuy(tradeData.order);
