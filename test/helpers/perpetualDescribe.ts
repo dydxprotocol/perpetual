@@ -60,6 +60,15 @@ export default function perpetualDescribe(
     // Runs before any after() calls made within the perpetualDescribe() call.
     after(async () => {
       await resetEVM(preInitSnapshotId);
+
+      // The ProfilerSubprovider should be set up when loading the Truffle configuration.
+      if (process.env.ENABLE_SOL_PROFILER === 'true') {
+        const profilerSubprovider = (global as any).profilerSubprovider;
+        if (!profilerSubprovider) {
+          throw new Error('ENABLE_SOL_PROFILER was "true" but global.profilerSubprovider not set');
+        }
+        await profilerSubprovider.writeProfilerOutputAsync();
+      }
     });
 
     tests(ctx);

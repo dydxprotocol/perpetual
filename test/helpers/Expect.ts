@@ -5,7 +5,7 @@ chai.use(require('chai-bignumber')(BigNumber));
 let REQUIRE_MSG = 'VM Exception while processing transaction: revert';
 let ASSERT_MSG = 'VM Exception while processing transaction: invalid opcode';
 
-if (process.env.ENABLE_SOL_TRACE !== 'true') {
+if (process.env.ENABLE_SOL_TRACE !== 'true' && process.env.ENABLE_SOL_PROFILER !== 'true') {
   REQUIRE_MSG = `Returned error: ${REQUIRE_MSG}`;
   ASSERT_MSG = `Returned error: ${ASSERT_MSG}`;
 }

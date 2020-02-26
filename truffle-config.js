@@ -1,10 +1,18 @@
 require('ts-node/register'); // eslint-disable-line
 require('dotenv-flow').config(); // eslint-disable-line
 
+const Web3 = require('web3');
+const { getDevProvider } = require('./provider');
+
+const enableProfiler = process.env.ENABLE_SOL_PROFILER === 'true';
+const enableTrace = process.env.ENABLE_SOL_TRACE === 'true';
+const enableDevTools = enableProfiler || enableTrace;
+const devProvider = getDevProvider(enableProfiler, enableTrace);
+
 module.exports = {
   compilers: {
     solc: {
-      version: '0.5.16',
+      version: enableDevTools ? '0.5.1' : '0.5.16',
       docker: process.env.DOCKER_COMPILER !== 'false',
       parser: 'solcjs',
       settings: {
@@ -22,6 +30,12 @@ module.exports = {
       port: 8545,
       gasPrice: 1,
       network_id: '1001',
+      provider: function() {
+        if (enableDevTools) {
+          return devProvider;
+        }
+        return new Web3.providers.HttpProvider(process.env.RPC_NODE_URI);
+      },
     },
     coverage: {
       host: '127.0.0.1',

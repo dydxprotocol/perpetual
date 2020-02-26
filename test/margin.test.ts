@@ -21,7 +21,7 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
   });
 
   describe('deposit()', () => {
-    it('Account owner can deposit', async () => {
+    it.only('Account owner can deposit', async () => {
       // Set initial balances and allowances.
       const amount = new BigNumber(150);
       await ctx.perpetual.testing.token.mint(accountOwner, amount);
