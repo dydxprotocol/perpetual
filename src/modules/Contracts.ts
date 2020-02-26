@@ -202,7 +202,7 @@ export class Contracts {
 
   // ============ Helper Functions ============
 
-  private async _send(
+  private async _send( // tslint:disable-line:function-name
     method: ContractSendMethod,
     txOptions: SendOptions = {},
   ): Promise<any> {
