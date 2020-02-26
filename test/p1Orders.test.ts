@@ -47,16 +47,16 @@ let otherUser: address;
 async function init(ctx: ITestContext) {
   await initializeWithTestContracts(ctx);
 
+  defaultOrder.maker = fullFlagOrder.maker = ctx.accounts[5];
+  defaultOrder.taker = fullFlagOrder.taker = ctx.accounts[1];
+  admin = ctx.accounts[0];
+  otherUser = ctx.accounts[8];
+
   const typedSignature = await ctx.perpetual.orders.signOrder(defaultOrder, SigningMethod.Hash);
   defaultSignedOrder = {
     ...defaultOrder,
     typedSignature,
   };
-
-  defaultOrder.maker = ctx.accounts[5];
-  defaultOrder.taker = ctx.accounts[1];
-  admin = ctx.accounts[0];
-  otherUser = ctx.accounts[8];
 }
 
 perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
