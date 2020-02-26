@@ -8,7 +8,7 @@ chai.use(require('chai-bignumber')(BigNumber));
 let REQUIRE_MSG = 'VM Exception while processing transaction: revert';
 let ASSERT_MSG = 'VM Exception while processing transaction: invalid opcode';
 
-if (config.enableDebugTools) {
+if (!config.enableDebugTools) {
   REQUIRE_MSG = `Returned error: ${REQUIRE_MSG}`;
   ASSERT_MSG = `Returned error: ${ASSERT_MSG}`;
 }
@@ -20,7 +20,7 @@ export async function expectThrow(promise: Promise<any>, reason?: string) {
     throw new Error('Did not throw');
   } catch (e) {
     assertCertainError(e, REQUIRE_MSG);
-    if (reason && config.COVERAGE) {
+    if (reason && !config.COVERAGE) {
       assertCertainError(e, `${REQUIRE_MSG} ${reason}`);
     }
   }

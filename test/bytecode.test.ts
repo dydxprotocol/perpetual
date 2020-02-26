@@ -1,13 +1,13 @@
-
+import config from './config';
 import { expect } from './helpers/Expect';
 
-const jsonFolder = `../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
+const jsonFolder = `../${config.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
 const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 
 describe('Bytecode Size', () => {
   it('Has a bytecode that does not exceed the maximum', async () => {
-    if (process.env.COVERAGE === 'true') {
+    if (config.COVERAGE) {
       return;
     }
 
