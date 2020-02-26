@@ -137,6 +137,17 @@ export class Orders {
 
   // ============ Signing Methods ============
 
+  public async getSignedOrder(
+    order: Order,
+    signingMethod: SigningMethod,
+  ): Promise<SignedOrder> {
+    const typedSignature = await this.signOrder(order, signingMethod);
+    return {
+      ...order,
+      typedSignature,
+    };
+  }
+
   /**
    * Sends order to current provider for signing. Can sign locally if the signing account is
    * loaded into web3 and SigningMethod.Hash is used.
