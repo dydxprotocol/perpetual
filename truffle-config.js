@@ -12,7 +12,7 @@ const devProvider = getDevProvider(enableProfiler, enableTrace);
 module.exports = {
   compilers: {
     solc: {
-      version: enableDevTools ? '0.5.1' : '0.5.16',
+      version: enableDevTools ? '0.5.4' : '0.5.16',
       docker: process.env.DOCKER_COMPILER !== 'false',
       parser: 'solcjs',
       settings: {

@@ -9,7 +9,7 @@ const RpcSubprovider = require('web3-provider-engine/subproviders/rpc');
 function getDevProvider(enableProfiler, enableTrace) {
   const artifactAdapter = new TruffleArtifactAdapter(
     '.', // project root
-    '0.5.16', // solc version
+    '0.5.4', // solc version
   );
 
   const defaultFromAddress = '0x0000000000000000000000000000000000000000';

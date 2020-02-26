@@ -4,7 +4,7 @@
  * TODO(ken): Find a more elegant solution.
  */
 
-pragma solidity 0.5.16;
+pragma solidity ^0.5.1;
 
 // Keep the following commented import--the comment is enough to get sol-trace to include the file,
 //   although the import itself fails.

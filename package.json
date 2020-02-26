@@ -44,6 +44,8 @@
   },
   "homepage": "https://github.com/dydxprotocol/perpetual#readme",
   "dependencies": {
+    "@0x/sol-tracing-utils": "^7.0.8",
+    "@0x/subproviders": "^6.0.8",
     "@openzeppelin/contracts": "2.4.0",
     "@openzeppelin/upgrades": "2.6.0",
     "bignumber.js": "^9.0.0",

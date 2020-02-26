@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.16;
+pragma solidity ^0.5.1;
 pragma experimental ABIEncoderV2;
 
 import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
