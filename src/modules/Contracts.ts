@@ -25,6 +25,9 @@ import {
   ContractSendMethod,
   Contract,
 } from 'web3-eth-contract';
+import {
+  AbiItem,
+} from 'web3-utils';
 
 // JSON
 const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
@@ -60,9 +63,10 @@ export class Contracts {
   private defaultOptions: SendOptions;
 
   private _cumulativeGasUsed: number = 0;
-  private _gasUsedByFunction: number[] = [];
+  private _gasUsedByFunction: { name: string, gasUsed: number }[] = [];
 
   // Contract instances
+  public mainContracts: Contract[];
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
   public p1Orders: Contract;
@@ -92,32 +96,18 @@ export class Contracts {
     };
 
     // Contracts
-    this.perpetualProxy = new web3.eth.Contract(perpetualProxyJson.abi);
-    this.perpetualV1 = new web3.eth.Contract(perpetualV1Json.abi);
-    this.p1Orders = new web3.eth.Contract(p1OrdersJson.abi);
-    this.p1Deleveraging = new web3.eth.Contract(p1DeleveragingJson.abi);
-    this.p1Liquidation = new web3.eth.Contract(p1LiquidationJson.abi);
+    this.mainContracts = [];
+    this.perpetualProxy = this.addMainContract(perpetualProxyJson);
+    this.perpetualV1 = this.addMainContract(perpetualV1Json);
+    this.p1Orders = this.addMainContract(p1OrdersJson);
+    this.p1Deleveraging = this.addMainContract(p1DeleveragingJson);
+    this.p1Liquidation = this.addMainContract(p1LiquidationJson);
 
     // Testing contracts
-    this.testP1Funder = new web3.eth.Contract(testP1FunderJson.abi);
-    this.testP1Oracle = new web3.eth.Contract(testP1OracleJson.abi);
-    this.testP1Trader = new web3.eth.Contract(testP1TraderJson.abi);
-    this.testToken = new web3.eth.Contract(testTokenJson.abi);
-
-    this.contractsList = [
-      // Contracts
-      { contract: this.perpetualProxy, json: perpetualProxyJson },
-      { contract: this.perpetualV1, json: perpetualProxyJson },
-      { contract: this.p1Orders, json: p1OrdersJson },
-      { contract: this.p1Deleveraging, json: p1DeleveragingJson },
-      { contract: this.p1Liquidation, json: p1LiquidationJson },
-
-      // Testing contracts
-      { contract: this.testP1Funder, json: testP1FunderJson },
-      { contract: this.testP1Oracle, json: testP1OracleJson },
-      { contract: this.testP1Trader, json: testP1TraderJson },
-      { contract: this.testToken, json: testTokenJson },
-    ];
+    this.testP1Funder = this.addTestContract(testP1FunderJson);
+    this.testP1Oracle = this.addTestContract(testP1OracleJson);
+    this.testP1Trader = this.addTestContract(testP1TraderJson);
+    this.testToken = this.addTestContract(testTokenJson);
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
@@ -137,8 +127,7 @@ export class Contracts {
    *
    * Empty unless DEBUG_GAS_USAGE_BY_FUNCTION was set.
    */
-  public * getGasUsedByFunction(): Iterable<number> {
-    // TODO: We should know the name of each function called.
+  public * getGasUsedByFunction(): Iterable<{ name: string, gasUsed: number }> {
     for (const gasUsed of this._gasUsedByFunction) {
       yield gasUsed;
     }
@@ -191,16 +180,33 @@ export class Contracts {
     const result = await this._send(method, txOptions);
     if (txOptions.confirmationType === ConfirmationType.Confirmed ||
         txOptions.confirmationType === ConfirmationType.Both) {
-      const gasUsed = (result as TxResult).gasUsed;
-      this._cumulativeGasUsed += gasUsed;
-      if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
-        this._gasUsedByFunction.push(gasUsed);
+
+      // Only count gas used on contracts we care about; exclude e.g. test contracts.
+      if (this.mainContracts.indexOf((method as any)._parent) >= 0) {
+        const gasUsed = (result as TxResult).gasUsed;
+        this._cumulativeGasUsed += gasUsed;
+        if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
+          this._gasUsedByFunction.push({ gasUsed, name: (method as any)._method.name });
+        }
       }
     }
     return result;
   }
 
   // ============ Helper Functions ============
+
+  private addMainContract(json: { abi: AbiItem }): Contract {
+    const contract = new this.web3.eth.Contract(json.abi);
+    this.mainContracts.push(contract);
+    this.contractsList.push({ contract, json });
+    return contract;
+  }
+
+  private addTestContract(json: { abi: AbiItem }): Contract {
+    const contract = new this.web3.eth.Contract(json.abi);
+    this.contractsList.push({ contract, json });
+    return contract;
+  }
 
   private async _send( // tslint:disable-line:function-name
     method: ContractSendMethod,
@@ -320,9 +326,16 @@ export class Contracts {
     provider: Provider,
     networkId: number,
   ): void {
+    let json: any = contractJson;
+
+    // Special case: Use the proxy address for the perpetual contract.
+    if (contract === this.perpetualV1) {
+      json = perpetualProxyJson;
+    }
+
     (contract as any).setProvider(provider);
-    contract.options.address = contractJson.networks[networkId]
-      && contractJson.networks[networkId].address;
+    contract.options.address = json.networks[networkId]
+      && json.networks[networkId].address;
   }
 
   private async estimateGas(
