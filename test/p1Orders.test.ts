@@ -1,8 +1,5 @@
 import BigNumber from 'bignumber.js';
 
-import { expect, expectBN, expectThrow } from './helpers/Expect';
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import {
   Fee,
   Order,
@@ -21,11 +18,17 @@ import {
 import {
   boolToBytes32,
 } from '../src/lib/BytesHelper';
+import { expect, expectBN, expectThrow } from './helpers/Expect';
+import { expectBalances, mintAndDeposit } from './helpers/balances';
+import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { buy, sell } from './helpers/trade';
 
+const orderAmount = new BigNumber('1e18');
 const defaultOrder: Order = {
   isBuy: true,
   isDecreaseOnly: false,
-  amount: new BigNumber('1e18'),
+  amount: orderAmount,
   limitPrice: new Price('987.654320'),
   triggerPrice: PRICES.NONE,
   limitFee: Fee.fromBips(20),
@@ -156,231 +159,350 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     });
   });
 
-  describe('Error Cases', () => {
-    it('fails for calls not from the perpetual contract', async () => {
-      await expectThrow(
-        ctx.perpetual.contracts.send(
-          ctx.perpetual.contracts.p1Orders.methods.trade(
-            admin,
-            admin,
-            admin,
-            '0',
-            '0x',
-            boolToBytes32(false),
+  describe('trade()', () => {
+    const initialAmount = orderAmount.times(defaultOrder.limitPrice.value).times(2);
+
+    beforeEach(async () => {
+      await Promise.all([
+        mintAndDeposit(ctx, defaultOrder.maker, initialAmount),
+        mintAndDeposit(ctx, defaultOrder.taker, initialAmount),
+      ]);
+      ctx.perpetual.contracts.resetGasUsed();
+    });
+
+    describe('basic success cases', () => {
+      it('fills a bid at the limit price', async () => {
+        const { expectedMarginAmount } = await fillOrder(defaultSignedOrder);
+        await expectBalances(
+          ctx,
+          [defaultOrder.maker, defaultOrder.taker],
+          [initialAmount.minus(expectedMarginAmount), initialAmount.plus(expectedMarginAmount)],
+          [orderAmount, orderAmount.negated()],
+        );
+      });
+
+      it('fills an ask at the limit price', async () => {
+        const sellOrder = await getModifiedOrder({ isBuy: false });
+        const { expectedMarginAmount } = await fillOrder(sellOrder);
+        await expectBalances(
+          ctx,
+          [defaultOrder.maker, defaultOrder.taker],
+          [initialAmount.plus(expectedMarginAmount), initialAmount.minus(expectedMarginAmount)],
+          [orderAmount.negated(), orderAmount],
+        );
+      });
+
+      it('fills a bid below the limit price', async () => {
+        const fillPrice = defaultOrder.limitPrice.minus(25);
+        const { expectedMarginAmount } = await fillOrder(defaultSignedOrder, { price: fillPrice });
+        await expectBalances(
+          ctx,
+          [defaultOrder.maker, defaultOrder.taker],
+          [initialAmount.minus(expectedMarginAmount), initialAmount.plus(expectedMarginAmount)],
+          [orderAmount, orderAmount.negated()],
+        );
+      });
+
+      it('fills an ask above the limit price', async () => {
+        const sellOrder = await getModifiedOrder({ isBuy: false });
+        const fillPrice = defaultOrder.limitPrice.plus(25);
+        const { expectedMarginAmount } = await fillOrder(sellOrder, { price: fillPrice });
+        await expectBalances(
+          ctx,
+          [defaultOrder.maker, defaultOrder.taker],
+          [initialAmount.plus(expectedMarginAmount), initialAmount.minus(expectedMarginAmount)],
+          [orderAmount.negated(), orderAmount],
+        );
+      });
+
+      it('fills a bid with a fee less than the limit fee', async () => {
+        const { expectedMarginAmount } = await fillOrder(
+          defaultSignedOrder,
+          {
+            fee: defaultOrder.limitFee.div(2),
+            price: defaultOrder.limitPrice.minus(25),
+          },
+        );
+        await expectBalances(
+          ctx,
+          [defaultOrder.maker, defaultOrder.taker],
+          [initialAmount.minus(expectedMarginAmount), initialAmount.plus(expectedMarginAmount)],
+          [orderAmount, orderAmount.negated()],
+        );
+      });
+
+      it('fills an ask with a fee less than the limit fee', async () => {
+        const sellOrder = await getModifiedOrder({ isBuy: false });
+        const fillPrice = defaultOrder.limitPrice.plus(25);
+        const fillFee = defaultOrder.limitFee.div(2);
+        const { expectedMarginAmount } = await fillOrder(
+          sellOrder,
+          {
+            fee: fillFee,
+            price: fillPrice,
+          },
+        );
+        await expectBalances(
+          ctx,
+          [defaultOrder.maker, defaultOrder.taker],
+          [initialAmount.plus(expectedMarginAmount), initialAmount.minus(expectedMarginAmount)],
+          [orderAmount.negated(), orderAmount],
+        );
+      });
+    });
+
+    describe('basic failure cases', () => {
+      it('fails for calls not from the perpetual contract', async () => {
+        await expectThrow(
+          ctx.perpetual.contracts.send(
+            ctx.perpetual.contracts.p1Orders.methods.trade(
+              admin,
+              admin,
+              admin,
+              '0',
+              '0x',
+              boolToBytes32(false),
+            ),
+            { from: admin },
           ),
-          { from: admin },
-        ),
-        'msg.sender must be PerpetualV1',
-      );
+          'msg.sender must be PerpetualV1',
+        );
+      });
+
+      it('fails for sender not equal to taker', async () => {
+        await expectThrow(
+          fillOrder(defaultSignedOrder, { sender: otherUser }),
+          'Sender must equal taker',
+        );
+      });
+
+      it('fails for bad signature', async () => {
+        const order = {
+          ...defaultSignedOrder,
+          typedSignature: `0xff${defaultSignedOrder.typedSignature.substr(4)}`,
+        };
+        await expectThrow(
+          fillOrder(order),
+          'Order has an invalid signature',
+        );
+      });
+
+      it('fails for canceled order', async () => {
+        await ctx.perpetual.orders.cancelOrder(defaultOrder, { from: defaultOrder.maker });
+        await expectThrow(
+          fillOrder(defaultSignedOrder),
+          'Order was already canceled',
+        );
+      });
+
+      it('fails for wrong maker', async () => {
+        const tradeData = ctx.perpetual.orders.fillToTradeData(
+          defaultSignedOrder,
+          defaultOrder.amount,
+          defaultOrder.limitPrice,
+          defaultOrder.limitFee,
+        );
+        await expectThrow(
+          ctx.perpetual.trade
+            .initiate()
+            .addTradeArg({
+              maker: otherUser,
+              taker: defaultOrder.taker,
+              data: tradeData,
+              trader: ctx.perpetual.contracts.p1Orders.options.address,
+            })
+            .commit({ from: defaultOrder.taker }),
+          'Order maker does not match maker',
+        );
+      });
+
+      it('fails for wrong taker', async () => {
+        const tradeData = ctx.perpetual.orders.fillToTradeData(
+          defaultSignedOrder,
+          defaultOrder.amount,
+          defaultOrder.limitPrice,
+          defaultOrder.limitFee,
+        );
+        await expectThrow(
+          ctx.perpetual.trade
+            .initiate()
+            .addTradeArg({
+              maker: defaultOrder.maker,
+              taker: otherUser,
+              data: tradeData,
+              trader: ctx.perpetual.contracts.p1Orders.options.address,
+            })
+            .commit({ from: otherUser }),
+          'Order taker does not match taker',
+        );
+      });
+
+      it('fails if the order has expired', async () => {
+        const order = await getModifiedOrder({ expiration: new BigNumber(1) });
+        await expectThrow(
+          fillOrder(order),
+          'Order has expired',
+        );
+      });
+
+      it('fails to fill a bid at a price above the limit price', async () => {
+        await expectThrow(
+          fillOrder(defaultSignedOrder, { price: defaultOrder.limitPrice.plus(1) }),
+          'Fill price is invalid',
+        );
+      });
+
+      it('fails to fill an ask at a price below the limit price', async () => {
+        const sellOrder = await getModifiedOrder({ isBuy: false });
+        await expectThrow(
+          fillOrder(sellOrder, { price: sellOrder.limitPrice.minus(1) }),
+          'Fill price is invalid',
+        );
+      });
+
+      it('fails if fee is greater than limit fee, for a positive limit fee', async () => {
+        await expectThrow(
+          fillOrder(defaultSignedOrder, { fee: defaultOrder.limitFee.plus(1) }),
+          'Fill fee is invalid',
+        );
+      });
+
+      it('fails if fee is greater than limit fee, for a negative limit fee', async () => {
+        await expectThrow(
+          fillOrder(fullFlagSignedOrder, { fee: fullFlagOrder.limitFee.plus(1) }),
+          'Fill fee is invalid',
+        );
+      });
+
+      it('fails to overfill order', async () => {
+        await expectThrow(
+          fillOrder(defaultSignedOrder, { amount: defaultSignedOrder.amount.plus(1) }),
+          'Cannot overfill order',
+        );
+      });
+
+      it('fails to overfill partially filled order', async () => {
+        const halfAmount = defaultOrder.amount.div(2);
+        await fillOrder(defaultSignedOrder, { amount: halfAmount });
+        await expectThrow(
+          fillOrder(defaultSignedOrder, { amount: halfAmount.plus(1) }),
+          'Cannot overfill order',
+        );
+      });
     });
 
-    it('fails for sender not equal to taker', async () => {
-      await expectThrow(
-        fillOrder(defaultSignedOrder, { sender: otherUser }),
-        'Sender must equal taker',
-      );
+    describe('with triggerPrice', () => {
+      it('fills a bid with the oracle price at the trigger price', async () => {
+        // limit bid |
+        //        -5 | fill price
+        //       -10 | trigger price, oracle price
+        const triggerPrice = defaultOrder.limitPrice.minus(10);
+        const fillPrice = defaultOrder.limitPrice.minus(5);
+        const order = await getModifiedOrder({ triggerPrice });
+        await ctx.perpetual.testing.oracle.setPrice(triggerPrice);
+        await fillOrder(order, { price: fillPrice });
+      });
+
+      it('fills an ask with the oracle price at the trigger price', async () => {
+        //       +10 | trigger price, oracle price
+        //        +5 | fill price
+        // limit ask |
+        const triggerPrice = defaultOrder.limitPrice.plus(10);
+        const fillPrice = defaultOrder.limitPrice.plus(5);
+        const sellOrder = await getModifiedOrder({ triggerPrice, isBuy: false });
+        await ctx.perpetual.testing.oracle.setPrice(triggerPrice);
+        await fillOrder(sellOrder, { price: fillPrice });
+      });
+
+      it('fills a bid with the oracle price above the trigger price', async () => {
+        //       +10 | oracle price
+        //           |
+        // limit bid |
+        //        -5 | fill price
+        //       -10 | trigger price
+        const triggerPrice = defaultOrder.limitPrice.minus(10);
+        const fillPrice = defaultOrder.limitPrice.minus(5);
+        const order = await getModifiedOrder({ triggerPrice });
+        await ctx.perpetual.testing.oracle.setPrice(triggerPrice.plus(20));
+        await fillOrder(order, { price: fillPrice });
+      });
+
+      it('fills an ask with the oracle price below the trigger price', async () => {
+        //       +10 | trigger price, oracle price
+        //        +5 | fill price
+        // limit ask |
+        //           |
+        //       -10 | oracle price
+        const triggerPrice = defaultOrder.limitPrice.plus(10);
+        const fillPrice = defaultOrder.limitPrice.plus(5);
+        const sellOrder = await getModifiedOrder({ triggerPrice, isBuy: false });
+        await ctx.perpetual.testing.oracle.setPrice(triggerPrice.minus(20));
+        await fillOrder(sellOrder, { price: fillPrice });
+      });
+
+      it('fails to fill a bid if the oracle price is below the trigger price', async () => {
+        // limit bid |
+        //       -10 | trigger price
+        //       -11 | oracle price
+        const triggerPrice = defaultOrder.limitPrice.minus(10);
+        await ctx.perpetual.testing.oracle.setPrice(triggerPrice.minus(1));
+        const order = await getModifiedOrder({ triggerPrice });
+        await expectThrow(
+          fillOrder(order),
+          'Trigger price has not been reached',
+        );
+      });
+
+      it('fails to fill an ask if the oracle price is above the trigger price', async () => {
+        //       +11 | oracle price
+        //       +10 | trigger price
+        // limit ask |
+        const triggerPrice = defaultOrder.limitPrice.plus(10);
+        await ctx.perpetual.testing.oracle.setPrice(triggerPrice.plus(1));
+        const sellOrder = await getModifiedOrder({ triggerPrice, isBuy: false });
+        await expectThrow(
+          fillOrder(sellOrder),
+          'Trigger price has not been reached',
+        );
+      });
     });
 
-    it('fails for bad signature', async () => {
-      const order = {
-        ...defaultSignedOrder,
-        typedSignature: `0xff${defaultSignedOrder.typedSignature.substr(4)}`,
-      };
-      await expectThrow(
-        fillOrder(order),
-        'Order has an invalid signature',
-      );
-    });
+    describe('with isDecreaseOnly', () => {
+      it('fails to fill a bid if maker position is positive', async () => {
+        const { maker, taker } = defaultOrder;
+        await buy(ctx, maker, taker, new BigNumber(1), defaultOrder.limitPrice.value);
+        const buyOrder = await getModifiedOrder({ isDecreaseOnly: true });
+        await expectThrow(
+          fillOrder(buyOrder),
+          'Fill does not decrease position',
+        );
+      });
 
-    it('fails for canceled order', async () => {
-      await ctx.perpetual.orders.cancelOrder(defaultOrder, { from: defaultOrder.maker });
-      await expectThrow(
-        fillOrder(defaultSignedOrder),
-        'Order was already canceled',
-      );
-    });
+      it('fails to fill an ask if maker position is negative', async () => {
+        const { maker, taker } = defaultOrder;
+        await sell(ctx, maker, taker, new BigNumber(1), defaultOrder.limitPrice.value);
+        const sellOrder = await getModifiedOrder({ isBuy: false, isDecreaseOnly: true });
+        await expectThrow(
+          fillOrder(sellOrder),
+          'Fill does not decrease position',
+        );
+      });
 
-    it('fails for wrong maker', async () => {
-      const tradeData = ctx.perpetual.orders.fillToTradeData(
-        defaultSignedOrder,
-        defaultOrder.amount,
-        defaultOrder.limitPrice,
-        defaultOrder.limitFee,
-      );
-      await expectThrow(
-        ctx.perpetual.trade
-          .initiate()
-          .addTradeArg({
-            maker: otherUser,
-            taker: defaultOrder.taker,
-            data: tradeData,
-            trader: ctx.perpetual.contracts.p1Orders.options.address,
-          })
-          .commit({ from: defaultOrder.taker }),
-        'Order maker does not match maker',
-      );
-    });
+      it('fails to buy if maker position would become positive', async () => {
+        const buyOrder = await getModifiedOrder({ isDecreaseOnly: true });
+        await expectThrow(
+          fillOrder(buyOrder),
+          'Fill does not decrease position',
+        );
+      });
 
-    it('fails for wrong taker', async () => {
-      const tradeData = ctx.perpetual.orders.fillToTradeData(
-        defaultSignedOrder,
-        defaultOrder.amount,
-        defaultOrder.limitPrice,
-        defaultOrder.limitFee,
-      );
-      await expectThrow(
-        ctx.perpetual.trade
-          .initiate()
-          .addTradeArg({
-            maker: defaultOrder.maker,
-            taker: otherUser,
-            data: tradeData,
-            trader: ctx.perpetual.contracts.p1Orders.options.address,
-          })
-          .commit({ from: otherUser }),
-        'Order taker does not match taker',
-      );
-    });
-
-    it('fails if the order has expired', async () => {
-      const order = await getModifiedOrder({ expiration: new BigNumber(1) });
-      await expectThrow(
-        fillOrder(order),
-        'Order has expired',
-      );
-    });
-
-    it('fails to buy if the fill price is below the limit price', async () => {
-      const sellOrder = await getModifiedOrder({ isBuy: false });
-      await expectThrow(
-        fillOrder(sellOrder, { price: sellOrder.limitPrice.minus(1) }),
-        'Fill price is invalid',
-      );
-    });
-
-    it('fails to sell if the fill price is above the limit price', async () => {
-      await expectThrow(
-        fillOrder(defaultSignedOrder, { price: defaultOrder.limitPrice.plus(1) }),
-        'Fill price is invalid',
-      );
-    });
-
-    it('fails if fee is greater than limit fee, for a positive limit fee', async () => {
-      await expectThrow(
-        fillOrder(defaultSignedOrder, { fee: defaultOrder.limitFee.plus(1) }),
-        'Fill fee is invalid',
-      );
-    });
-
-    it('fails if fee is greater than limit fee, for a negative limit fee', async () => {
-      await expectThrow(
-        fillOrder(fullFlagSignedOrder, { fee: fullFlagOrder.limitFee.plus(1) }),
-        'Fill fee is invalid',
-      );
-    });
-
-    it('fails to buy if the trigger price is above the oracle price', async () => {
-      const triggerPrice = defaultOrder.limitPrice.minus(25);
-      await ctx.perpetual.testing.oracle.setPrice(triggerPrice.minus(1));
-      const order = await getModifiedOrder({ triggerPrice });
-      await expectThrow(
-        fillOrder(order),
-        'Trigger price has not been reached',
-      );
-    });
-
-    it('fails to sell if the trigger price is below the oracle price', async () => {
-      const triggerPrice = defaultOrder.limitPrice.plus(25);
-      await ctx.perpetual.testing.oracle.setPrice(triggerPrice.plus(1));
-      const sellOrder = await getModifiedOrder({ triggerPrice, isBuy: false });
-      await expectThrow(
-        fillOrder(sellOrder),
-        'Trigger price has not been reached',
-      );
-    });
-
-    // TODO
-    // it('decrease-only order fails to buy if maker position is positive', async () => {
-    //   const sellOrder = await getModifiedOrder({ isBuy: false, isDecreaseOnly: true });
-    //   await expectThrow(
-    //     fillOrder(sellOrder),
-    //     'Trigger price has not been reached',
-    //   );
-    // });
-
-    // it('decrease-only order fails to sell if maker position is negative', async () => {
-    //   const buyOrder = await getModifiedOrder({ isDecreaseOnly: true });
-    //   await expectThrow(
-    //     fillOrder(buyOrder),
-    //     'Trigger price has not been reached',
-    //   );
-    // });
-
-    // it('decrease-only order fails to buy if maker position would become positive', async () => {
-    //   const sellOrder = await getModifiedOrder({ isBuy: false, isDecreaseOnly: true });
-    //   await expectThrow(
-    //     fillOrder(sellOrder),
-    //     'Trigger price has not been reached',
-    //   );
-    // });
-
-    // it('decrease-only order fails to sell if maker position would become negative', async () => {
-    //   const buyOrder = await getModifiedOrder({ isDecreaseOnly: true });
-    //   await expectThrow(
-    //     fillOrder(buyOrder),
-    //     'Trigger price has not been reached',
-    //   );
-    // });
-
-    it('fails to overfill order', async () => {
-      await expectThrow(
-        fillOrder(defaultSignedOrder, { amount: defaultSignedOrder.amount.plus(1) }),
-        'Cannot overfill order',
-      );
-    });
-
-    // TODO
-    xit('fails to overfill partially filled order', async () => {
-      const halfAmount = defaultOrder.amount.div(2);
-      await fillOrder(defaultSignedOrder, { amount: halfAmount });
-      await expectThrow(
-        fillOrder(defaultSignedOrder, { amount: halfAmount.plus(1) }),
-        'Cannot overfill order',
-      );
-    });
-  });
-
-  describe('Fill.price', () => {
-    // TODO
-  });
-
-  describe('Fill.fees', () => {
-    // TODO
-  });
-
-  describe('isDecreaseOnly', () => {
-    it('fails if not decreasing position for decrease-only order', async () => {
-      // TODO
-    });
-
-    // TODO
-  });
-
-  describe('triggerPrice', () => {
-    // TODO
-  });
-
-  describe('Trade', () => {
-    it('Succeeds for simple case', async () => {
-      // TODO: change to success
-      await expectThrow(
-        fillOrder(defaultSignedOrder),
-        'account is undercollateralized',
-      );
-    });
-
-    it('TODO', async () => {
-      // TODO
+      it('fails to sell if maker position would become negative', async () => {
+        const sellOrder = await getModifiedOrder({ isBuy: false, isDecreaseOnly: true });
+        await expectThrow(
+          fillOrder(sellOrder),
+          'Fill does not decrease position',
+        );
+      });
     });
   });
 
@@ -404,16 +526,30 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       fee?: Fee,
       sender?: address,
     } = {},
-  ): Promise<TxResult> {
-    return ctx.perpetual.trade
+  ): Promise<{
+    expectedMarginAmount: BigNumber,
+    txResult: TxResult,
+  }> {
+    const fillAmount = args.amount || order.amount;
+    const fillPrice = args.price || order.limitPrice;
+    const fillFee = args.fee || order.limitFee;
+    const effectivePrice = order.isBuy ?
+      fillPrice.plus(fillFee.value) :
+      fillPrice.minus(fillFee.value);
+    const expectedMarginAmount = fillAmount.times(effectivePrice.value).dp(0);
+    const txResult = await ctx.perpetual.trade
       .initiate()
       .fillSignedOrder(
         order,
-        args.amount || order.amount,
-        args.price || order.limitPrice,
-        args.fee || order.limitFee,
+        fillAmount,
+        fillPrice,
+        fillFee,
       )
       .commit({ from: args.sender || order.taker });
+    return {
+      expectedMarginAmount,
+      txResult,
+    };
   }
 
   async function expectStatus(
