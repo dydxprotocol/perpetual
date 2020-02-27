@@ -38,13 +38,13 @@ async function trade(
     positionAmount: position,
     traderFlags: TRADER_FLAG_ORDERS,
   });
-  const accounts = [taker, maker].sort();
+  const accounts = [taker, maker].map(s => s.toLowerCase()).sort();
   await ctx.perpetual.trade.trade(
     accounts,
     [
       {
-        makerIndex: accounts.indexOf(maker),
-        takerIndex: accounts.indexOf(taker),
+        makerIndex: accounts.indexOf(maker.toLowerCase()),
+        takerIndex: accounts.indexOf(taker.toLowerCase()),
         trader: ctx.perpetual.testing.trader.address,
         data: '0x00',
       },
