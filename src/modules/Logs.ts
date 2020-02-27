@@ -11,6 +11,7 @@ import { TxResult } from '../lib/types';
 type IContractsByAddress = { [address: string]: Contract };
 
 const TUPLE_MAP = {
+  'struct P1Orders.Fill': ['amount', 'price', 'fee', 'isNegativeFee'],
   'struct P1Types.Index': ['timestamp', 'isPositive', 'value'],
 };
 
@@ -32,6 +33,7 @@ export class Logs {
       this._contractsByAddress = {};
       for (const contract of [
         this.contracts.perpetualV1,
+        this.contracts.p1Orders,
         this.contracts.p1Deleveraging,
       ]) {
         if (!contract.options.address) {

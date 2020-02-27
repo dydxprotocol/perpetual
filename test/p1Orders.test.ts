@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import BigNumber from 'bignumber.js';
 
 import {
@@ -107,8 +108,18 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
   describe('approveOrder()', () => {
     it('Succeeds', async () => {
-      await ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      const txResult = await ctx.perpetual.orders.approveOrder(
+        fullFlagOrder,
+        { from: fullFlagOrder.maker },
+      );
       await expectStatus(fullFlagOrder, OrderStatus.Approved);
+
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      expect(logs.length).to.equal(1);
+      expect(logs[0].name).to.equal('LogOrderApproved');
+      expect(logs[0].args.orderHash).to.equal(ctx.perpetual.orders.getOrderHash(fullFlagOrder));
+      expect(logs[0].args.approver).to.equal(fullFlagOrder.maker);
     });
 
     it('Succeeds in double-approving order', async () => {
@@ -135,8 +146,18 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
   describe('cancelOrder()', () => {
     it('Succeeds', async () => {
-      await ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      const txResult = await ctx.perpetual.orders.cancelOrder(
+        fullFlagOrder,
+        { from: fullFlagOrder.maker },
+      );
       await expectStatus(fullFlagOrder, OrderStatus.Canceled);
+
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      expect(logs.length).to.equal(1);
+      expect(logs[0].name).to.equal('LogOrderCanceled');
+      expect(logs[0].args.orderHash).to.equal(ctx.perpetual.orders.getOrderHash(fullFlagOrder));
+      expect(logs[0].args.canceler).to.equal(fullFlagOrder.maker);
     });
 
     it('Succeeds in double-canceling order', async () => {
@@ -172,24 +193,60 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
     describe('basic success cases', () => {
       it('fills a bid at the limit price', async () => {
-        const { expectedMarginAmount } = await fillOrder(defaultSignedOrder);
+        const { expectedMarginAmount, txResult } = await fillOrder(defaultSignedOrder);
         await expectBalances(
           ctx,
           [defaultOrder.maker, defaultOrder.taker],
           [initialAmount.minus(expectedMarginAmount), initialAmount.plus(expectedMarginAmount)],
           [orderAmount, orderAmount.negated()],
         );
+
+        // Check logs.
+        const logs = ctx.perpetual.logs.parseLogs(txResult);
+        const filteredLogs = _.filter(logs, { name: 'LogOrderFilled' });
+        expect(filteredLogs.length).to.equal(1);
+        expect(filteredLogs[0].args.orderHash).to.equal(
+          ctx.perpetual.orders.getOrderHash(defaultOrder),
+        );
+        expect(filteredLogs[0].args.orderMaker).to.equal(defaultOrder.maker);
+        expect(filteredLogs[0].args.isBuy).to.equal(true);
+        expectBN(filteredLogs[0].args.fill.amount).to.equal(defaultOrder.amount);
+        expect(filteredLogs[0].args.fill.price.toString()).to.equal(
+          defaultOrder.limitPrice.toSolidity(),
+        );
+        expect(filteredLogs[0].args.fill.fee.toString()).to.equal(
+          defaultOrder.limitFee.toSolidity(),
+        );
+        expect(filteredLogs[0].args.fill.isNegativeFee).to.equal(false);
       });
 
       it('fills an ask at the limit price', async () => {
         const sellOrder = await getModifiedOrder({ isBuy: false });
-        const { expectedMarginAmount } = await fillOrder(sellOrder);
+        const { expectedMarginAmount, txResult } = await fillOrder(sellOrder);
         await expectBalances(
           ctx,
           [defaultOrder.maker, defaultOrder.taker],
           [initialAmount.plus(expectedMarginAmount), initialAmount.minus(expectedMarginAmount)],
           [orderAmount.negated(), orderAmount],
         );
+
+        // Check logs.
+        const logs = ctx.perpetual.logs.parseLogs(txResult);
+        const filteredLogs = _.filter(logs, { name: 'LogOrderFilled' });
+        expect(filteredLogs.length).to.equal(1);
+        expect(filteredLogs[0].args.orderHash).to.equal(
+          ctx.perpetual.orders.getOrderHash(sellOrder),
+        );
+        expect(filteredLogs[0].args.orderMaker).to.equal(sellOrder.maker);
+        expect(filteredLogs[0].args.isBuy).to.equal(false);
+        expectBN(filteredLogs[0].args.fill.amount).to.equal(defaultOrder.amount);
+        expect(filteredLogs[0].args.fill.price.toString()).to.equal(
+          defaultOrder.limitPrice.toSolidity(),
+        );
+        expect(filteredLogs[0].args.fill.fee.toString()).to.equal(
+          defaultOrder.limitFee.toSolidity(),
+        );
+        expect(filteredLogs[0].args.fill.isNegativeFee).to.equal(false);
       });
 
       it('fills a bid below the limit price', async () => {
