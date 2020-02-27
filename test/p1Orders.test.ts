@@ -360,16 +360,9 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         );
       });
 
-      it('fails if fee is greater than limit fee, for a positive limit fee', async () => {
+      it('fails if fee is greater than limit fee', async () => {
         await expectThrow(
           fillOrder(defaultSignedOrder, { fee: defaultOrder.limitFee.plus(1) }),
-          'Fill fee is invalid',
-        );
-      });
-
-      it('fails if fee is greater than limit fee, for a negative limit fee', async () => {
-        await expectThrow(
-          fillOrder(fullFlagSignedOrder, { fee: fullFlagOrder.limitFee.plus(1) }),
           'Fill fee is invalid',
         );
       });
@@ -467,7 +460,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
     });
 
-    describe('with isDecreaseOnly', () => {
+    describe('in decrease-only mode', () => {
       it('fails to fill a bid if maker position is positive', async () => {
         const { maker, taker } = defaultOrder;
         await buy(ctx, maker, taker, new BigNumber(1), defaultOrder.limitPrice.value);
@@ -488,7 +481,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         );
       });
 
-      it('fails to buy if maker position would become positive', async () => {
+      it('fails to fill a bid if maker position would become positive', async () => {
         const buyOrder = await getModifiedOrder({ isDecreaseOnly: true });
         await expectThrow(
           fillOrder(buyOrder),
@@ -496,11 +489,44 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         );
       });
 
-      it('fails to sell if maker position would become negative', async () => {
+      it('fails to fill an ask if maker position would become negative', async () => {
         const sellOrder = await getModifiedOrder({ isBuy: false, isDecreaseOnly: true });
         await expectThrow(
           fillOrder(sellOrder),
           'Fill does not decrease position',
+        );
+      });
+    });
+
+    describe('with negative limit fee', () => {
+      it('fills a bid', async () => {
+        const negativeFee = new Fee(defaultOrder.limitFee.value.abs().negated());
+        const order = await getModifiedOrder({ limitFee: negativeFee });
+        const { expectedMarginAmount } = await fillOrder(order);
+        await expectBalances(
+          ctx,
+          [defaultOrder.maker, defaultOrder.taker],
+          [initialAmount.minus(expectedMarginAmount), initialAmount.plus(expectedMarginAmount)],
+          [orderAmount, orderAmount.negated()],
+        );
+      });
+
+      it('fills an ask', async () => {
+        const negativeFee = new Fee(defaultOrder.limitFee.value.abs().negated());
+        const sellOrder = await getModifiedOrder({ isBuy: false, limitFee: negativeFee });
+        const { expectedMarginAmount } = await fillOrder(sellOrder);
+        await expectBalances(
+          ctx,
+          [defaultOrder.maker, defaultOrder.taker],
+          [initialAmount.plus(expectedMarginAmount), initialAmount.minus(expectedMarginAmount)],
+          [orderAmount.negated(), orderAmount],
+        );
+      });
+
+      it('fails if fee is greater than limit fee', async () => {
+        await expectThrow(
+          fillOrder(fullFlagSignedOrder, { fee: fullFlagOrder.limitFee.plus(1) }),
+          'Fill fee is invalid',
         );
       });
     });
