@@ -17,7 +17,6 @@
 */
 
 import _ from 'lodash';
-import { Contract } from 'web3-eth-contract';
 import { Contracts } from './Contracts';
 import {
   SendOptions,
@@ -29,7 +28,6 @@ import { Orders } from './Orders';
 
 export class Trade {
   private contracts: Contracts;
-  private perpetual: Contract;
   private orders: Orders;
 
   constructor(
@@ -37,7 +35,6 @@ export class Trade {
     orders: Orders,
   ) {
     this.contracts = contracts;
-    this.perpetual = this.contracts.perpetualV1;
     this.orders = orders;
   }
 
@@ -58,10 +55,21 @@ export class Trade {
     options?: SendOptions,
   ): Promise<TxResult> {
     if (!_.isEqual(accounts, _.chain(accounts).map(_.toLower).sort().value())) {
-      throw new Error('Accounts passed to trade() should be lowercase and sorted');
+      throw new Error(
+        'Accounts passed to trade() should be lowercase and sorted; got: '
+        + `${JSON.stringify(accounts)}`,
+      );
+    }
+    for (const { makerIndex, takerIndex } of tradeArgs) {
+      if (makerIndex < 0 || makerIndex >= accounts.length) {
+        throw new Error(`Trade arg maker index out of bounds: ${makerIndex}`);
+      }
+      if (takerIndex < 0 || takerIndex >= accounts.length) {
+        throw new Error(`Trade arg taker index out of bounds: ${takerIndex}`);
+      }
     }
     return this.contracts.send(
-      this.perpetual.methods.trade(
+      this.contracts.perpetualV1.methods.trade(
         accounts,
         tradeArgs,
       ),

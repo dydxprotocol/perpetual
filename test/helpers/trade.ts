@@ -43,8 +43,8 @@ async function trade(
     accounts,
     [
       {
-        makerIndex: accounts.indexOf(maker),
-        takerIndex: accounts.indexOf(taker),
+        makerIndex: accounts.indexOf(maker.toLowerCase()),
+        takerIndex: accounts.indexOf(taker.toLowerCase()),
         trader: ctx.perpetual.testing.trader.address,
         data: '0x00',
       },
