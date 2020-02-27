@@ -6,7 +6,7 @@ import { expectBalances, mintAndDeposit } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 import { fastForward } from './helpers/EVM';
-import { expectThrow, expect } from './helpers/Expect';
+import { expect, expectBN, expectThrow } from './helpers/Expect';
 import { address } from '../src';
 import { FEES, INTEGERS, PRICES } from '../src/lib/Constants';
 import {
@@ -66,6 +66,48 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
   });
 
   describe('trade(), via PerpetualV1, as the deleveraging admin', () => {
+    it('Succeeds partially deleveraging a long position', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+      const deleverageAmount = positionSize.div(2);
+      const txResult = await deleverage(long, short, deleverageAmount);
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(-250), new BigNumber(1250)],
+        [new BigNumber(5), new BigNumber(-5)],
+      );
+
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      const filteredLogs = _.filter(logs, { name: 'LogDeleveraged' });
+      expect(filteredLogs.length).to.equal(1);
+      expect(filteredLogs[0].args.maker).to.equal(long);
+      expect(filteredLogs[0].args.taker).to.equal(short);
+      expectBN(filteredLogs[0].args.amount).to.equal(deleverageAmount);
+      expect(filteredLogs[0].args.isBuy).to.equal(true);
+    });
+
+    it('Succeeds partially deleveraging a short position', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
+      const deleverageAmount = positionSize.div(2);
+      const txResult = await deleverage(short, long, deleverageAmount);
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(250), new BigNumber(750)],
+        [new BigNumber(5), new BigNumber(-5)],
+      );
+
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      const filteredLogs = _.filter(logs, { name: 'LogDeleveraged' });
+      expect(filteredLogs.length).to.equal(1);
+      expect(filteredLogs[0].args.maker).to.equal(short);
+      expect(filteredLogs[0].args.taker).to.equal(long);
+      expectBN(filteredLogs[0].args.amount).to.equal(deleverageAmount);
+      expect(filteredLogs[0].args.isBuy).to.equal(false);
+    });
+
     it('Succeeds fully deleveraging a long position', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
       await deleverage(long, short, positionSize);
@@ -85,28 +127,6 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
         [long, short],
         [new BigNumber(1000), new BigNumber(0)],
         [new BigNumber(0), new BigNumber(0)],
-      );
-    });
-
-    it('Succeeds partially deleveraging a long position', async () => {
-      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
-      await deleverage(long, short, positionSize.div(2));
-      await expectBalances(
-        ctx,
-        [long, short],
-        [new BigNumber(-250), new BigNumber(1250)],
-        [new BigNumber(5), new BigNumber(-5)],
-      );
-    });
-
-    it('Succeeds partially deleveraging a short position', async () => {
-      await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
-      await deleverage(short, long, positionSize.div(2));
-      await expectBalances(
-        ctx,
-        [long, short],
-        [new BigNumber(250), new BigNumber(750)],
-        [new BigNumber(5), new BigNumber(-5)],
       );
     });
 

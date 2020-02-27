@@ -35,6 +35,7 @@ export class Logs {
         this.contracts.perpetualV1,
         this.contracts.p1Orders,
         this.contracts.p1Deleveraging,
+        this.contracts.p1Liquidation,
       ]) {
         if (!contract.options.address) {
           throw new Error('Contract has not been deployed');

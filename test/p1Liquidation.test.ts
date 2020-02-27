@@ -1,10 +1,11 @@
 import BigNumber from 'bignumber.js';
+import _ from 'lodash';
 
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import { expectBalances, mintAndDeposit, expectPositions } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
-import { expectThrow } from './helpers/Expect';
+import { expect, expectBN, expectThrow } from './helpers/Expect';
 import { address } from '../src';
 import { FEES, INTEGERS, PRICES } from '../src/lib/Constants';
 import {
@@ -65,6 +66,48 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
   });
 
   describe('trade(), via PerpetualV1', () => {
+    it('Succeeds partially liquidating a long position', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+      const liquidationAmount = positionSize.div(2);
+      const txResult = await liquidate(long, short, liquidationAmount);
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(-250), new BigNumber(1250)],
+        [new BigNumber(5), new BigNumber(-5)],
+      );
+
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      const filteredLogs = _.filter(logs, { name: 'LogLiquidated' });
+      expect(filteredLogs.length).to.equal(1);
+      expect(filteredLogs[0].args.maker).to.equal(long);
+      expect(filteredLogs[0].args.taker).to.equal(short);
+      expectBN(filteredLogs[0].args.amount).to.equal(liquidationAmount);
+      expect(filteredLogs[0].args.isBuy).to.equal(true);
+    });
+
+    it('Succeeds partially liquidating a short position', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
+      const liquidationAmount = positionSize.div(2);
+      const txResult = await liquidate(short, long, liquidationAmount);
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(250), new BigNumber(750)],
+        [new BigNumber(5), new BigNumber(-5)],
+      );
+
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      const filteredLogs = _.filter(logs, { name: 'LogLiquidated' });
+      expect(filteredLogs.length).to.equal(1);
+      expect(filteredLogs[0].args.maker).to.equal(short);
+      expect(filteredLogs[0].args.taker).to.equal(long);
+      expectBN(filteredLogs[0].args.amount).to.equal(liquidationAmount);
+      expect(filteredLogs[0].args.isBuy).to.equal(false);
+    });
+
     it('Succeeds fully liquidating an undercollateralized long position', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
       await liquidate(long, short, positionSize);
@@ -106,28 +149,6 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
         [long, short],
         [new BigNumber(1000), new BigNumber(0)],
         [new BigNumber(0), new BigNumber(0)],
-      );
-    });
-
-    it('Succeeds partially liquidating a long position', async () => {
-      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
-      await liquidate(long, short, positionSize.div(2));
-      await expectBalances(
-        ctx,
-        [long, short],
-        [new BigNumber(-250), new BigNumber(1250)],
-        [new BigNumber(5), new BigNumber(-5)],
-      );
-    });
-
-    it('Succeeds partially liquidating a short position', async () => {
-      await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
-      await liquidate(short, long, positionSize.div(2));
-      await expectBalances(
-        ctx,
-        [long, short],
-        [new BigNumber(250), new BigNumber(750)],
-        [new BigNumber(5), new BigNumber(-5)],
       );
     });
 
