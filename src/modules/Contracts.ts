@@ -69,6 +69,8 @@ export class Contracts {
   public p1Deleveraging: Contract;
   public p1Liquidation: Contract;
 
+  public mainContracts: Contract[];
+
   // Testing contract instances
   public testP1Funder: Contract;
   public testP1Oracle: Contract;
@@ -97,6 +99,15 @@ export class Contracts {
     this.p1Orders = new web3.eth.Contract(p1OrdersJson.abi);
     this.p1Deleveraging = new web3.eth.Contract(p1DeleveragingJson.abi);
     this.p1Liquidation = new web3.eth.Contract(p1LiquidationJson.abi);
+
+    // TODO clean up
+    this.mainContracts = [
+      this.perpetualProxy,
+      this.perpetualV1,
+      this.p1Orders,
+      this.p1Deleveraging,
+      this.p1Liquidation,
+    ];
 
     // Testing contracts
     this.testP1Funder = new web3.eth.Contract(testP1FunderJson.abi);
@@ -191,10 +202,14 @@ export class Contracts {
     const result = await this._send(method, txOptions);
     if (txOptions.confirmationType === ConfirmationType.Confirmed ||
         txOptions.confirmationType === ConfirmationType.Both) {
-      const gasUsed = (result as TxResult).gasUsed;
-      this._cumulativeGasUsed += gasUsed;
-      if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
-        this._gasUsedByFunction.push({ gasUsed, name: (method as any)._method.name });
+
+      // Only count gas used on contracts we care about; exclude e.g. test contracts.
+      if (this.mainContracts.indexOf((method as any)._parent) >= 0) {
+        const gasUsed = (result as TxResult).gasUsed;
+        this._cumulativeGasUsed += gasUsed;
+        if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
+          this._gasUsedByFunction.push({ gasUsed, name: (method as any)._method.name });
+        }
       }
     }
     return result;
