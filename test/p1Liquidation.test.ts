@@ -6,11 +6,10 @@ import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 import { expectThrow } from './helpers/Expect';
 import { address } from '../src';
-import { FEES, PRICES } from '../src/lib/Constants';
+import { FEES, INTEGERS, PRICES } from '../src/lib/Constants';
 import {
   Order,
   Price,
-  SignedOrder,
   SigningMethod,
 } from '../src/lib/types';
 
@@ -272,14 +271,13 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
         limitFee: FEES.ZERO,
         maker: long,
         taker: short,
-        expiration: new BigNumber(888),
+        expiration: INTEGERS.ZERO,
         salt: new BigNumber(444),
       };
-      const typedSignature = await ctx.perpetual.orders.signOrder(defaultOrder, SigningMethod.Hash);
-      const defaultSignedOrder: SignedOrder = {
-        ...defaultOrder,
-        typedSignature,
-      };
+      const defaultSignedOrder = await ctx.perpetual.orders.getSignedOrder(
+        defaultOrder,
+        SigningMethod.Hash,
+      );
 
       // Fill the order and then liquidate the entire short position.
       await ctx.perpetual.trade.initiate()

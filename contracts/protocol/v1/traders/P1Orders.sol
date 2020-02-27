@@ -248,10 +248,14 @@ contract P1Orders
     )
         external
     {
-        bytes32 orderHash = _getOrderHash(order);
         require(
             msg.sender == order.maker,
             "Order cannot be approved by non-maker"
+        );
+        bytes32 orderHash = _getOrderHash(order);
+        require(
+            _STATUS_[orderHash] != OrderStatus.Canceled,
+            "Canceled order cannot be approved"
         );
         _STATUS_[orderHash] = OrderStatus.Approved;
         emit LogOrderApproved(orderHash, msg.sender);
@@ -262,11 +266,11 @@ contract P1Orders
     )
         external
     {
-        bytes32 orderHash = _getOrderHash(order);
         require(
             msg.sender == order.maker,
             "Order cannot be canceled by non-maker"
         );
+        bytes32 orderHash = _getOrderHash(order);
         _STATUS_[orderHash] = OrderStatus.Canceled;
         emit LogOrderCanceled(orderHash, msg.sender);
     }
@@ -303,12 +307,12 @@ contract P1Orders
         if (orderStatus == OrderStatus.Open) {
             require(
                 tradeData.order.maker == TypedSignature.recover(orderHash, tradeData.signature),
-                "Order invalid signature"
+                "Order has an invalid signature"
             );
         } else {
             require(
                 orderStatus != OrderStatus.Canceled,
-                "Order already canceled"
+                "Order was already canceled"
             );
             assert(orderStatus == OrderStatus.Approved);
         }
@@ -331,6 +335,10 @@ contract P1Orders
             tradeData.order.taker == address(0) || tradeData.order.taker == taker,
             "Order taker does not match taker"
         );
+        require(
+            tradeData.order.expiration >= block.timestamp || tradeData.order.expiration == 0,
+            "Order has expired"
+        );
 
         bool isBuyOrder = _isBuy(tradeData.order);
         bool validPrice = isBuyOrder
@@ -338,7 +346,7 @@ contract P1Orders
             : tradeData.fill.price >= tradeData.order.limitPrice;
         require(
             validPrice,
-            "Fill invalid price"
+            "Fill price is invalid"
         );
 
         bool validFee = _isNegativeLimitFee(tradeData.order)
@@ -346,7 +354,7 @@ contract P1Orders
             : tradeData.fill.isNegativeFee || tradeData.fill.fee <= tradeData.order.limitFee;
         require(
             validFee,
-            "Fill invalid fee"
+            "Fill fee is invalid"
         );
 
         if (tradeData.order.triggerPrice != 0) {
@@ -355,7 +363,7 @@ contract P1Orders
                 : tradeData.order.triggerPrice >= price;
             require(
                 validTriggerPrice,
-                "Stop price untriggered"
+                "Trigger price has not been reached"
             );
         }
 

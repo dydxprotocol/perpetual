@@ -56,13 +56,12 @@ export class TradeOperation {
       price,
       fee,
     );
-    this.addTradeArg({
+    return this.addTradeArg({
       maker: order.maker,
       taker: order.taker,
       data: tradeData,
       trader: this.contracts.p1Orders.options.address,
     });
-    return this;
   }
 
   public liquidate(
@@ -71,13 +70,12 @@ export class TradeOperation {
     amount: BigNumber,
     allOrNothing: boolean = false,
   ): this {
-    this.addTradeArg({
+    return this.addTradeArg({
       maker,
       taker,
       data: makeLiquidateTradeData(amount, allOrNothing),
       trader: this.contracts.p1Liquidation.options.address,
     });
-    return this;
   }
 
   public deleverage(
@@ -86,13 +84,12 @@ export class TradeOperation {
     amount: BigNumber,
     allOrNothing: boolean = false,
   ): this {
-    this.addTradeArg({
+    return this.addTradeArg({
       maker,
       taker,
       data: makeDeleverageTradeData(amount, allOrNothing),
       trader: this.contracts.p1Deleveraging.options.address,
     });
-    return this;
   }
 
   public async commit(
@@ -139,28 +136,26 @@ export class TradeOperation {
     }
   }
 
-  // ============ Private Helper Functions ============
-
-  private addTradeArg({
+  public addTradeArg({
     maker,
     taker,
     trader,
     data,
-  }:{
+  }: {
     maker: address,
     taker: address,
     trader: address,
     data: string,
-  }): void {
+  }): this {
     if (this.committed) {
       throw new Error('Operation already committed');
     }
-
     this.trades.push({
       trader,
       data,
       maker: maker.toLowerCase(),
       taker: taker.toLowerCase(),
     });
+    return this;
   }
 }
