@@ -16,6 +16,7 @@
 
 */
 
+import _ from 'lodash';
 import { Contract } from 'web3-eth-contract';
 import { Contracts } from './Contracts';
 import {
@@ -56,6 +57,9 @@ export class Trade {
     tradeArgs: TradeArg[],
     options?: SendOptions,
   ): Promise<TxResult> {
+    if (!_.isEqual(accounts, _.chain(accounts).map(_.toLower).sort().value())) {
+      throw new Error('Accounts passed to trade() should be lowercase and sorted');
+    }
     return this.contracts.send(
       this.perpetual.methods.trade(
         accounts,

@@ -38,7 +38,7 @@ async function trade(
     positionAmount: position,
     traderFlags: TRADER_FLAG_ORDERS,
   });
-  const accounts = [taker, maker].sort();
+  const accounts = [taker, maker].map(s => s.toLowerCase()).sort();
   await ctx.perpetual.trade.trade(
     accounts,
     [
