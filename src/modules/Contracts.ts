@@ -60,7 +60,7 @@ export class Contracts {
   private defaultOptions: SendOptions;
 
   private _cumulativeGasUsed: number = 0;
-  private _gasUsedByFunction: number[] = [];
+  private _gasUsedByFunction: { name: string, gasUsed: number }[] = [];
 
   // Contract instances
   public perpetualProxy: Contract;
@@ -94,6 +94,7 @@ export class Contracts {
     // Contracts
     this.perpetualProxy = new web3.eth.Contract(perpetualProxyJson.abi);
     this.perpetualV1 = new web3.eth.Contract(perpetualV1Json.abi);
+    console.log(this.perpetualV1.methods.deposit('0x0000000000000000000000000000000000000000', '0'));
     this.p1Orders = new web3.eth.Contract(p1OrdersJson.abi);
     this.p1Deleveraging = new web3.eth.Contract(p1DeleveragingJson.abi);
     this.p1Liquidation = new web3.eth.Contract(p1LiquidationJson.abi);
@@ -137,7 +138,7 @@ export class Contracts {
    *
    * Empty unless DEBUG_GAS_USAGE_BY_FUNCTION was set.
    */
-  public * getGasUsedByFunction(): Iterable<number> {
+  public * getGasUsedByFunction(): Iterable<{ name: string, gasUsed: number }> {
     // TODO: We should know the name of each function called.
     for (const gasUsed of this._gasUsedByFunction) {
       yield gasUsed;
@@ -194,7 +195,7 @@ export class Contracts {
       const gasUsed = (result as TxResult).gasUsed;
       this._cumulativeGasUsed += gasUsed;
       if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
-        this._gasUsedByFunction.push(gasUsed);
+        this._gasUsedByFunction.push({ name: (method as any)._method.name, gasUsed});
       }
     }
     return result;

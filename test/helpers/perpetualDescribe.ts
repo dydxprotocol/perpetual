@@ -67,10 +67,8 @@ export default function perpetualDescribe(
     afterEach(() => {
       // Output the gas used in each test case.
       if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
-        let i = 0;
         for (const gasUsed of ctx.perpetual.contracts.getGasUsedByFunction()) {
-          printGasUsage(`Gas used [${i}]:`, gasUsed);
-          i += 1;
+          printGasUsage(`Gas used [${gasUsed.name}]:`, gasUsed.gasUsed);
         }
       } else {
         printGasUsage('Gas used:', ctx.perpetual.contracts.getCumulativeGasUsed());
