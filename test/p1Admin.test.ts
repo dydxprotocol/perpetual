@@ -8,7 +8,6 @@ perpetualDescribe('P1Getters', initializeWithTestContracts, (ctx: ITestContext) 
   let admin: address;
 
   before(() => {
-    // Default account is accounts[1]. Use other accounts.
     admin = ctx.accounts[0];
   });
 
