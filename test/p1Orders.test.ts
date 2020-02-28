@@ -308,6 +308,22 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
           [orderAmount.negated(), orderAmount],
         );
       });
+
+      it('succeeds with an invalid signature for an order approved on-chain', async () => {
+        await ctx.perpetual.orders.approveOrder(defaultOrder, { from: defaultOrder.maker });
+        const order = {
+          ...defaultSignedOrder,
+          typedSignature: `0xff${defaultSignedOrder.typedSignature.substr(4)}`,
+        };
+        const { expectedMarginAmount } = await fillOrder(order);
+
+        await expectBalances(
+          ctx,
+          [defaultOrder.maker, defaultOrder.taker],
+          [initialAmount.minus(expectedMarginAmount), initialAmount.plus(expectedMarginAmount)],
+          [orderAmount, orderAmount.negated()],
+        );
+      });
     });
 
     describe('basic failure cases', () => {
