@@ -2,6 +2,8 @@ import chai from 'chai';
 import BigNumber from 'bignumber.js';
 chai.use(require('chai-bignumber')(BigNumber));
 
+import { address } from '../../src/lib/types';
+
 let REQUIRE_MSG = 'VM Exception while processing transaction: revert';
 let ASSERT_MSG = 'VM Exception while processing transaction: invalid opcode';
 
@@ -47,6 +49,12 @@ function assertCertainError(error: Error, expected_error_msg?: string) {
 
 export function expect(item: any, message?: string): Chai.Assertion {
   return chai.expect(item, message);
+}
+
+export function expectAddressesEqual(arg1: address, arg2: address, message?: string) {
+  chai.expect(typeof arg1).to.equal('string', 'expectAddressesEqual arg1 type');
+  chai.expect(typeof arg2).to.equal('string', 'expectAddressesEqual arg2 type');
+  expect(arg1.toLowerCase()).to.equal(arg2.toLowerCase(), message);
 }
 
 export function expectBN(bn: BigNumber, message?: string): Chai.Assertion {
