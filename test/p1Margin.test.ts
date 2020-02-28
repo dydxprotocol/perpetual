@@ -27,8 +27,10 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       await ctx.perpetual.testing.token.mint(accountOwner, amount);
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
 
-      // Execute deposit.
+      // Ensure index is updated on deposit.
       await mineAvgBlock();
+
+      // Execute deposit.
       const txResult = await ctx.perpetual.margin.deposit(
         accountOwner,
         amount,
@@ -103,8 +105,10 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
     it('Account owner can withdraw partial amount', async () => {
       const amount = new BigNumber(100);
 
-      // Execute withdraw.
+      // Ensure index is updated on deposit.
       await mineAvgBlock();
+
+      // Execute withdraw.
       const txResult = await ctx.perpetual.margin.withdraw(
         accountOwner,
         amount,

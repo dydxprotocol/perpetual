@@ -66,12 +66,10 @@ perpetualDescribe('P1Getters', initializeWithTestContracts, (ctx: ITestContext) 
   });
 
   describe('with account balances', () => {
-    let marginAmount;
-    let positionAmount;
+    const marginAmount = new BigNumber('1e18');
+    const positionAmount = new BigNumber('1e16');
 
     beforeEach(async () => {
-      marginAmount = new BigNumber('1e18');
-      positionAmount = new BigNumber('1e16');
       await Promise.all([
         await mintAndDeposit(ctx, account, marginAmount),
         await mintAndDeposit(ctx, otherAccount, marginAmount),
