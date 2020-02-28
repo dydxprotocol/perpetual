@@ -35,6 +35,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * Trade logic contract
  */
 contract P1Trade is
+    P1FinalSettlement,
     P1Storage,
     P1Settlement
 {
@@ -68,6 +69,7 @@ contract P1Trade is
         TradeArg[] memory trades
     )
         public
+        noFinalSettlement
         nonReentrant
     {
         _verifyAccounts(accounts);

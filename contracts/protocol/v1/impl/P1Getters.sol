@@ -117,6 +117,14 @@ contract P1Getters is
         return _MIN_COLLATERAL_;
     }
 
+    function getFinalSettlementEnabled()
+        external
+        view
+        returns (bool)
+    {
+        return _FINAL_SETTLEMENT_ENABLED_;
+    }
+
     // ============ Public Getters ============
 
     function hasAccountPermissions(

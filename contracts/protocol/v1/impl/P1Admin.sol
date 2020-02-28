@@ -53,6 +53,10 @@ contract P1Admin is
         uint256 minCollateral
     );
 
+    event LogFinalSettlementEnabled(
+        uint256 oraclePrice
+    );
+
     // ============ Functions ============
 
     function setGlobalOperator(
@@ -109,5 +113,20 @@ contract P1Admin is
         );
         _MIN_COLLATERAL_ = minCollateral;
         emit LogSetMinCollateral(minCollateral);
+    }
+
+    function enableFinalSettlement(
+        uint256 expectedPrice
+    )
+        public
+        onlyAdmin
+    {
+        _FINAL_SETTLEMENT_PRICE_ = I_P1Oracle(_ORACLE_).getPrice();
+        _FINAL_SETTLEMENT_ENABLED_ = true;
+        require(
+            _FINAL_SETTLEMENT_PRICE_ == expectedPrice,
+            "Oracle price not equal to the expected final settlement price"
+        );
+        emit LogFinalSettlementEnabled(_FINAL_SETTLEMENT_PRICE_);
     }
 }

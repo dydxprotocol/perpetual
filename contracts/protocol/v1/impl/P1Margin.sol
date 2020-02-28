@@ -35,6 +35,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * Margin logic contract
  */
 contract P1Margin is
+    P1FinalSettlement,
     P1Storage,
     P1Getters,
     P1Settlement
@@ -61,6 +62,7 @@ contract P1Margin is
         uint256 amount
     )
         external
+        noFinalSettlement
         nonReentrant
     {
         P1Types.Context memory context = _loadContext();
@@ -84,6 +86,7 @@ contract P1Margin is
         uint256 amount
     )
         external
+        noFinalSettlement
         nonReentrant
     {
         require(

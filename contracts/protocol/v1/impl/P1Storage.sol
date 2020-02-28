@@ -46,4 +46,7 @@ contract P1Storage is
 
     P1Types.Index internal _GLOBAL_INDEX_;
     uint256 internal _MIN_COLLATERAL_;
+
+    bool internal _FINAL_SETTLEMENT_ENABLED_;
+    uint256 internal _FINAL_SETTLEMENT_PRICE_;
 }

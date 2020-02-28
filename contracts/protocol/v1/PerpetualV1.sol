@@ -36,6 +36,7 @@ import { P1Types } from "./lib/P1Types.sol";
  */
 contract PerpetualV1 is
     P1Admin,
+    P1FinalSettlement,
     P1Getters,
     P1Margin,
     P1Operator,
