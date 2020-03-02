@@ -68,3 +68,11 @@ export const ADDRESSES = {
 export const TRADER_FLAG_ORDERS = new BigNumber(1);
 export const TRADER_FLAG_LIQUIDATION = new BigNumber(2);
 export const TRADER_FLAG_DELEVERAGING = new BigNumber(4);
+
+// ============ P1Orders.sol ============
+
+export const ORDER_FLAGS = {
+  IS_BUY: 1,
+  IS_DECREASE_ONLY: 2,
+  IS_NEGATIVE_LIMIT_FEE: 4,
+};

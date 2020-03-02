@@ -80,7 +80,7 @@ contract P1Orders
     bytes32 constant FLAG_MASK_NULL = bytes32(uint256(0));
     bytes32 constant FLAG_MASK_IS_BUY = bytes32(uint256(1));
     bytes32 constant FLAG_MASK_IS_DECREASE_ONLY = bytes32(uint256(1 << 1));
-    bytes32 constant FLAG_MASK_IS_NEGATIVE_FEES = bytes32(uint256(1 << 2));
+    bytes32 constant FLAG_MASK_IS_NEGATIVE_LIMIT_FEE = bytes32(uint256(1 << 2));
 
     // ============ Enums ============
 
@@ -430,6 +430,6 @@ contract P1Orders
         pure
         returns (bool)
     {
-        return (order.flags & FLAG_MASK_IS_NEGATIVE_FEES) != FLAG_MASK_NULL;
+        return (order.flags & FLAG_MASK_IS_NEGATIVE_LIMIT_FEE) != FLAG_MASK_NULL;
     }
 }
