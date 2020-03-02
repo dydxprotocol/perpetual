@@ -48,8 +48,12 @@ export default function perpetualDescribe(
       ctx.accounts = accounts;
 
       preInitSnapshotId = await snapshot();
+
       await init(ctx);
+
+      // force the index to update on the next call to the perpetual
       await mineAvgBlock();
+
       postInitSnapshotId = await snapshot();
     });
 
