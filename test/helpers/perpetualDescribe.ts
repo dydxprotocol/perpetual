@@ -16,7 +16,7 @@
 
 */
 
-import { snapshot, resetEVM } from './EVM';
+import { snapshot, resetEVM, mineAvgBlock } from './EVM';
 import { getPerpetual } from './Perpetual';
 import { address } from '../../src/lib/types';
 import { Perpetual } from '../../src/Perpetual';
@@ -49,6 +49,7 @@ export default function perpetualDescribe(
 
       preInitSnapshotId = await snapshot();
       await init(ctx);
+      await mineAvgBlock();
       postInitSnapshotId = await snapshot();
     });
 
