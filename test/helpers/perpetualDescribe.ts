@@ -16,7 +16,7 @@
 
 */
 
-import { snapshot, resetEVM } from './EVM';
+import { snapshot, resetEVM, mineAvgBlock } from './EVM';
 import { getPerpetual } from './Perpetual';
 import { address } from '../../src/lib/types';
 import { Perpetual } from '../../src/Perpetual';
@@ -48,7 +48,12 @@ export default function perpetualDescribe(
       ctx.accounts = accounts;
 
       preInitSnapshotId = await snapshot();
+
       await init(ctx);
+
+      // force the index to update on the next call to the perpetual
+      await mineAvgBlock();
+
       postInitSnapshotId = await snapshot();
     });
 
