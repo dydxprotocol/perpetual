@@ -136,6 +136,9 @@ export class Logs {
       return argValue;
     }
     if (input.type.match(/^bytes[0-9]*$/)) {
+      if (input.name === 'flags') {
+        return this.parseOrderFlags(argValue);
+      }
       return argValue;
     }
     if (input.type.match(/^uint[0-9]*$/)) {
@@ -162,5 +165,15 @@ export class Logs {
     }
 
     return this.parseArgs(input.components, argValue);
+  }
+
+  private parseOrderFlags(flags: string): any {
+    const flagsNumber = new BigNumber(flags, 16).mod(8).toNumber();
+    return {
+      rawValue: flags,
+      isBuy: (flagsNumber & 1) !== 0,
+      isDecreaseOnly: (flagsNumber & 2) !== 0,
+      isNegativeLimitFee: (flagsNumber & 4) !== 0,
+    };
   }
 }

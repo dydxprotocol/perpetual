@@ -208,8 +208,9 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         expect(filteredLogs[0].args.orderHash).to.equal(
           ctx.perpetual.orders.getOrderHash(defaultOrder),
         );
-        expect(filteredLogs[0].args.orderMaker).to.equal(defaultOrder.maker);
-        expect(filteredLogs[0].args.isBuy).to.equal(true);
+        expect(filteredLogs[0].args.flags.isBuy).to.equal(true);
+        expect(filteredLogs[0].args.flags.isDecreaseOnly).to.equal(false);
+        expect(filteredLogs[0].args.flags.isNegativeLimitFee).to.equal(false);
         expectBN(filteredLogs[0].args.fill.amount).to.equal(defaultOrder.amount);
         expect(filteredLogs[0].args.fill.price.toString()).to.equal(
           defaultOrder.limitPrice.toSolidity(),
@@ -237,8 +238,9 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         expect(filteredLogs[0].args.orderHash).to.equal(
           ctx.perpetual.orders.getOrderHash(sellOrder),
         );
-        expect(filteredLogs[0].args.orderMaker).to.equal(sellOrder.maker);
-        expect(filteredLogs[0].args.isBuy).to.equal(false);
+        expect(filteredLogs[0].args.flags.isBuy).to.equal(false);
+        expect(filteredLogs[0].args.flags.isDecreaseOnly).to.equal(false);
+        expect(filteredLogs[0].args.flags.isNegativeLimitFee).to.equal(false);
         expectBN(filteredLogs[0].args.fill.amount).to.equal(defaultOrder.amount);
         expect(filteredLogs[0].args.fill.price.toString()).to.equal(
           defaultOrder.limitPrice.toSolidity(),
