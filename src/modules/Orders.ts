@@ -29,6 +29,7 @@ import {
   Price,
   Fee,
 } from '../lib/types';
+import { ORDER_FLAGS } from '../lib/Constants';
 
 const EIP712_ORDER_STRUCT = [
   { type: 'bytes32', name: 'flags' },
@@ -532,9 +533,9 @@ export class Orders {
     order: Order,
   ): string {
     const booleanFlag = 0
-      + (order.limitFee.isNegative() ? 4 : 0)
-      + (order.isDecreaseOnly ? 2 : 0)
-      + (order.isBuy ? 1 : 0);
+      + (order.limitFee.isNegative() ? ORDER_FLAGS.IS_NEGATIVE_LIMIT_FEE : 0)
+      + (order.isDecreaseOnly ? ORDER_FLAGS.IS_DECREASE_ONLY : 0)
+      + (order.isBuy ? ORDER_FLAGS.IS_BUY : 0);
     const saltBytes = bnToBytes32(order.salt);
     return `0x${saltBytes.slice(-63)}${booleanFlag}`;
   }

@@ -7,6 +7,7 @@ import { AbiInput, AbiItem } from 'web3-utils';
 
 import { Contracts } from '../modules/Contracts';
 import { TxResult } from '../lib/types';
+import { ORDER_FLAGS } from '../lib/Constants';
 
 type IContractsByAddress = { [address: string]: Contract };
 
@@ -136,6 +137,9 @@ export class Logs {
       return argValue;
     }
     if (input.type.match(/^bytes[0-9]*$/)) {
+      if (input.name === 'flags') {
+        return this.parseOrderFlags(argValue);
+      }
       return argValue;
     }
     if (input.type.match(/^uint[0-9]*$/)) {
@@ -162,5 +166,15 @@ export class Logs {
     }
 
     return this.parseArgs(input.components, argValue);
+  }
+
+  private parseOrderFlags(flags: string): any {
+    const flagsNumber = new BigNumber(flags, 16).mod(8).toNumber();
+    return {
+      rawValue: flags,
+      isBuy: (flagsNumber & ORDER_FLAGS.IS_BUY) !== 0,
+      isDecreaseOnly: (flagsNumber & ORDER_FLAGS.IS_DECREASE_ONLY) !== 0,
+      isNegativeLimitFee: (flagsNumber & ORDER_FLAGS.IS_NEGATIVE_LIMIT_FEE) !== 0,
+    };
   }
 }

@@ -80,7 +80,7 @@ contract P1Orders
     bytes32 constant FLAG_MASK_NULL = bytes32(uint256(0));
     bytes32 constant FLAG_MASK_IS_BUY = bytes32(uint256(1));
     bytes32 constant FLAG_MASK_IS_DECREASE_ONLY = bytes32(uint256(1 << 1));
-    bytes32 constant FLAG_MASK_IS_NEGATIVE_FEES = bytes32(uint256(1 << 2));
+    bytes32 constant FLAG_MASK_IS_NEGATIVE_LIMIT_FEE = bytes32(uint256(1 << 2));
 
     // ============ Enums ============
 
@@ -134,9 +134,9 @@ contract P1Orders
     );
 
     event LogOrderFilled(
-        bytes32 indexed orderHash,
-        address indexed orderMaker,
-        bool isBuy,
+        bytes32 orderHash,
+        bytes32 flags,
+        uint256 triggerPrice,
         Fill fill
     );
 
@@ -200,7 +200,6 @@ contract P1Orders
         );
 
         TradeData memory tradeData = abi.decode(data, (TradeData));
-        bool isBuyOrder = _isBuy(tradeData.order);
         bytes32 orderHash = _getOrderHash(tradeData.order);
 
         // sanity checking
@@ -226,11 +225,12 @@ contract P1Orders
 
         emit LogOrderFilled(
             orderHash,
-            tradeData.order.maker,
-            isBuyOrder,
+            tradeData.order.flags,
+            tradeData.order.triggerPrice,
             tradeData.fill
         );
 
+        bool isBuyOrder = _isBuy(tradeData.order);
         uint256 marginPerPosition = (isBuyOrder == tradeData.fill.isNegativeFee)
             ? tradeData.fill.price.sub(tradeData.fill.fee)
             : tradeData.fill.price.add(tradeData.fill.fee);
@@ -332,7 +332,7 @@ contract P1Orders
             "Order maker does not match maker"
         );
         require(
-            tradeData.order.taker == address(0) || tradeData.order.taker == taker,
+            tradeData.order.taker == taker || tradeData.order.taker == address(0),
             "Order taker does not match taker"
         );
         require(
@@ -430,6 +430,6 @@ contract P1Orders
         pure
         returns (bool)
     {
-        return (order.flags & FLAG_MASK_IS_NEGATIVE_FEES) != FLAG_MASK_NULL;
+        return (order.flags & FLAG_MASK_IS_NEGATIVE_LIMIT_FEE) != FLAG_MASK_NULL;
     }
 }
