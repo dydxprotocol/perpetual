@@ -94,11 +94,12 @@ contract P1Settlement is
             }
 
             // store new index
-            _INDEX_ = P1Types.Index({
+            index = P1Types.Index({
                 timestamp: block.timestamp.toUint32(),
                 isPositive: signedIndex.isPositive,
                 value: signedIndex.value.toUint128()
             });
+            _INDEX_ = index;
 
             emit LogIndexUpdated(index);
         }
