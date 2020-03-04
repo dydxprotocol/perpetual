@@ -153,7 +153,7 @@ contract P1Trade is
             address account = accounts[i];
             require(
                 account > prevAccount,
-                "Accounts must be sorted"
+                "Accounts must be sorted and unique"
             );
             prevAccount = account;
         }
