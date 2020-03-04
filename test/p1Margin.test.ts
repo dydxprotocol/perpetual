@@ -1,5 +1,6 @@
 import BigNumber from 'bignumber.js';
 
+import { mineAvgBlock } from './helpers/EVM';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import { expectMarginBalances, mintAndDeposit } from './helpers/balances';
@@ -94,6 +95,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
   describe('withdraw()', () => {
     beforeEach(async () => {
       await mintAndDeposit(ctx, accountOwner, new BigNumber(150));
+      await mineAvgBlock();
       ctx.perpetual.contracts.resetGasUsed();
     });
 
