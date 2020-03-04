@@ -35,7 +35,7 @@ contract P1Storage is
     ReentrancyGuard
 {
     mapping(address => P1Types.Balance) internal _BALANCES_;
-    mapping(address => P1Types.Index) internal _INDEXES_;
+    mapping(address => P1Types.Index) internal _LOCAL_INDEXES_;
 
     mapping(address => bool) internal _GLOBAL_OPERATORS_;
     mapping(address => mapping(address => bool)) internal _LOCAL_OPERATORS_;
@@ -44,7 +44,7 @@ contract P1Storage is
     address internal _ORACLE_;
     address internal _FUNDER_;
 
-    P1Types.Index internal _INDEX_;
+    P1Types.Index internal _GLOBAL_INDEX_;
     uint256 internal _TOTAL_POSITION_;
     uint256 internal _TOTAL_MARGIN_;
     uint256 internal _MIN_COLLATERAL_;
