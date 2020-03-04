@@ -20,7 +20,7 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
-import { P1Constants } from "../P1Constants.sol";
+import { P1TraderConstants } from "./P1TraderConstants.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { TypedSignature } from "../../lib/TypedSignature.sol";
 import { P1Getters } from "../impl/P1Getters.sol";
@@ -33,8 +33,8 @@ import { P1Types } from "../lib/P1Types.sol";
  *
  * P1Orders contract
  */
-contract P1Orders
-    is P1Constants
+contract P1Orders is
+    P1TraderConstants
 {
     using BaseMath for uint256;
     using SafeMath for uint256;
@@ -202,7 +202,7 @@ contract P1Orders
         TradeData memory tradeData = abi.decode(data, (TradeData));
         bytes32 orderHash = _getOrderHash(tradeData.order);
 
-        // sanity checking
+        // validations
         _verifyOrderStateAndSignature(
             tradeData,
             orderHash

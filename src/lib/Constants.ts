@@ -63,7 +63,7 @@ export const ADDRESSES = {
   ],
 };
 
-// ============ P1Constants.sol ============
+// ============ P1TraderConstants.sol ============
 
 export const TRADER_FLAG_ORDERS = new BigNumber(1);
 export const TRADER_FLAG_LIQUIDATION = new BigNumber(2);

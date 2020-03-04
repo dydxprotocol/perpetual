@@ -20,7 +20,7 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
-import { P1Constants } from "../P1Constants.sol";
+import { P1TraderConstants } from "./P1TraderConstants.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { Math } from "../../lib/Math.sol";
 import { P1Getters } from "../impl/P1Getters.sol";
@@ -35,7 +35,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * P1Liquidation contract
  */
 contract P1Liquidation is
-    P1Constants
+    P1TraderConstants
 {
     using SafeMath for uint256;
     using Math for uint256;

@@ -27,19 +27,19 @@ pragma experimental ABIEncoderV2;
  * Storage library
  */
 library Storage {
-
-    /* solium-disable-next-line security/no-named-returns */
     function load(
         bytes32 slot
     )
         internal
         view
-        returns (bytes32 result)
+        returns (bytes32)
     {
+        bytes32 result;
         /* solium-disable-next-line security/no-inline-assembly */
         assembly {
             result := sload(slot)
         }
+        return result;
     }
 
     function store(

@@ -21,7 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
-import { P1Constants } from "../P1Constants.sol";
+import { P1TraderConstants } from "./P1TraderConstants.sol";
 import { Math } from "../../lib/Math.sol";
 import { P1Getters } from "../impl/P1Getters.sol";
 import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
@@ -37,7 +37,7 @@ import { P1Types } from "../lib/P1Types.sol";
  */
 contract P1Deleveraging is
     Ownable,
-    P1Constants
+    P1TraderConstants
 {
     using SafeMath for uint256;
     using Math for uint256;

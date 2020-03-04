@@ -19,12 +19,14 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { Storage } from "./Storage.sol";
+
 
 /**
  * @title Adminable
  * @author dYdX
  *
- * Admin logic contract
+ * EIP-1967 Proxy Admin contract
  */
 contract Adminable {
     /**
@@ -40,33 +42,20 @@ contract Adminable {
     */
     modifier onlyAdmin() {
         require(
-            msg.sender == _admin(),
+            msg.sender == getAdmin(),
             "Adminable: caller is not admin"
         );
         _;
     }
 
     /**
-     * @return The admin slot.
+     * @return The EIP-1967 proxy admin
      */
-    /* solium-disable-next-line security/no-named-returns */
-    function _admin()
-        internal
-        view
-        returns (address adm)
-    {
-        bytes32 slot = ADMIN_SLOT;
-        /* solium-disable-next-line security/no-inline-assembly */
-        assembly {
-            adm := sload(slot)
-        }
-    }
-
     function getAdmin()
-        external
+        public
         view
         returns (address)
     {
-        return _admin();
+        return address(uint160(uint256(Storage.load(ADMIN_SLOT))));
     }
 }
