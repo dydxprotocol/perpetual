@@ -12,25 +12,23 @@ import { address } from '../src/lib/types';
 const depositAmount = new BigNumber('1e18');
 const positionAmount = new BigNumber('1e16');
 
-perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) => {
-  let maker: address;
-  let taker: address;
+let maker: address;
+let taker: address;
+async function init(ctx: ITestContext): Promise<void> {
+  await initializeWithTestContracts(ctx);
+  maker = ctx.accounts[2];
+  taker = ctx.accounts[3];
 
-  before(() => {
-    maker = ctx.accounts[2];
-    taker = ctx.accounts[3];
-  });
+  await Promise.all([
+    await mintAndDeposit(ctx, maker, depositAmount),
+    await mintAndDeposit(ctx, taker, depositAmount),
+  ]);
 
-  beforeEach(async () => {
-    await Promise.all([
-      await mintAndDeposit(ctx, maker, depositAmount),
-      await mintAndDeposit(ctx, taker, depositAmount),
-    ]);
+  // Ensure index is updated in subsequent account updates.
+  await mineAvgBlock();
+}
 
-    // Ensure index is updated in subsequent account updates.
-    await mineAvgBlock();
-  });
-
+perpetualDescribe('P1Trade', init, (ctx: ITestContext) => {
   describe('trade()', () => {
     it('executes a buy', async () => {
       const marginAmount = depositAmount.div(2);
