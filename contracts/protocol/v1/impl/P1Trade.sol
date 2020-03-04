@@ -152,7 +152,7 @@ contract P1Trade is
         for (uint256 i = 1; i < accounts.length; i++) {
             address account = accounts[i];
             require(
-                account >= prevAccount,
+                account > prevAccount,
                 "Accounts must be sorted"
             );
             prevAccount = account;

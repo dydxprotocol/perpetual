@@ -147,7 +147,7 @@ library P1BalanceMath {
         return P1Types.Balance({
             marginIsPositive: signedInt.isPositive,
             positionIsPositive: balance.positionIsPositive,
-            margin: signedInt.value.toUint112(),
+            margin: signedInt.value.toUint120(),
             position: balance.position
         });
     }
@@ -177,7 +177,7 @@ library P1BalanceMath {
             marginIsPositive: balance.marginIsPositive,
             positionIsPositive: signedInt.isPositive,
             margin: balance.margin,
-            position: signedInt.value.toUint112()
+            position: signedInt.value.toUint120()
         });
     }
 }

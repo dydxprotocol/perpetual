@@ -43,13 +43,13 @@ contract PerpetualProxy is
             admin,
             data
         )
-    {
+    {}
 
-    }
-
+    /**
+     * Overrides the default functionality that prevents the admin from reaching the
+     * implementation contract.
+     */
     function _willFallback()
         internal
-    {
-        // Override the default functionality that prevents the admin from calling non-admin functions
-    }
+    { /* solium-disable-line no-empty-blocks */ }
 }

@@ -202,7 +202,7 @@ contract P1Orders
         TradeData memory tradeData = abi.decode(data, (TradeData));
         bytes32 orderHash = _getOrderHash(tradeData.order);
 
-        // sanity checking
+        // validations
         _verifyOrderStateAndSignature(
             tradeData,
             orderHash
