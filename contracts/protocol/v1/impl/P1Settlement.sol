@@ -64,7 +64,7 @@ contract P1Settlement is
         returns (P1Types.Context memory)
     {
         // SLOAD old index
-        P1Types.Index memory index = _INDEX_;
+        P1Types.Index memory index = _GLOBAL_INDEX_;
 
         // get Price (P)
         uint256 price = I_P1Oracle(_ORACLE_).getPrice();
@@ -94,11 +94,12 @@ contract P1Settlement is
             }
 
             // store new index
-            _INDEX_ = P1Types.Index({
+            index = P1Types.Index({
                 timestamp: block.timestamp.toUint32(),
                 isPositive: signedIndex.isPositive,
                 value: signedIndex.value.toUint128()
             });
+            _GLOBAL_INDEX_ = index;
 
             emit LogIndexUpdated(index);
         }
@@ -128,14 +129,15 @@ contract P1Settlement is
         internal
     {
         P1Types.Index memory newIndex = context.index;
-        P1Types.Index memory oldIndex = _INDEXES_[account];
+        P1Types.Index memory oldIndex = _LOCAL_INDEXES_[account];
 
         // do nothing if no settlement is needed
         if (oldIndex.timestamp == newIndex.timestamp) {
             return;
         }
 
-        _INDEXES_[account] = newIndex;
+        // store a cached copy of the index for this account
+        _LOCAL_INDEXES_[account] = newIndex;
 
         P1Types.Balance memory balance = _BALANCES_[account];
 
@@ -156,17 +158,17 @@ contract P1Settlement is
         }
 
         // settlement
-        signedIndexDiff.value = signedIndexDiff.value.baseMul(balance.position);
+        uint256 settlementAmount = signedIndexDiff.value.baseMul(balance.position);
         if (signedIndexDiff.isPositive) {
-            _BALANCES_[account] = balance.marginSub(signedIndexDiff.value);
+            _BALANCES_[account] = balance.marginSub(settlementAmount);
         } else {
-            _BALANCES_[account] = balance.marginAdd(signedIndexDiff.value);
+            _BALANCES_[account] = balance.marginAdd(settlementAmount);
         }
 
         emit LogAccountSettled(
             account,
             signedIndexDiff.isPositive,
-            signedIndexDiff.value
+            settlementAmount
         );
     }
 

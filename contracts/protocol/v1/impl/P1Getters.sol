@@ -51,7 +51,7 @@ contract P1Getters is
         view
         returns (P1Types.Index memory)
     {
-        return _INDEXES_[account];
+        return _LOCAL_INDEXES_[account];
     }
 
     function getIsLocalOperator(
@@ -106,7 +106,7 @@ contract P1Getters is
         view
         returns (P1Types.Index memory)
     {
-        return _INDEX_;
+        return _GLOBAL_INDEX_;
     }
 
     function getOpenInterest()
