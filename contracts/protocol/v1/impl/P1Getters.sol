@@ -109,22 +109,6 @@ contract P1Getters is
         return _GLOBAL_INDEX_;
     }
 
-    function getOpenInterest()
-        external
-        view
-        returns (uint256)
-    {
-        return _TOTAL_POSITION_;
-    }
-
-    function getTotalMargin()
-        external
-        view
-        returns (uint256)
-    {
-        return _TOTAL_MARGIN_;
-    }
-
     function getMinCollateral()
         external
         view

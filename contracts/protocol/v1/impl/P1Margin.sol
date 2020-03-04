@@ -72,7 +72,6 @@ contract P1Margin is
             amount
         );
 
-        _TOTAL_MARGIN_ = _TOTAL_MARGIN_.add(amount);
         _BALANCES_[account] = _BALANCES_[account].marginAdd(amount);
         emit LogDeposit(account, amount);
     }
@@ -98,7 +97,6 @@ contract P1Margin is
             amount
         );
 
-        _TOTAL_MARGIN_ = _TOTAL_MARGIN_.sub(amount);
         _BALANCES_[account] = _BALANCES_[account].marginSub(amount);
 
         require(

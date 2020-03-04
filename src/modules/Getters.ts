@@ -149,26 +149,6 @@ export class Getters {
     return this.solidityIndexToIndex(result);
   }
 
-  public async getOpenInterest(
-    options?: CallOptions,
-  ): Promise<BigNumber> {
-    const result = await this.contracts.call(
-      this.perpetual.methods.getOpenInterest(),
-      options,
-    );
-    return new BigNumber(result);
-  }
-
-  public async getTotalMargin(
-    options?: CallOptions,
-  ): Promise<BigNumber> {
-    const result = await this.contracts.call(
-      this.perpetual.methods.getTotalMargin(),
-      options,
-    );
-    return new BigNumber(result);
-  }
-
   // ============ Helper Functions ============
 
   private solidityIndexToIndex(
