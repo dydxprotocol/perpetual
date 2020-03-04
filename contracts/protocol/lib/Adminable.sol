@@ -56,6 +56,6 @@ contract Adminable {
         view
         returns (address)
     {
-        return address(bytes20(Storage.load(ADMIN_SLOT)));
+        return address(uint160(uint256(Storage.load(ADMIN_SLOT))));
     }
 }
