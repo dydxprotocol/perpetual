@@ -45,7 +45,5 @@ contract P1Storage is
     address internal _FUNDER_;
 
     P1Types.Index internal _GLOBAL_INDEX_;
-    uint256 internal _TOTAL_POSITION_;
-    uint256 internal _TOTAL_MARGIN_;
     uint256 internal _MIN_COLLATERAL_;
 }
