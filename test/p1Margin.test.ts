@@ -3,7 +3,6 @@ import BigNumber from 'bignumber.js';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import { expectMarginBalances, mintAndDeposit } from './helpers/balances';
-import { mineAvgBlock } from './helpers/EVM';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { sell } from './helpers/trade';
 import {
@@ -26,9 +25,6 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       const amount = new BigNumber(150);
       await ctx.perpetual.testing.token.mint(accountOwner, amount);
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
-
-      // Ensure index is updated on deposit.
-      await mineAvgBlock();
 
       // Execute deposit.
       const txResult = await ctx.perpetual.margin.deposit(
@@ -104,9 +100,6 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
 
     it('Account owner can withdraw partial amount', async () => {
       const amount = new BigNumber(100);
-
-      // Ensure index is updated on deposit.
-      await mineAvgBlock();
 
       // Execute withdraw.
       const txResult = await ctx.perpetual.margin.withdraw(

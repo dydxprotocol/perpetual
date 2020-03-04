@@ -1,6 +1,5 @@
 import BigNumber from 'bignumber.js';
 
-import { mineAvgBlock } from './helpers/EVM';
 import { expect, expectBN } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
@@ -26,9 +25,6 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       await mintAndDeposit(ctx, maker, depositAmount),
       await mintAndDeposit(ctx, taker, depositAmount),
     ]);
-
-    // Ensure index is updated in subsequent account updates.
-    await mineAvgBlock();
   });
 
   describe('trade()', () => {
