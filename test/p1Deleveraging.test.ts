@@ -29,6 +29,7 @@ let long: address;
 let short: address;
 let thirdParty: address;
 let deleveragingTimelockSeconds: number;
+
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
   admin = ctx.accounts[0];
@@ -36,20 +37,21 @@ async function init(ctx: ITestContext): Promise<void> {
   short = ctx.accounts[2];
   thirdParty = ctx.accounts[3];
   deleveragingTimelockSeconds = await ctx.perpetual.deleveraging.getDeleveragingTimelockSeconds();
+
+  // Set up initial balances:
+  // | account | margin | position | collateralization |
+  // |---------+--------+----------+-------------------|
+  // | long    |   -500 |       10 |              200% |
+  // | short   |   1500 |      -10 |              150% |
+  await Promise.all([
+    ctx.perpetual.testing.oracle.setPrice(initialPrice),
+    mintAndDeposit(ctx, long, new BigNumber(500)),
+    mintAndDeposit(ctx, short, new BigNumber(500)),
+  ]);
+  await buy(ctx, long, short, positionSize, new BigNumber(1000));
 }
 
 perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
-  beforeEach(async () => {
-    await ctx.perpetual.testing.oracle.setPrice(initialPrice);
-    await mintAndDeposit(ctx, long, new BigNumber(500));
-    await mintAndDeposit(ctx, short, new BigNumber(500));
-    await buy(ctx, long, short, positionSize, new BigNumber(1000));
-    // Starting balances:
-    // | account | margin | position | collateralization |
-    // |---------+--------+----------+-------------------|
-    // | long    |   -500 |       10 |              200% |
-    // | short   |   1500 |      -10 |              150% |
-  });
 
   describe('trade()', () => {
     it('Fails if the caller is not the perpetual contract', async () => {
@@ -289,6 +291,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
   describe('trade(), via PerpetualV1, as a non-admin', () => {
     beforeEach(async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+      ctx.perpetual.contracts.resetGasUsed();
     });
 
     it('Can mark an account and deleverage it after waiting the timelock period', async () => {
@@ -377,6 +380,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     beforeEach(async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
       await ctx.perpetual.deleveraging.mark(long);
+      ctx.perpetual.contracts.resetGasUsed();
     });
 
     it('Can unmark an account which is not underwater', async () => {

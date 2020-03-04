@@ -4,12 +4,14 @@ import { expect, expectAddressesEqual, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 
-perpetualDescribe('P1Getters', initializeWithTestContracts, (ctx: ITestContext) => {
-  let admin: address;
+let admin: address;
 
-  before(() => {
-    admin = ctx.accounts[0];
-  });
+async function init(ctx: ITestContext): Promise<void> {
+  await initializeWithTestContracts(ctx);
+  admin = ctx.accounts[0];
+}
+
+perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
 
   describe('setGlobalOperator()', () => {
     it('sets the Global Operator', async () => {

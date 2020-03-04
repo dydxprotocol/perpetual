@@ -13,11 +13,13 @@ const positionAmount = new BigNumber('1e16');
 
 let maker: address;
 let taker: address;
+
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
   maker = ctx.accounts[2];
   taker = ctx.accounts[3];
 
+  // Set up initial balances.
   await Promise.all([
     await mintAndDeposit(ctx, maker, depositAmount),
     await mintAndDeposit(ctx, taker, depositAmount),

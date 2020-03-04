@@ -27,28 +27,28 @@ let admin: address;
 let long: address;
 let short: address;
 let thirdParty: address;
+
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
   admin = ctx.accounts[0];
   long = ctx.accounts[1];
   short = ctx.accounts[2];
   thirdParty = ctx.accounts[3];
+
+  // Set up initial balances:
+  // | account | margin | position | collateralization |
+  // |---------+--------+----------+-------------------|
+  // | long    |   -500 |       10 |              200% |
+  // | short   |   1500 |      -10 |              150% |
+  await Promise.all([
+    ctx.perpetual.testing.oracle.setPrice(initialPrice),
+    mintAndDeposit(ctx, long, new BigNumber(500)),
+    mintAndDeposit(ctx, short, new BigNumber(500)),
+  ]);
+  await buy(ctx, long, short, positionSize, new BigNumber(1000));
 }
 
 perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
-  beforeEach(async () => {
-    await Promise.all([
-      ctx.perpetual.testing.oracle.setPrice(initialPrice),
-      mintAndDeposit(ctx, long, new BigNumber(500)),
-      mintAndDeposit(ctx, short, new BigNumber(500)),
-    ]);
-    await buy(ctx, long, short, positionSize, new BigNumber(1000));
-    // Starting balances:
-    // | account | margin | position | collateralization |
-    // |---------+--------+----------+-------------------|
-    // | long    |   -500 |       10 |              200% |
-    // | short   |   1500 |      -10 |              150% |
-  });
 
   describe('trade()', () => {
     it('Fails if the caller is not the perpetual contract', async () => {
@@ -315,6 +315,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
     describe('sent by a third party', () => {
       beforeEach(async () => {
         await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+        ctx.perpetual.contracts.resetGasUsed();
       });
 
       it('Succeeds liquidating if the sender is a global operator', async () => {
