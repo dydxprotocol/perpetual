@@ -21,6 +21,7 @@ import { Contracts } from './Contracts';
 import {
   address,
   Balance,
+  BaseValue,
   CallOptions,
   Index,
 } from '../lib/types';
@@ -165,12 +166,12 @@ export class Getters {
 
   public async getMinCollateral(
     options?: CallOptions,
-  ): Promise<BigNumber> {
+  ): Promise<BaseValue> {
     const result = await this.contracts.call(
       this.perpetual.methods.getMinCollateral(),
       options,
     );
-    return new BigNumber(result);
+    return BaseValue.fromSolidity(result);
   }
 
   // ============ Helper Functions ============
@@ -183,10 +184,9 @@ export class Getters {
       isPositive,
       value,
     ] = solidityIndex;
-    const valueBN = new BigNumber(value);
     return {
       timestamp: new BigNumber(timestamp),
-      value: isPositive ? valueBN : valueBN.negated(),
+      baseValue: BaseValue.fromSolidity(value, isPositive),
     };
   }
 }
