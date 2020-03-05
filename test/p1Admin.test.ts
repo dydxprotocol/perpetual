@@ -1,8 +1,9 @@
 import { ADDRESSES } from '../src/lib/Constants';
-import { address } from '../src/lib/types';
-import { expect, expectAddressesEqual, expectThrow } from './helpers/Expect';
+import { BASE_DECIMALS, address, BaseValue } from '../src/lib/types';
+import { expect, expectBN, expectAddressesEqual, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { BigNumber } from '../src';
 
 let admin: address;
 
@@ -70,6 +71,39 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
       await expectThrow(
         ctx.perpetual.admin.setFunder(ADDRESSES.TEST[0]),
         'Adminable: caller is not admin',
+      );
+    });
+  });
+
+  describe('setMinCollateral()', () => {
+    it('sets the collateral requirement', async () => {
+      const minCollateral = new BaseValue('1.2');
+      const txResult = await ctx.perpetual.admin.setMinCollateral(minCollateral, { from: admin });
+
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      expect(logs.length).to.equal(1);
+      expect(logs[0].name).to.equal('LogSetMinCollateral');
+      expectBN(logs[0].args.minCollateral).to.equal(minCollateral.toSolidity());
+    });
+
+    it('fails if called by non-admin', async () => {
+      await expectThrow(
+        ctx.perpetual.admin.setMinCollateral(new BaseValue('1.2')),
+        'Adminable: caller is not admin',
+      );
+    });
+
+    it('fails to set the collateral requirement below 100%', async () => {
+      const minCollateral = new BaseValue(
+        new BigNumber(1)
+          .shiftedBy(BASE_DECIMALS)
+          .minus(1)
+          .shiftedBy(-BASE_DECIMALS),
+      );
+      await expectThrow(
+        ctx.perpetual.admin.setMinCollateral(minCollateral, { from: admin }),
+        'The collateral requirement cannot be under 100%',
       );
     });
   });
