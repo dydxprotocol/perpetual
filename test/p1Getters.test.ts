@@ -83,17 +83,6 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
     expectBN(timeDelta).to.be.lessThan(TIMESTAMP_THRESHOLD_MS);
   });
 
-  it('getOpenInterest()', async () => {
-    const totalPosition = await ctx.perpetual.getters.getOpenInterest();
-    // TODO: This should be the actual open interest.
-    expectBN(totalPosition).to.equal(INTEGERS.ZERO);
-  });
-
-  it('getTotalMargin()', async () => {
-    const totalMargin = await ctx.perpetual.getters.getTotalMargin();
-    expectBN(totalMargin).to.equal(marginAmount.times(2));
-  });
-
   it('getMinCollateral()', async () => {
     const minCollateral = await ctx.perpetual.getters.getMinCollateral();
     expectBN(minCollateral).to.equal('1100000000000000000');
