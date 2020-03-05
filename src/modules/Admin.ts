@@ -18,9 +18,10 @@
 
 import { Contracts } from './Contracts';
 import {
-  address,
+  BaseValue,
   SendOptions,
   TxResult,
+  address,
 } from '../lib/types';
 import { Contract } from 'web3-eth-contract';
 
@@ -68,6 +69,18 @@ export class Admin {
     return this.contracts.send(
       this.perpetual.methods.setFunder(
         funder,
+      ),
+      options,
+    );
+  }
+
+  public async setMinCollateral(
+    minCollateral: BaseValue,
+    options?: SendOptions,
+  ): Promise<TxResult> {
+    return this.contracts.send(
+      this.perpetual.methods.setMinCollateral(
+        minCollateral.toSolidity(),
       ),
       options,
     );

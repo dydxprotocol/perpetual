@@ -20,6 +20,7 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { P1Storage } from "./P1Storage.sol";
+import { BaseMath } from "../../lib/BaseMath.sol";
 
 
 /**
@@ -44,6 +45,10 @@ contract P1Admin is
 
     event LogSetFunder(
         address funder
+    );
+
+    event LogSetMinCollateral(
+        uint256 minCollateral
     );
 
     // ============ Functions ============
@@ -80,5 +85,20 @@ contract P1Admin is
     {
         _FUNDER_ = funder;
         emit LogSetFunder(funder);
+    }
+
+    function setMinCollateral(
+        uint256 minCollateral
+    )
+        external
+        onlyAdmin
+        nonReentrant
+    {
+        require(
+            minCollateral >= BaseMath.base(),
+            "The collateral requirement cannot be under 100%"
+        );
+        _MIN_COLLATERAL_ = minCollateral;
+        emit LogSetMinCollateral(minCollateral);
     }
 }

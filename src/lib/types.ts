@@ -159,37 +159,43 @@ export interface SignedOrder extends Order {
   typedSignature: string;
 }
 
-// ============ Classees ============
+// ============ Classes ============
 
-export class Price {
+// From BaseMath.sol.
+export const BASE_DECIMALS = 18;
+
+/**
+ * A value that is represented on the smart contract by an integer shifted by `BASE` decimal places.
+ */
+export class BaseValue {
   readonly value: BigNumber;
 
   constructor(value: BigNumberable) {
     this.value = new BigNumber(value);
   }
 
-  static fromSolidity(value: BigNumberable): Price {
-    return new Price(new BigNumber(value).shiftedBy(-18));
-  }
-
   public toSolidity(): string {
-    return this.value.abs().shiftedBy(18).toFixed(0);
+    return this.value.abs().shiftedBy(BASE_DECIMALS).toFixed(0);
   }
 
-  public times(value: BigNumberable): Price {
-    return new Price(this.value.times(value));
+  static fromSolidity(value: BigNumberable): BaseValue {
+    return new BaseValue(new BigNumber(value).shiftedBy(-BASE_DECIMALS));
   }
 
-  public div(value: BigNumberable): Price {
-    return new Price(this.value.div(value));
+  public times(value: BigNumberable): BaseValue {
+    return new BaseValue(this.value.times(value));
   }
 
-  public plus(value: BigNumberable): Price {
-    return new Price(this.value.plus(value));
+  public div(value: BigNumberable): BaseValue {
+    return new BaseValue(this.value.div(value));
   }
 
-  public minus(value: BigNumberable): Price {
-    return new Price(this.value.minus(value));
+  public plus(value: BigNumberable): BaseValue {
+    return new BaseValue(this.value.plus(value));
+  }
+
+  public minus(value: BigNumberable): BaseValue {
+    return new BaseValue(this.value.minus(value));
   }
 
   public isNegative(): boolean {
@@ -197,7 +203,10 @@ export class Price {
   }
 }
 
-export class Fee extends Price {
+export class Price extends BaseValue {
+}
+
+export class Fee extends BaseValue {
   static fromBips(value: BigNumberable): Fee {
     return new Fee(new BigNumber('1e-4').times(value));
   }

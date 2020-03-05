@@ -1,3 +1,4 @@
+import { BaseValue } from '../../src';
 import { ITestContext } from './perpetualDescribe';
 
 export default async function initializeWithTestContracts(ctx: ITestContext): Promise<void> {
@@ -6,7 +7,7 @@ export default async function initializeWithTestContracts(ctx: ITestContext): Pr
       ctx.perpetual.contracts.testToken.options.address,
       ctx.perpetual.contracts.testP1Oracle.options.address,
       ctx.perpetual.contracts.testP1Funder.options.address,
-      '1100000000000000000', // minCollateral
+      new BaseValue('1.1').toSolidity(), // minCollateral
     ),
     { from: ctx.accounts[0] },
   );
