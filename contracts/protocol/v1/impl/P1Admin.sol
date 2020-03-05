@@ -92,6 +92,7 @@ contract P1Admin is
     )
         external
         onlyAdmin
+        nonReentrant
     {
         require(
             minCollateral >= BaseMath.base(),

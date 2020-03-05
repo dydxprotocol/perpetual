@@ -159,7 +159,7 @@ export interface SignedOrder extends Order {
   typedSignature: string;
 }
 
-// ============ Classees ============
+// ============ Classes ============
 
 // From BaseMath.sol.
 export const BASE_DECIMALS = 18;
