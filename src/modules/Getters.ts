@@ -89,6 +89,20 @@ export class Getters {
     );
   }
 
+  public async hasAccountPermissions(
+    account: address,
+    operator: address,
+    options?: CallOptions,
+  ): Promise<boolean> {
+    return this.contracts.call(
+      this.perpetual.methods.hasAccountPermissions(
+        account,
+        operator,
+      ),
+      options,
+    );
+  }
+
   // ============ Global Getters ============
 
   public async getAdmin(
@@ -147,6 +161,16 @@ export class Getters {
       options,
     );
     return this.solidityIndexToIndex(result);
+  }
+
+  public async getMinCollateral(
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result = await this.contracts.call(
+      this.perpetual.methods.getMinCollateral(),
+      options,
+    );
+    return new BigNumber(result);
   }
 
   // ============ Helper Functions ============

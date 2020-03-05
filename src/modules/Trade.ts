@@ -54,9 +54,9 @@ export class Trade {
     tradeArgs: TradeArg[],
     options?: SendOptions,
   ): Promise<TxResult> {
-    if (!_.isEqual(accounts, _.chain(accounts).map(_.toLower).sort().value())) {
+    if (!_.isEqual(accounts, _.chain(accounts).map(_.toLower).sort().sortedUniq().value())) {
       throw new Error(
-        'Accounts passed to trade() should be lowercase and sorted; got: '
+        'Accounts passed to trade() should be lowercase, unique, and sorted; got: '
         + `${JSON.stringify(accounts)}`,
       );
     }

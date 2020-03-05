@@ -1,9 +1,9 @@
 import BigNumber from 'bignumber.js';
 
+import { mineAvgBlock } from './helpers/EVM';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import { expectMarginBalances, mintAndDeposit } from './helpers/balances';
-import { mineAvgBlock } from './helpers/EVM';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { sell } from './helpers/trade';
 import {
@@ -11,14 +11,16 @@ import {
   Price,
 } from '../src/lib/types';
 
-perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) => {
-  let accountOwner: address;
-  let otherUser: address;
+let accountOwner: address;
+let otherUser: address;
 
-  before(() => {
-    accountOwner = ctx.accounts[1];
-    otherUser = ctx.accounts[2];
-  });
+async function init(ctx: ITestContext): Promise<void> {
+  await initializeWithTestContracts(ctx);
+  accountOwner = ctx.accounts[2];
+  otherUser = ctx.accounts[3];
+}
+
+perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
 
   describe('deposit()', () => {
     it('Account owner can deposit', async () => {
@@ -28,7 +30,6 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
 
       // Execute deposit.
-      await mineAvgBlock();
       const txResult = await ctx.perpetual.margin.deposit(
         accountOwner,
         amount,
@@ -93,18 +94,15 @@ perpetualDescribe('P1Margin', initializeWithTestContracts, (ctx: ITestContext) =
 
   describe('withdraw()', () => {
     beforeEach(async () => {
-      // Deposit.
-      const amount = new BigNumber(150);
-      await ctx.perpetual.testing.token.mint(accountOwner, amount);
-      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
-      await ctx.perpetual.margin.deposit(accountOwner, amount, { from: accountOwner });
+      await mintAndDeposit(ctx, accountOwner, new BigNumber(150));
+      await mineAvgBlock();
+      ctx.perpetual.contracts.resetGasUsed();
     });
 
     it('Account owner can withdraw partial amount', async () => {
       const amount = new BigNumber(100);
 
       // Execute withdraw.
-      await mineAvgBlock();
       const txResult = await ctx.perpetual.margin.withdraw(
         accountOwner,
         amount,

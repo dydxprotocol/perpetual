@@ -5,7 +5,6 @@ export async function resetEVM(id?: string) {
 }
 
 export async function mineAvgBlock() {
-  // Increase time so that tests must update the index
   await perpetual.testing.evm.increaseTime(15);
   await perpetual.testing.evm.mineBlock();
 }
