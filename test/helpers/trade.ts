@@ -1,4 +1,5 @@
 import BigNumber from 'bignumber.js';
+import _ from 'lodash';
 
 import { ITestContext } from './perpetualDescribe';
 import { TRADER_FLAG_ORDERS } from '../../src/lib/Constants';
@@ -38,7 +39,7 @@ async function trade(
     positionAmount: position,
     traderFlags: TRADER_FLAG_ORDERS,
   });
-  const accounts = [taker, maker].map(s => s.toLowerCase()).sort();
+  const accounts = _.chain([taker, maker]).map(_.toLower).sort().sortedUniq().value();
   return ctx.perpetual.trade.trade(
     accounts,
     [
