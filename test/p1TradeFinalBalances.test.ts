@@ -9,6 +9,9 @@ import { INTEGERS } from '../src/lib/Constants';
 import { BigNumberable, Price, TxResult, address, TradeArg } from '../src/lib/types';
 import { TRADER_FLAG_RESULT_2 } from '../src/testing/TestP1Trader';
 
+// Use a large gas value. Had “out of gas” errors with some expectFailure() calls.
+const TX_OPTIONS = { gas: 4000000 };
+
 const MIN_COLLATERAL = new BigNumber('1.1');
 
 const ERROR_NON_POSITIVE = 'account has no positive value';
@@ -364,18 +367,24 @@ perpetualDescribe('P1Trade._verifyAccountsFinalBalances()', init, (ctx: ITestCon
     const marginDiff = new BigNumber(finalMargin).minus(margin);
     const positionDiff = new BigNumber(finalPosition).minus(position);
     await Promise.all([
-      ctx.perpetual.testing.trader.setTradeResult({
-        isBuy: marginDiff.isNegative(),
-        marginAmount: marginDiff.abs(),
-        positionAmount: INTEGERS.ZERO,
-        traderFlags: TRADER_FLAG_RESULT_2,
-      }),
-      ctx.perpetual.testing.trader.setSecondTradeResult({
-        isBuy: positionDiff.isPositive(),
-        marginAmount: INTEGERS.ZERO,
-        positionAmount: positionDiff.abs(),
-        traderFlags: TRADER_FLAG_RESULT_2,
-      }),
+      ctx.perpetual.testing.trader.setTradeResult(
+        {
+          isBuy: marginDiff.isNegative(),
+          marginAmount: marginDiff.abs(),
+          positionAmount: INTEGERS.ZERO,
+          traderFlags: TRADER_FLAG_RESULT_2,
+        },
+        TX_OPTIONS,
+      ),
+      ctx.perpetual.testing.trader.setSecondTradeResult(
+        {
+          isBuy: positionDiff.isPositive(),
+          marginAmount: INTEGERS.ZERO,
+          positionAmount: positionDiff.abs(),
+          traderFlags: TRADER_FLAG_RESULT_2,
+        },
+        TX_OPTIONS,
+      ),
     ]);
     const accounts = _.chain([maker, riskyAccount]).map(_.toLower).sort().sortedUniq().value();
     const args: TradeArg = {
@@ -384,7 +393,6 @@ perpetualDescribe('P1Trade._verifyAccountsFinalBalances()', init, (ctx: ITestCon
       trader: ctx.perpetual.testing.trader.address,
       data: '0x00',
     };
-    // Use a higher gas multiplier. Had “out of gas” errors with some expectFailure() calls.
-    return ctx.perpetual.trade.trade(accounts, [args, args], { gasMultiplier: 3 });
+    return ctx.perpetual.trade.trade(accounts, [args, args], TX_OPTIONS);
   }
 });
