@@ -33,6 +33,10 @@ contract Test_P1Trader is
     I_P1Trader
 {
     P1Types.TradeResult public _TRADE_RESULT_;
+    P1Types.TradeResult public _TRADE_RESULT_2_;
+
+    // Special testing-only trader flag that will cause the second result to be returned.
+    bytes32 constant public TRADER_FLAG_RESULT_2 = bytes32(~uint256(0));
 
     function trade(
         address, // sender
@@ -40,17 +44,15 @@ contract Test_P1Trader is
         address, // taker
         uint256, // price
         bytes calldata, // data
-        bytes32 // traderFlags
+        bytes32 traderFlags
     )
         external
         returns(P1Types.TradeResult memory)
     {
-        return P1Types.TradeResult({
-            marginAmount: _TRADE_RESULT_.marginAmount,
-            positionAmount: _TRADE_RESULT_.positionAmount,
-            isBuy: _TRADE_RESULT_.isBuy,
-            traderFlags: _TRADE_RESULT_.traderFlags
-        });
+        if (traderFlags == TRADER_FLAG_RESULT_2) {
+            return _TRADE_RESULT_2_;
+        }
+        return _TRADE_RESULT_;
     }
 
     function setTradeResult(
@@ -62,6 +64,25 @@ contract Test_P1Trader is
         external
     {
         _TRADE_RESULT_ = P1Types.TradeResult({
+            marginAmount: marginAmount,
+            positionAmount: positionAmount,
+            isBuy: isBuy,
+            traderFlags: traderFlags
+        });
+    }
+
+    /**
+     * Sets a second trade result which can be triggered by the trader flags of the first trade.
+     */
+    function setSecondTradeResult(
+        uint256 marginAmount,
+        uint256 positionAmount,
+        bool isBuy,
+        bytes32 traderFlags
+    )
+        external
+    {
+        _TRADE_RESULT_2_ = P1Types.TradeResult({
             marginAmount: marginAmount,
             positionAmount: positionAmount,
             isBuy: isBuy,
