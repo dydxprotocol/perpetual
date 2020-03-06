@@ -53,7 +53,7 @@ contract P1Settlement is
 
     event LogAccountSettled(
         address indexed account,
-        bool positive,
+        bool isPositive,
         uint256 amount
     );
 
@@ -78,15 +78,14 @@ contract P1Settlement is
                 isPositive: index.isPositive
             });
 
+            // Get the funding rate, applied over the time delta.
             (
                 bool fundingPositive,
                 uint256 fundingValue
             ) = I_P1Funder(_FUNDER_).getFunding(timeDelta);
-
-            // multiply funding by price
             fundingValue = fundingValue.baseMul(price);
 
-            // affect positive and negative by FP or 1/FP
+            // Update the index according to the funding rate, applied over the time delta.
             if (fundingPositive) {
                 signedIndex = signedIndex.add(fundingValue);
             } else {
@@ -157,17 +156,21 @@ contract P1Settlement is
             signedIndexDiff = signedIndexDiff.add(oldIndex.value);
         }
 
-        // settlement
+        // Settle the account balance by applying the index delta as a credit or debit.
+        // By convention, positive funding (index increases) means longs pay shorts
+        // and negative funding (index decreases) means shorts pay longs.
         uint256 settlementAmount = signedIndexDiff.value.baseMul(balance.position);
-        if (signedIndexDiff.isPositive) {
-            _BALANCES_[account] = balance.marginSub(settlementAmount);
-        } else {
+        bool settlementIsPositive = signedIndexDiff.isPositive != balance.positionIsPositive;
+        if (settlementIsPositive) {
             _BALANCES_[account] = balance.marginAdd(settlementAmount);
+        } else {
+            _BALANCES_[account] = balance.marginSub(settlementAmount);
         }
 
+        // Log the change to the account balance, which is the negative of the change in the index.
         emit LogAccountSettled(
             account,
-            signedIndexDiff.isPositive,
+            settlementIsPositive,
             settlementAmount
         );
     }

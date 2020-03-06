@@ -139,7 +139,7 @@ export interface Balance {
 
 export interface Index {
   timestamp: BigNumber;
-  value: BigNumber;
+  baseValue: BaseValue;
 }
 
 export interface Order {
@@ -178,8 +178,17 @@ export class BaseValue {
     return this.value.abs().shiftedBy(BASE_DECIMALS).toFixed(0);
   }
 
-  static fromSolidity(value: BigNumberable): BaseValue {
-    return new BaseValue(new BigNumber(value).shiftedBy(-BASE_DECIMALS));
+  static fromSolidity(solidityValue: BigNumberable, isPositive: boolean = true): BaseValue {
+    // Help to detect errors in the parsing and typing of Solidity data.
+    if (typeof isPositive !== 'boolean') {
+      throw new Error('Error in BaseValue.fromSolidity: isPositive was not a boolean');
+    }
+
+    let value = new BigNumber(solidityValue).shiftedBy(-BASE_DECIMALS);
+    if (!isPositive) {
+      value = value.negated();
+    }
+    return new BaseValue(value);
   }
 
   public times(value: BigNumberable): BaseValue {

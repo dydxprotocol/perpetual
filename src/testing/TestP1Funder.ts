@@ -1,6 +1,6 @@
 import BigNumber from 'bignumber.js';
 import { Contracts } from '../modules/Contracts';
-import { SendOptions, TxResult } from '../lib/types';
+import { BaseValue, SendOptions, TxResult } from '../lib/types';
 
 export class TestP1Funder {
   private contracts: Contracts;
@@ -16,14 +16,13 @@ export class TestP1Funder {
   }
 
   public async setFunding(
-    isPositive: boolean,
-    newFunding: BigNumber,
+    newFunding: BaseValue,
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
       this.contracts.testP1Funder.methods.setFunding(
-        isPositive,
-        newFunding.toFixed(0),
+        !newFunding.isNegative(), // isPositive
+        newFunding.toSolidity(),
       ),
       options,
     );

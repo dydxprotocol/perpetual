@@ -10,9 +10,10 @@ export async function expectBalances(
   accounts: address[],
   expectedMargins: BigNumber[],
   expectedPositions: BigNumber[],
+  fullySettled: boolean = true,
   positionsSumToZero: boolean = true,
 ): Promise<void> {
-  await expectMarginBalances(ctx, accounts, expectedMargins);
+  await expectMarginBalances(ctx, accounts, expectedMargins, fullySettled);
   await expectPositions(ctx, accounts, expectedPositions, positionsSumToZero);
 }
 
@@ -26,6 +27,7 @@ export async function expectMarginBalances(
   ctx: ITestContext,
   accounts: address[],
   expectedMargins: BigNumber[],
+  fullySettled: boolean = true,
 ): Promise<void> {
   const actualMargins = await Promise.all(accounts.map((account: address) => {
     return ctx.perpetual.getters.getAccountBalance(account).then(balance => balance.margin);
@@ -36,11 +38,13 @@ export async function expectMarginBalances(
   }
 
   // Contract solvency check
-  const accountSumMargin = actualMargins.reduce((a, b) => a.plus(b), INTEGERS.ZERO);
-  const perpetualTokenBalance = await ctx.perpetual.testing.token.getBalance(
-    ctx.perpetual.contracts.perpetualV1.options.address,
-  );
-  expectBN(accountSumMargin, 'sum of margins equals token balance').eq(perpetualTokenBalance);
+  if (fullySettled) {
+    const accountSumMargin = actualMargins.reduce((a, b) => a.plus(b), INTEGERS.ZERO);
+    const perpetualTokenBalance = await ctx.perpetual.testing.token.getBalance(
+      ctx.perpetual.contracts.perpetualV1.options.address,
+    );
+    expectBN(accountSumMargin, 'sum of margins equals token balance').eq(perpetualTokenBalance);
+  }
 }
 
 /**

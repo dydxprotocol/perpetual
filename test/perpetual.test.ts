@@ -1,4 +1,5 @@
-import { expectBN } from './helpers/Expect';
+import { BaseValue } from '../src';
+import { expectBN, expectBaseValueEqual } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 
@@ -8,7 +9,7 @@ perpetualDescribe('Perpetual', initializeWithTestContracts, (ctx: ITestContext) 
     it('has proper index', async () => {
       const index = await ctx.perpetual.getters.getGlobalIndex();
       const { timestamp } = await ctx.perpetual.web3.eth.getBlock('latest');
-      expectBN(index.value).eq(0);
+      expectBaseValueEqual(index.baseValue, new BaseValue(0));
       expectBN(index.timestamp).lte(timestamp as any);
     });
 

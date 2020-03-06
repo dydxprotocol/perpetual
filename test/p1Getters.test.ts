@@ -1,8 +1,7 @@
 import BigNumber from 'bignumber.js';
 
-import { INTEGERS } from '../src/lib/Constants';
-import { expect, expectBN } from './helpers/Expect';
-import { address } from '../src/lib/types';
+import { expect, expectBN, expectBaseValueEqual } from './helpers/Expect';
+import { BaseValue, address } from '../src/lib/types';
 import { mintAndDeposit } from './helpers/balances';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
@@ -11,8 +10,8 @@ import { buy } from './helpers/trade';
 // Tolerance when comparing blockchain timestamp against local timestamp.
 const TIMESTAMP_THRESHOLD_MS = 30000;
 
-const marginAmount = new BigNumber('1e18');
-const positionAmount = new BigNumber('1e16');
+const marginAmount = new BigNumber('1e17');
+const positionAmount = new BigNumber('1e15');
 
 let account: address;
 let otherAccount: address;
@@ -42,7 +41,7 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
 
   it('getAccountIndex()', async () => {
     const index = await ctx.perpetual.getters.getAccountIndex(account);
-    expectBN(index.value).to.equal(INTEGERS.ZERO);
+    expectBaseValueEqual(index.baseValue, new BaseValue(0));
     const timeDelta = index.timestamp.times(1000).minus(Date.now()).abs();
     expectBN(timeDelta).to.be.lessThan(TIMESTAMP_THRESHOLD_MS);
   });
@@ -78,14 +77,14 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
 
   it('getGlobalIndex()', async () => {
     const index = await ctx.perpetual.getters.getGlobalIndex();
-    expectBN(index.value).to.equal(INTEGERS.ZERO);
+    expectBaseValueEqual(index.baseValue, new BaseValue(0));
     const timeDelta = index.timestamp.times(1000).minus(Date.now()).abs();
     expectBN(timeDelta).to.be.lessThan(TIMESTAMP_THRESHOLD_MS);
   });
 
   it('getMinCollateral()', async () => {
     const minCollateral = await ctx.perpetual.getters.getMinCollateral();
-    expectBN(minCollateral).to.equal('1100000000000000000');
+    expectBaseValueEqual(minCollateral, new BaseValue('1.1'));
   });
 
   it('hasAccountPermissions()', async () => {

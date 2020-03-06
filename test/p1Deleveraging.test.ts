@@ -39,10 +39,12 @@ async function init(ctx: ITestContext): Promise<void> {
   deleveragingTimelockSeconds = await ctx.perpetual.deleveraging.getDeleveragingTimelockSeconds();
 
   // Set up initial balances:
+  // +---------+--------+----------+-------------------+
   // | account | margin | position | collateralization |
   // |---------+--------+----------+-------------------|
   // | long    |   -500 |       10 |              200% |
   // | short   |   1500 |      -10 |              150% |
+  // +---------+--------+----------+-------------------+
   await Promise.all([
     ctx.perpetual.testing.oracle.setPrice(initialPrice),
     mintAndDeposit(ctx, long, new BigNumber(500)),
