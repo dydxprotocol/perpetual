@@ -536,6 +536,26 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     });
 
     describe('in decrease-only mode', () => {
+      it('fills a bid', async () => {
+        const { maker, taker } = defaultOrder;
+        const cost = defaultOrder.limitPrice.value.times(orderAmount);
+        await sell(ctx, maker, taker, orderAmount, cost);
+        const buyOrder = await getModifiedOrder({ isDecreaseOnly: true });
+        await fillOrder(buyOrder);
+
+        // Check balances.
+      });
+
+      it('fills an ask', async () => {
+        const { maker, taker } = defaultOrder;
+        const cost = defaultOrder.limitPrice.value.times(orderAmount);
+        await buy(ctx, maker, taker, orderAmount, cost);
+        const sellOrder = await getModifiedOrder({ isBuy: false, isDecreaseOnly: true });
+        await fillOrder(sellOrder);
+
+        // Check balances.
+      });
+
       it('fails to fill a bid if maker position is positive', async () => {
         const { maker, taker } = defaultOrder;
         await buy(ctx, maker, taker, new BigNumber(1), defaultOrder.limitPrice.value);
@@ -557,6 +577,9 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
 
       it('fails to fill a bid if maker position would become positive', async () => {
+        const { maker, taker } = defaultOrder;
+        const cost = defaultOrder.limitPrice.value.times(orderAmount.minus(1));
+        await sell(ctx, maker, taker, orderAmount.minus(1), cost);
         const buyOrder = await getModifiedOrder({ isDecreaseOnly: true });
         await expectThrow(
           fillOrder(buyOrder),
@@ -565,6 +588,9 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
 
       it('fails to fill an ask if maker position would become negative', async () => {
+        const { maker, taker } = defaultOrder;
+        const cost = defaultOrder.limitPrice.value.times(orderAmount.minus(1));
+        await buy(ctx, maker, taker, orderAmount.minus(1), cost);
         const sellOrder = await getModifiedOrder({ isBuy: false, isDecreaseOnly: true });
         await expectThrow(
           fillOrder(sellOrder),
