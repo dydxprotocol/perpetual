@@ -1,15 +1,18 @@
 import { ADDRESSES } from '../src/lib/Constants';
-import { BASE_DECIMALS, address, BaseValue, Price } from '../src/lib/types';
+import { BASE_DECIMALS, BaseValue, Price, address } from '../src/lib/types';
 import { expect, expectBN, expectAddressesEqual, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { BigNumber } from '../src';
+
+const oraclePrice = new Price(100);
 
 let admin: address;
 
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
   admin = ctx.accounts[0];
+  await ctx.perpetual.testing.oracle.setPrice(oraclePrice);
 }
 
 perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
@@ -149,6 +152,42 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
       await expectThrow(
         ctx.perpetual.admin.setMinCollateral(minCollateral, { from: admin }),
         'The collateral requirement cannot be under 100%',
+      );
+    });
+  });
+
+  describe.only('enableFinalSettlement()', () => {
+    it('enables final settlement', async () => {
+      const txResult = await ctx.perpetual.admin.enableFinalSettlement(
+        oraclePrice,
+        { from: admin },
+      );
+
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      expect(logs.length).to.equal(1);
+      expect(logs[0].name).to.equal('LogFinalSettlementEnabled');
+      expectBN(logs[0].args.settlementPrice).to.equal(oraclePrice.toSolidity());
+    });
+
+    it('fails if called by non-admin', async () => {
+      await expectThrow(
+        ctx.perpetual.admin.enableFinalSettlement(oraclePrice),
+        'Adminable: caller is not admin',
+      );
+    });
+
+    it('fails to enable settlement at a price much below the oracle price', async () => {
+      await expectThrow(
+        ctx.perpetual.admin.enableFinalSettlement(oraclePrice.times('1.05')),
+        'Adminable: caller is not admin',
+      );
+    });
+
+    it('fails to enable settlement at a price much above the oracle price', async () => {
+      await expectThrow(
+        ctx.perpetual.admin.enableFinalSettlement(oraclePrice.times('0.95')),
+        'Adminable: caller is not admin',
       );
     });
   });

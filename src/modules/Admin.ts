@@ -22,6 +22,7 @@ import {
   SendOptions,
   TxResult,
   address,
+  Price,
 } from '../lib/types';
 import { Contract } from 'web3-eth-contract';
 
@@ -81,6 +82,18 @@ export class Admin {
     return this.contracts.send(
       this.perpetual.methods.setMinCollateral(
         minCollateral.toSolidity(),
+      ),
+      options,
+    );
+  }
+
+  public async enableFinalSettlement(
+    expectedPrice: Price,
+    options?: SendOptions,
+  ): Promise<TxResult> {
+    return this.contracts.send(
+      this.perpetual.methods.enableFinalSettlement(
+        expectedPrice.toSolidity(),
       ),
       options,
     );
