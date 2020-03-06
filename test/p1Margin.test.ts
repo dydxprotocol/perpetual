@@ -176,8 +176,10 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
       // Set initial balances and allowances.
       // Bring the total deposited to 1000.
       const marginAmount = new BigNumber(850);
-      await mintAndDeposit(ctx, accountOwner, marginAmount);
-      await mintAndDeposit(ctx, otherUser, marginAmount);
+      await Promise.all([
+        mintAndDeposit(ctx, accountOwner, marginAmount),
+        mintAndDeposit(ctx, otherUser, marginAmount),
+      ]);
 
       // Open a short position, bringing the account to 1100 margin and -10 position.
       // This trade should put the account right on the collateralization line.
