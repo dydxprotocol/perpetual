@@ -3,13 +3,13 @@ import BigNumber from 'bignumber.js';
 import { ITestContext } from './perpetualDescribe';
 import { expectBN } from './Expect';
 import { INTEGERS } from '../../src/lib/Constants';
-import { address } from '../../src/lib/types';
+import { BigNumberable, address } from '../../src/lib/types';
 
 export async function expectBalances(
   ctx: ITestContext,
   accounts: address[],
-  expectedMargins: BigNumber[],
-  expectedPositions: BigNumber[],
+  expectedMargins: BigNumberable[],
+  expectedPositions: BigNumberable[],
   fullySettled: boolean = true,
   positionsSumToZero: boolean = true,
 ): Promise<void> {
@@ -26,7 +26,7 @@ export async function expectBalances(
 export async function expectMarginBalances(
   ctx: ITestContext,
   accounts: address[],
-  expectedMargins: BigNumber[],
+  expectedMargins: BigNumberable[],
   fullySettled: boolean = true,
 ): Promise<void> {
   const actualMargins = await Promise.all(accounts.map((account: address) => {
@@ -34,7 +34,8 @@ export async function expectMarginBalances(
   }));
 
   for (const i in expectedMargins) {
-    expectBN(actualMargins[i], `accounts[${i}] margin balance`).eq(expectedMargins[i]);
+    const expectedMargin = new BigNumber(expectedMargins[i]);
+    expectBN(actualMargins[i], `accounts[${i}] margin balance`).eq(expectedMargin);
   }
 
   // Contract solvency check
@@ -57,7 +58,7 @@ export async function expectMarginBalances(
 export async function expectPositions(
   ctx: ITestContext,
   accounts: address[],
-  expectedPositions: BigNumber[],
+  expectedPositions: BigNumberable[],
   sumToZero: boolean = true,
 ) {
   const actualPositions = await Promise.all(accounts.map((account: address) => {
@@ -65,7 +66,8 @@ export async function expectPositions(
   }));
 
   for (const i in expectedPositions) {
-    expectBN(actualPositions[i], `accounts[${i}] position balance`).eq(expectedPositions[i]);
+    const expectedPosition = new BigNumber(expectedPositions[i]);
+    expectBN(actualPositions[i], `accounts[${i}] position balance`).eq(expectedPosition);
   }
 
   if (sumToZero) {

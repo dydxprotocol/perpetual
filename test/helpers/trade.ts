@@ -3,14 +3,14 @@ import _ from 'lodash';
 
 import { ITestContext } from './perpetualDescribe';
 import { TRADER_FLAG_ORDERS } from '../../src/lib/Constants';
-import { TxResult, address } from '../../src/lib/types';
+import { BigNumberable, TxResult, address } from '../../src/lib/types';
 
 export async function buy(
   ctx: ITestContext,
   taker: address,
   maker: address,
-  position: BigNumber,
-  cost: BigNumber,
+  position: BigNumberable,
+  cost: BigNumberable,
 ): Promise<TxResult> {
   return trade(ctx, taker, maker, position, cost, true);
 }
@@ -19,24 +19,24 @@ export async function sell(
   ctx: ITestContext,
   taker: address,
   maker: address,
-  position: BigNumber,
-  cost: BigNumber,
+  position: BigNumberable,
+  cost: BigNumberable,
 ): Promise<TxResult> {
   return trade(ctx, taker, maker, position, cost, false);
 }
 
-async function trade(
+export async function trade(
   ctx: ITestContext,
   taker: address,
   maker: address,
-  position: BigNumber,
-  cost: BigNumber,
+  position: BigNumberable,
+  cost: BigNumberable,
   isBuy: boolean,
 ): Promise<TxResult> {
   await ctx.perpetual.testing.trader.setTradeResult({
     isBuy,
-    marginAmount: cost,
-    positionAmount: position,
+    marginAmount: new BigNumber(cost),
+    positionAmount: new BigNumber(position),
     traderFlags: TRADER_FLAG_ORDERS,
   });
   const accounts = _.chain([taker, maker]).map(_.toLower).sort().sortedUniq().value();
