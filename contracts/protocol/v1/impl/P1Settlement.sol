@@ -160,16 +160,17 @@ contract P1Settlement is
         // By convention, positive funding (index increases) means longs pay shorts
         // and negative funding (index decreases) means shorts pay longs.
         uint256 settlementAmount = signedIndexDiff.value.baseMul(balance.position);
-        if (signedIndexDiff.isPositive == balance.positionIsPositive) {
-            _BALANCES_[account] = balance.marginSub(settlementAmount);
-        } else {
+        bool settlementIsPositive = signedIndexDiff.isPositive != balance.positionIsPositive;
+        if (settlementIsPositive) {
             _BALANCES_[account] = balance.marginAdd(settlementAmount);
+        } else {
+            _BALANCES_[account] = balance.marginSub(settlementAmount);
         }
 
         // Log the change to the account balance, which is the negative of the change in the index.
         emit LogAccountSettled(
             account,
-            signedIndexDiff.isPositive != balance.positionIsPositive,
+            settlementIsPositive,
             settlementAmount
         );
     }
