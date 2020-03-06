@@ -92,7 +92,7 @@ export class Contracts {
       from: null,
       confirmations: 0,
       confirmationType: ConfirmationType.Confirmed,
-      gasMultiplier: 1.5,
+      gasMultiplier: 5,
     };
 
     // Contracts

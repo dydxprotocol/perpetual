@@ -174,8 +174,10 @@ perpetualDescribe('P1Trade._verifyAccountsFinalBalances()', init, (ctx: ITestCon
       });
 
       it('fails if collateralizaion worsens', async () => {
-        await expectFailure([margin.minus(1), position], ERROR_COLLATERALIZATION_DECREASED);
-        await expectFailure([margin, position.minus(1)], ERROR_COLLATERALIZATION_DECREASED);
+        await Promise.all([
+          expectFailure([margin.minus(1), position], ERROR_COLLATERALIZATION_DECREASED),
+          expectFailure([margin, position.minus(1)], ERROR_COLLATERALIZATION_DECREASED),
+        ]);
       });
 
       it('fails if absolute position size increases', async () => {
@@ -382,6 +384,7 @@ perpetualDescribe('P1Trade._verifyAccountsFinalBalances()', init, (ctx: ITestCon
       trader: ctx.perpetual.testing.trader.address,
       data: '0x00',
     };
-    return ctx.perpetual.trade.trade(accounts, [args, args]);
+    // Use a higher gas multiplier. Had “out of gas” errors with some expectFailure() calls.
+    return ctx.perpetual.trade.trade(accounts, [args, args], { gasMultiplier: 3 });
   }
 });
