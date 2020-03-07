@@ -19,9 +19,11 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { P1Storage } from "./P1Storage.sol";
+import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
 
@@ -34,6 +36,8 @@ import { P1Types } from "../lib/P1Types.sol";
 contract P1FinalSettlement is
     P1Storage
 {
+    using SafeMath for uint256;
+
     // ============ Events ============
 
     event LogWithdrawFinalSettlement(
@@ -72,17 +76,36 @@ contract P1FinalSettlement is
         onlyFinalSettlement
         nonReentrant
     {
-        uint256 amount = 0;
-        // TODO: math.
+        P1Types.Balance memory balance = _BALANCES_[msg.sender];
+
+        // Zero-out balances as early in the function as possible.
+        _BALANCES_[msg.sender].margin = 0;
+        _BALANCES_[msg.sender].position = 0;
+
+        // Determine the account net value.
+        (uint256 positive, uint256 negative) = P1BalanceMath.getPositiveAndNegativeValue(
+            balance,
+            _FINAL_SETTLEMENT_PRICE_
+        );
+
+        // Determine the amount to be withdrawn.
+        uint256 amount;
+        if (positive > negative) {
+            amount = positive.sub(negative);
+
+            uint256 contractBalance = IERC20(_TOKEN_).balanceOf(address(this));
+            if (amount > contractBalance) {
+                amount = contractBalance;
+            }
+        } else {
+            amount = 0;
+        }
 
         SafeERC20.safeTransfer(
             IERC20(_TOKEN_),
             msg.sender,
             amount
         );
-
-        _BALANCES_[msg.sender].margin = 0;
-        _BALANCES_[msg.sender].position = 0;
 
         emit LogWithdrawFinalSettlement(
             msg.sender,
