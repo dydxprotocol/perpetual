@@ -20,6 +20,7 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { P1FinalSettlement } from "./P1FinalSettlement.sol";
 import { P1Settlement } from "./P1Settlement.sol";
 import { P1Storage } from "./P1Storage.sol";
 import { Require } from "../../lib/Require.sol";
@@ -35,8 +36,8 @@ import { P1Types } from "../lib/P1Types.sol";
  * Trade logic contract
  */
 contract P1Trade is
-    P1FinalSettlement,
     P1Storage,
+    P1FinalSettlement,
     P1Settlement
 {
     using SafeMath for uint120;

@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { Storage } from "../lib/Storage.sol";
 import { P1Admin } from "./impl/P1Admin.sol";
+import { P1FinalSettlement } from "./impl/P1FinalSettlement.sol";
 import { P1Getters } from "./impl/P1Getters.sol";
 import { P1Margin } from "./impl/P1Margin.sol";
 import { P1Operator } from "./impl/P1Operator.sol";

@@ -49,7 +49,7 @@ contract P1FinalSettlement is
     modifier noFinalSettlement() {
         require(
             !_FINAL_SETTLEMENT_ENABLED_,
-            "Cannot run during final settlement"
+            "Not permitted during final settlement"
         );
         _;
     }
@@ -60,7 +60,7 @@ contract P1FinalSettlement is
     modifier onlyFinalSettlement() {
         require(
             _FINAL_SETTLEMENT_ENABLED_,
-            "Can only run during final settlement"
+            "Only permitted during final settlement"
         );
         _;
     }

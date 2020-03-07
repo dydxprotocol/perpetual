@@ -54,7 +54,7 @@ contract P1Admin is
     );
 
     event LogFinalSettlementEnabled(
-        uint256 oraclePrice
+        uint256 settlementPrice
     );
 
     // ============ Functions ============
@@ -120,6 +120,7 @@ contract P1Admin is
     )
         public
         onlyAdmin
+        nonReentrant
     {
         _FINAL_SETTLEMENT_PRICE_ = I_P1Oracle(_ORACLE_).getPrice();
         _FINAL_SETTLEMENT_ENABLED_ = true;
