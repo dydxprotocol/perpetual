@@ -143,13 +143,13 @@ contract P1Settlement is
             return balance;
         }
 
+        // store a cached copy of the index for this account
+        _LOCAL_INDEXES_[account] = newIndex;
+
         // no need for settlement if balance is zero
         if (balance.position == 0) {
             return balance;
         }
-
-        // store a cached copy of the index for this account
-        _LOCAL_INDEXES_[account] = newIndex;
 
         // get the difference between the newIndex and oldIndex
         SignedMath.Int memory signedIndexDiff = SignedMath.Int({
