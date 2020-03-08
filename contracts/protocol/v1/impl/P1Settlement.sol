@@ -168,12 +168,10 @@ contract P1Settlement is
         uint256 settlementAmount = signedIndexDiff.value.baseMul(balance.position);
         bool settlementIsPositive = signedIndexDiff.isPositive != balance.positionIsPositive;
 
-        P1Types.Balance memory newBalance;
-        if (settlementIsPositive) {
-            newBalance = balance.marginAdd(settlementAmount);
-        } else {
-            newBalance = balance.marginSub(settlementAmount);
-        }
+        // calculate the new balance of the account with updated margin
+        P1Types.Balance memory newBalance = settlementIsPositive
+            ? balance.marginAdd(settlementAmount)
+            : balance.marginSub(settlementAmount);
         _BALANCES_[account] = newBalance;
 
         // Log the change to the account balance, which is the negative of the change in the index.
