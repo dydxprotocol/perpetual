@@ -41,16 +41,6 @@ library BaseMath {
         return BASE;
     }
 
-    function addOne(
-        uint256 value
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return value.add(BASE);
-    }
-
     function baseMul(
         uint256 value,
         uint256 basedValue
@@ -60,16 +50,5 @@ library BaseMath {
         returns (uint256)
     {
         return value.mul(basedValue).div(BASE);
-    }
-
-    function baseDiv(
-        uint256 value,
-        uint256 basedValue
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return value.mul(BASE).div(basedValue);
     }
 }
