@@ -63,7 +63,7 @@ contract P1Margin is
         nonReentrant
     {
         P1Types.Context memory context = _loadContext();
-        _settleAccount(context, account);
+        P1Types.Balance memory balance = _settleAccount(context, account);
 
         SafeERC20.safeTransferFrom(
             IERC20(_TOKEN_),
@@ -72,7 +72,7 @@ contract P1Margin is
             amount
         );
 
-        _BALANCES_[account] = _BALANCES_[account].marginAdd(amount);
+        _BALANCES_[account] = balance.marginAdd(amount);
         emit LogDeposit(account, amount);
     }
 
@@ -89,7 +89,7 @@ contract P1Margin is
         );
 
         P1Types.Context memory context = _loadContext();
-        _settleAccount(context, account);
+        P1Types.Balance memory balance = _settleAccount(context, account);
 
         SafeERC20.safeTransfer(
             IERC20(_TOKEN_),
@@ -97,7 +97,7 @@ contract P1Margin is
             amount
         );
 
-        _BALANCES_[account] = _BALANCES_[account].marginSub(amount);
+        _BALANCES_[account] = balance.marginSub(amount);
 
         require(
             _isCollateralized(context, account),

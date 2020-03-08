@@ -71,16 +71,10 @@ contract P1Trade is
     {
         _verifyAccounts(accounts);
         P1Types.Context memory context = _loadContext();
-        _settleAccounts(context, accounts);
-
-        P1Types.Balance[] memory initialBalances = new P1Types.Balance[](accounts.length);
-        uint256 i;
-        for (i = 0; i < accounts.length; i++) {
-            initialBalances[i] = _BALANCES_[accounts[i]];
-        }
+        P1Types.Balance[] memory initialBalances = _settleAccounts(context, accounts);
 
         bytes32 traderFlags = 0;
-        for (i = 0; i < trades.length; i++) {
+        for (uint256 i = 0; i < trades.length; i++) {
             TradeArg memory tradeArg = trades[i];
 
             require(
