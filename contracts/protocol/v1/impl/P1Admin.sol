@@ -76,7 +76,7 @@ contract P1Admin is
     {
         require(
             I_P1Oracle(_ORACLE_).getPrice() != 0,
-            "The oracle cannot return a zero price"
+            "New oracle cannot return a zero price"
         );
         _ORACLE_ = oracle;
         emit LogSetOracle(oracle);

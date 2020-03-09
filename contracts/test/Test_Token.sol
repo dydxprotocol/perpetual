@@ -29,6 +29,7 @@ import { ERC20Detailed } from "@openzeppelin/contracts/token/ERC20/ERC20Detailed
  *
  * ERC20 token for testing
  */
+/* solium-disable-next-line camelcase */
 contract Test_Token is
     ERC20,
     ERC20Detailed("Test Token", "TEST", 18)

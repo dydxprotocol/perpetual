@@ -19,39 +19,20 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { I_P1Funder } from "../../protocol/v1/intf/I_P1Funder.sol";
+import { Test_P1Funder } from "./Test_P1Funder.sol";
+import { Test_P1Oracle } from "./Test_P1Oracle.sol";
+import { Test_P1Trader } from "./Test_P1Trader.sol";
 
 
 /**
- * @title Test_P1Funder
+ * @title Test_P1Monolith
  * @author dYdX
  *
- * P1Funder for testing
+ * A second contract for testing the funder, oracle, and trader.
  */
-/* solium-disable-next-line camelcase */
-contract Test_P1Funder is
-    I_P1Funder
-{
-    bool public _FUNDING_IS_POSITIVE_ = true;
-    uint256 public _FUNDING_ = 0;
-
-    function getFunding(
-        uint256 // timestamp
-    )
-        external
-        view
-        returns (bool, uint256)
-    {
-        return (_FUNDING_IS_POSITIVE_, _FUNDING_);
-    }
-
-    function setFunding(
-        bool isPositive,
-        uint256 newFunding
-    )
-        external
-    {
-        _FUNDING_IS_POSITIVE_ = isPositive;
-        _FUNDING_ = newFunding;
-    }
-}
+/* solium-disable-next-line camelcase, no-empty-blocks */
+contract Test_P1Monolith is
+    Test_P1Funder,
+    Test_P1Oracle,
+    Test_P1Trader
+{}
