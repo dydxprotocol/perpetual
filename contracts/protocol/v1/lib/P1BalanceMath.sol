@@ -40,6 +40,21 @@ library P1BalanceMath {
 
     // ============ Functions ============
 
+    function copy(
+        P1Types.Balance memory balance
+    )
+        internal
+        pure
+        returns (P1Types.Balance memory)
+    {
+        return P1Types.Balance({
+            marginIsPositive: balance.marginIsPositive,
+            positionIsPositive: balance.positionIsPositive,
+            margin: balance.margin,
+            position: balance.position
+        });
+    }
+
     function marginAdd(
         P1Types.Balance memory balance,
         uint256 amount

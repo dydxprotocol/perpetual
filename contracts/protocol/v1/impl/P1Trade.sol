@@ -72,9 +72,15 @@ contract P1Trade is
         _verifyAccounts(accounts);
         P1Types.Context memory context = _loadContext();
         P1Types.Balance[] memory initialBalances = _settleAccounts(context, accounts);
+        P1Types.Balance[] memory currentBalances = new P1Types.Balance[](initialBalances.length);
+
+        uint256 i = 0;
+        for (i = 0; i < currentBalances.length; i++) {
+            currentBalances[i] = initialBalances[i].copy();
+        }
 
         bytes32 traderFlags = 0;
-        for (uint256 i = 0; i < trades.length; i++) {
+        for (i = 0; i < trades.length; i++) {
             TradeArg memory tradeArg = trades[i];
 
             require(
@@ -101,8 +107,8 @@ contract P1Trade is
                 continue;
             }
 
-            P1Types.Balance memory makerBalance = _BALANCES_[maker];
-            P1Types.Balance memory takerBalance = _BALANCES_[taker];
+            P1Types.Balance memory makerBalance = currentBalances[tradeArg.makerIndex];
+            P1Types.Balance memory takerBalance = currentBalances[tradeArg.takerIndex];
 
             if (tradeResult.isBuy) {
                 makerBalance = makerBalance.marginAdd(tradeResult.marginAmount);
@@ -118,6 +124,8 @@ contract P1Trade is
 
             _BALANCES_[maker] = makerBalance;
             _BALANCES_[taker] = takerBalance;
+            currentBalances[tradeArg.makerIndex] = makerBalance;
+            currentBalances[tradeArg.takerIndex] = takerBalance;
 
             emit LogTrade(
                 maker,
@@ -129,7 +137,12 @@ contract P1Trade is
             );
         }
 
-        _verifyAccountsFinalBalances(context, accounts, initialBalances);
+        _verifyAccountsFinalBalances(
+            context,
+            accounts,
+            initialBalances,
+            currentBalances
+        );
     }
 
     function _verifyAccounts(
@@ -169,7 +182,8 @@ contract P1Trade is
     function _verifyAccountsFinalBalances(
         P1Types.Context memory context,
         address[] memory accounts,
-        P1Types.Balance[] memory initialBalances
+        P1Types.Balance[] memory initialBalances,
+        P1Types.Balance[] memory currentBalances
     )
         private
         view
@@ -180,7 +194,7 @@ contract P1Trade is
             }
 
             P1Types.Balance memory initialBalance = initialBalances[i];
-            P1Types.Balance memory finalBalance = _BALANCES_[accounts[i]];
+            P1Types.Balance memory finalBalance = currentBalances[i];
 
             // Let margin be zero for now but require position to be non-zero.
             require(
