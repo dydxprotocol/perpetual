@@ -146,7 +146,7 @@ contract P1Orders is
     address public _PERPETUAL_V1_;
 
     // Hash of the EIP712 Domain Separator data
-    bytes32 public EIP712_DOMAIN_HASH;
+    bytes32 public _EIP712_DOMAIN_HASH_;
 
     // ============ Mutable Storage ============
 
@@ -167,7 +167,7 @@ contract P1Orders is
         _PERPETUAL_V1_ = perpetualV1;
 
         /* solium-disable-next-line indentation */
-        EIP712_DOMAIN_HASH = keccak256(abi.encode(
+        _EIP712_DOMAIN_HASH_ = keccak256(abi.encode(
             EIP712_DOMAIN_SEPARATOR_SCHEMA_HASH,
             keccak256(bytes(EIP712_DOMAIN_NAME)),
             keccak256(bytes(EIP712_DOMAIN_VERSION)),
@@ -189,15 +189,19 @@ contract P1Orders is
         external
         returns(P1Types.TradeResult memory)
     {
+        address perpetual = _PERPETUAL_V1_;
+
         require(
-            msg.sender == _PERPETUAL_V1_,
+            msg.sender == perpetual,
             "msg.sender must be PerpetualV1"
         );
 
-        require(
-            sender == taker,
-            "Sender must equal taker"
-        );
+        if (taker != sender) {
+            require(
+                P1Getters(perpetual).hasAccountPermissions(taker, sender),
+                "Sender must equal taker"
+            );
+        }
 
         TradeData memory tradeData = abi.decode(data, (TradeData));
         bytes32 orderHash = _getOrderHash(tradeData.order);
@@ -211,6 +215,7 @@ contract P1Orders is
             tradeData,
             maker,
             taker,
+            perpetual,
             price
         );
 
@@ -322,6 +327,7 @@ contract P1Orders is
         TradeData memory tradeData,
         address maker,
         address taker,
+        address perpetual,
         uint256 price
     )
         private
@@ -368,7 +374,7 @@ contract P1Orders is
         }
 
         if (_isDecreaseOnly(tradeData.order)) {
-            P1Types.Balance memory balance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
+            P1Types.Balance memory balance = P1Getters(perpetual).getAccountBalance(maker);
             require(
                 isBuyOrder != balance.positionIsPositive
                 && tradeData.fill.amount <= balance.position,
@@ -398,7 +404,7 @@ contract P1Orders is
         /* solium-disable-next-line indentation */
         return keccak256(abi.encodePacked(
             EIP191_HEADER,
-            EIP712_DOMAIN_HASH,
+            _EIP712_DOMAIN_HASH_,
             structHash
         ));
     }

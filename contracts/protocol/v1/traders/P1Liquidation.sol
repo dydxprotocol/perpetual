@@ -85,19 +85,27 @@ contract P1Liquidation is
         external
         returns(P1Types.TradeResult memory)
     {
+        address perpetual = _PERPETUAL_V1_;
+
         require(
-            msg.sender == _PERPETUAL_V1_,
+            msg.sender == perpetual,
             "msg.sender must be PerpetualV1"
         );
+
         require(
-            P1Getters(_PERPETUAL_V1_).hasAccountPermissions(taker, sender),
+            P1Getters(perpetual).hasAccountPermissions(taker, sender),
             "sender does not have permissions for the taker (i.e. liquidator)"
         );
 
         TradeData memory tradeData = abi.decode(data, (TradeData));
-        P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
+        P1Types.Balance memory makerBalance = P1Getters(perpetual).getAccountBalance(maker);
 
-        _verifyTrade(tradeData, makerBalance, price);
+        _verifyTrade(
+            tradeData,
+            makerBalance,
+            perpetual,
+            price
+        );
 
         uint256 amount = Math.min(tradeData.amount, makerBalance.position);
         bool isBuy = makerBalance.positionIsPositive;
@@ -129,13 +137,14 @@ contract P1Liquidation is
     function _verifyTrade(
         TradeData memory tradeData,
         P1Types.Balance memory makerBalance,
+        address perpetual,
         uint256 price
     )
         private
         view
     {
         require(
-            _isUndercollateralized(makerBalance, price),
+            _isUndercollateralized(makerBalance, perpetual, price),
             "Cannot liquidate since maker is not undercollateralized"
         );
         require(
@@ -146,6 +155,7 @@ contract P1Liquidation is
 
     function _isUndercollateralized(
         P1Types.Balance memory balance,
+        address perpetual,
         uint256 price
     )
         private
@@ -153,7 +163,7 @@ contract P1Liquidation is
         returns (bool)
     {
         (uint256 positive, uint256 negative) = balance.getPositiveAndNegativeValue(price);
-        uint256 minCollateral = P1Getters(_PERPETUAL_V1_).getMinCollateral();
+        uint256 minCollateral = P1Getters(perpetual).getMinCollateral();
         return positive.mul(BaseMath.base()) < negative.mul(minCollateral);
     }
 }
