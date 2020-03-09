@@ -57,7 +57,7 @@ contract P1Admin is
         address operator,
         bool approved
     )
-        public
+        external
         onlyAdmin
         nonReentrant
     {
@@ -68,7 +68,7 @@ contract P1Admin is
     function setOracle(
         address oracle
     )
-        public
+        external
         onlyAdmin
         nonReentrant
     {
@@ -79,7 +79,7 @@ contract P1Admin is
     function setFunder(
         address funder
     )
-        public
+        external
         onlyAdmin
         nonReentrant
     {
