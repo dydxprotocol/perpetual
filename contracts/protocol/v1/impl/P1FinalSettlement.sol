@@ -97,7 +97,8 @@ contract P1FinalSettlement is
             // store the amount still owed.
             uint256 contractBalance = IERC20(_TOKEN_).balanceOf(address(this));
             if (amount > contractBalance) {
-                _BALANCES_[msg.sender].margin = amount.sub(contractBalance);
+                // Don't bother with SafeCast here for uint120 conversion.
+                _BALANCES_[msg.sender].margin = uint120(amount.sub(contractBalance));
                 amount = contractBalance;
             }
 
