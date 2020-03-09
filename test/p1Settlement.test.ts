@@ -194,7 +194,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
     });
 
     it('Does not settle an account if its local index is up-to-date', async () => {
-      await ctx.perpetual.testing.funder.setFunding(new BaseValue('-0.05'));
+      await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.05'));
 
       // Wait until we get two deposits with the same timestamp.
       let result1: TxResult;
@@ -203,8 +203,10 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       let block2: any;
       let numTries = 0;
       do {
-        result1 = await ctx.perpetual.margin.deposit(long, new BigNumber(0), { from: long });
-        result2 = await ctx.perpetual.margin.deposit(long, new BigNumber(0), { from: long });
+        // Since it's unknown whether the deposit will trigger an index update, we need to use
+        // a high gas amount, in case the estimate is too low.
+        result1 = await ctx.perpetual.margin.deposit(long, new BigNumber(0), { gas: 4000000 });
+        result2 = await ctx.perpetual.margin.deposit(long, new BigNumber(0), { gas: 4000000 });
         [block1, block2] = await Promise.all([
           ctx.perpetual.web3.eth.getBlock(result1.blockNumber),
           ctx.perpetual.web3.eth.getBlock(result2.blockNumber),
