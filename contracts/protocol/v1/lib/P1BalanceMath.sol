@@ -120,7 +120,7 @@ library P1BalanceMath {
     }
 
     /**
-     * Returns the relative positive and negative values of the position given a price
+     * Returns the positive and negative values of the margin and position together, given a price.
      */
     function getPositiveAndNegativeValue(
         P1Types.Balance memory balance,

@@ -74,7 +74,7 @@ contract P1Trade is
         P1Types.Balance[] memory initialBalances = _settleAccounts(context, accounts);
         P1Types.Balance[] memory currentBalances = new P1Types.Balance[](initialBalances.length);
 
-        uint256 i = 0;
+        uint256 i;
         for (i = 0; i < currentBalances.length; i++) {
             currentBalances[i] = initialBalances[i].copy();
         }
@@ -102,14 +102,14 @@ contract P1Trade is
 
             traderFlags |= tradeResult.traderFlags;
 
-            // if the accounts are equal no need to update balances
+            // If the accounts are equal, no need to update balances.
             if (maker == taker) {
                 continue;
             }
 
+            // Modify currentBalances in-place.
             P1Types.Balance memory makerBalance = currentBalances[tradeArg.makerIndex];
             P1Types.Balance memory takerBalance = currentBalances[tradeArg.takerIndex];
-
             if (tradeResult.isBuy) {
                 makerBalance.addToMargin(tradeResult.marginAmount);
                 makerBalance.subFromPosition(tradeResult.positionAmount);
@@ -122,10 +122,9 @@ contract P1Trade is
                 takerBalance.subFromPosition(tradeResult.positionAmount);
             }
 
+            // Store the new balances in storage.
             _BALANCES_[maker] = makerBalance;
             _BALANCES_[taker] = takerBalance;
-            currentBalances[tradeArg.makerIndex] = makerBalance;
-            currentBalances[tradeArg.takerIndex] = takerBalance;
 
             emit LogTrade(
                 maker,
