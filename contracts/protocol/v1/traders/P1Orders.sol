@@ -146,7 +146,7 @@ contract P1Orders is
     address public _PERPETUAL_V1_;
 
     // Hash of the EIP712 Domain Separator data
-    bytes32 public EIP712_DOMAIN_HASH;
+    bytes32 public _EIP712_DOMAIN_HASH_;
 
     // ============ Mutable Storage ============
 
@@ -167,7 +167,7 @@ contract P1Orders is
         _PERPETUAL_V1_ = perpetualV1;
 
         /* solium-disable-next-line indentation */
-        EIP712_DOMAIN_HASH = keccak256(abi.encode(
+        _EIP712_DOMAIN_HASH_ = keccak256(abi.encode(
             EIP712_DOMAIN_SEPARATOR_SCHEMA_HASH,
             keccak256(bytes(EIP712_DOMAIN_NAME)),
             keccak256(bytes(EIP712_DOMAIN_VERSION)),
@@ -398,7 +398,7 @@ contract P1Orders is
         /* solium-disable-next-line indentation */
         return keccak256(abi.encodePacked(
             EIP191_HEADER,
-            EIP712_DOMAIN_HASH,
+            _EIP712_DOMAIN_HASH_,
             structHash
         ));
     }

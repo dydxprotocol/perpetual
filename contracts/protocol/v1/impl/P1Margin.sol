@@ -59,7 +59,7 @@ contract P1Margin is
         address account,
         uint256 amount
     )
-        public
+        external
         nonReentrant
     {
         P1Types.Context memory context = _loadContext();
@@ -81,7 +81,7 @@ contract P1Margin is
         address account,
         uint256 amount
     )
-        public
+        external
         nonReentrant
     {
         require(
