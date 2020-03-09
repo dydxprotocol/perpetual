@@ -39,7 +39,7 @@ async function init(ctx: ITestContext): Promise<void> {
   maker = ctx.accounts[2];
   riskyAccount = ctx.accounts[3];
 
-  errorAddress = ` ${riskyAccount.substr(0, 10)}...${riskyAccount.substr(-8)}`.toLowerCase();
+  errorAddress = `: ${riskyAccount.substr(0, 10)}...${riskyAccount.substr(-8)}`.toLowerCase();
   ERROR_NON_POSITIVE += errorAddress;
   ERROR_POSITION_SIZE += errorAddress;
   ERROR_POSITION_SIGN += errorAddress;

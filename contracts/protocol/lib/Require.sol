@@ -30,11 +30,11 @@ library Require {
 
     // ============ Constants ============
 
-    uint256 constant ASCII_ZERO = 0x30; // 'a' - 10
+    uint256 constant ASCII_ZERO = 0x30; // '0'
     uint256 constant ASCII_RELATIVE_ZERO = 0x57; // 'a' - 10
     uint256 constant FOUR_BIT_MASK = 0xf;
-    bytes22 constant ZERO_ADDRESS =
-    0x20307830303030303030302e2e2e3030303030303030; // " 0x00000000...00000000"
+    bytes23 constant ZERO_ADDRESS =
+    0x3a20307830303030303030302e2e2e3030303030303030; // ": 0x00000000...00000000"
 
     // ============ Library Functions ============
 
@@ -69,7 +69,7 @@ library Require {
         pure
         returns (bytes memory)
     {
-        // begin with " 0x00000000...00000000"
+        // begin with ": 0x00000000...00000000"
         bytes memory result = abi.encodePacked(ZERO_ADDRESS);
 
         // initialize values
@@ -78,7 +78,7 @@ library Require {
         uint256 shift2 = 8 * 4 - 4;
 
         // populate both sections in parallel
-        for (uint256 i = 3; i < 11; i++) {
+        for (uint256 i = 4; i < 12; i++) {
             result[i] = char(z >> shift1); // set char in first section
             result[i + 11] = char(z >> shift2); // set char in second section
             shift1 -= 4;
@@ -89,7 +89,7 @@ library Require {
     }
 
     /**
-     * Returns the ASCII hex character that represents by the last four bits of the input.
+     * Returns the ASCII hex character that represents the last four bits of the input (0-9a-f).
      */
     function char(
         uint256 input
