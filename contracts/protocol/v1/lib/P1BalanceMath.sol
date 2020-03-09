@@ -61,11 +61,10 @@ library P1BalanceMath {
     )
         internal
         pure
-        returns (P1Types.Balance memory)
     {
         SignedMath.Int memory signedMargin = marginToSignedInt(balance);
         signedMargin = signedMargin.add(amount);
-        return signedIntToMargin(balance, signedMargin);
+        signedIntToMargin(balance, signedMargin);
     }
 
     function marginSub(
@@ -74,11 +73,10 @@ library P1BalanceMath {
     )
         internal
         pure
-        returns (P1Types.Balance memory)
     {
         SignedMath.Int memory signedMargin = marginToSignedInt(balance);
         signedMargin = signedMargin.sub(amount);
-        return signedIntToMargin(balance, signedMargin);
+        signedIntToMargin(balance, signedMargin);
     }
 
     function positionAdd(
@@ -87,11 +85,10 @@ library P1BalanceMath {
     )
         internal
         pure
-        returns (P1Types.Balance memory)
     {
         SignedMath.Int memory signedPosition = positionToSignedInt(balance);
         signedPosition = signedPosition.add(amount);
-        return signedIntToPosition(balance, signedPosition);
+        signedIntToPosition(balance, signedPosition);
     }
 
     function positionSub(
@@ -100,11 +97,10 @@ library P1BalanceMath {
     )
         internal
         pure
-        returns (P1Types.Balance memory)
     {
         SignedMath.Int memory signedPosition = positionToSignedInt(balance);
         signedPosition = signedPosition.sub(amount);
-        return signedIntToPosition(balance, signedPosition);
+        signedIntToPosition(balance, signedPosition);
     }
 
     function getPositiveAndNegativeValue(
@@ -157,14 +153,9 @@ library P1BalanceMath {
     )
         private
         pure
-        returns (P1Types.Balance memory)
     {
-        return P1Types.Balance({
-            marginIsPositive: signedInt.isPositive,
-            positionIsPositive: balance.positionIsPositive,
-            margin: signedInt.value.toUint120(),
-            position: balance.position
-        });
+        balance.margin = signedInt.value.toUint120();
+        balance.marginIsPositive = signedInt.isPositive;
     }
 
     function positionToSignedInt(
@@ -186,13 +177,8 @@ library P1BalanceMath {
     )
         private
         pure
-        returns (P1Types.Balance memory)
     {
-        return P1Types.Balance({
-            marginIsPositive: balance.marginIsPositive,
-            positionIsPositive: signedInt.isPositive,
-            margin: balance.margin,
-            position: signedInt.value.toUint120()
-        });
+        balance.position = signedInt.value.toUint120();
+        balance.positionIsPositive = signedInt.isPositive;
     }
 }

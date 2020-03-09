@@ -169,10 +169,12 @@ contract P1Settlement is
         bool settlementIsPositive = signedIndexDiff.isPositive != balance.positionIsPositive;
 
         // calculate the new balance of the account with updated margin
-        P1Types.Balance memory newBalance = settlementIsPositive
-            ? balance.marginAdd(settlementAmount)
-            : balance.marginSub(settlementAmount);
-        _BALANCES_[account] = newBalance;
+        if (settlementIsPositive) {
+            balance.marginAdd(settlementAmount);
+        } else {
+            balance.marginSub(settlementAmount);
+        }
+        _BALANCES_[account] = balance;
 
         // Log the change to the account balance, which is the negative of the change in the index.
         emit LogAccountSettled(
@@ -181,7 +183,7 @@ contract P1Settlement is
             settlementAmount
         );
 
-        return newBalance;
+        return balance;
     }
 
     function _isCollateralized(

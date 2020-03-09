@@ -72,7 +72,8 @@ contract P1Margin is
             amount
         );
 
-        _BALANCES_[account] = balance.marginAdd(amount);
+        balance.marginAdd(amount);
+        _BALANCES_[account] = balance;
         emit LogDeposit(account, amount);
     }
 
@@ -97,7 +98,8 @@ contract P1Margin is
             amount
         );
 
-        _BALANCES_[account] = balance.marginSub(amount);
+        balance.marginSub(amount);
+        _BALANCES_[account] = balance;
 
         require(
             _isCollateralized(context, account),

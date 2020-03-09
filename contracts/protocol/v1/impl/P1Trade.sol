@@ -111,15 +111,15 @@ contract P1Trade is
             P1Types.Balance memory takerBalance = currentBalances[tradeArg.takerIndex];
 
             if (tradeResult.isBuy) {
-                makerBalance = makerBalance.marginAdd(tradeResult.marginAmount);
-                makerBalance = makerBalance.positionSub(tradeResult.positionAmount);
-                takerBalance = takerBalance.marginSub(tradeResult.marginAmount);
-                takerBalance = takerBalance.positionAdd(tradeResult.positionAmount);
+                makerBalance.marginAdd(tradeResult.marginAmount);
+                makerBalance.positionSub(tradeResult.positionAmount);
+                takerBalance.marginSub(tradeResult.marginAmount);
+                takerBalance.positionAdd(tradeResult.positionAmount);
             } else {
-                makerBalance = makerBalance.marginSub(tradeResult.marginAmount);
-                makerBalance = makerBalance.positionAdd(tradeResult.positionAmount);
-                takerBalance = takerBalance.marginAdd(tradeResult.marginAmount);
-                takerBalance = takerBalance.positionSub(tradeResult.positionAmount);
+                makerBalance.marginSub(tradeResult.marginAmount);
+                makerBalance.positionAdd(tradeResult.positionAmount);
+                takerBalance.marginAdd(tradeResult.marginAmount);
+                takerBalance.positionSub(tradeResult.positionAmount);
             }
 
             _BALANCES_[maker] = makerBalance;
