@@ -57,7 +57,7 @@ perpetualDescribe('Proxy', initializeWithTestContracts, (ctx: ITestContext) => {
   });
 
   async function expectAdmin(address: address) {
-    const currentAdmin = await ctx.perpetual.proxy.admin({ from: address });
+    const currentAdmin = await ctx.perpetual.proxy.getAdmin({ from: address });
     expect(currentAdmin).to.equal(address);
   }
 });

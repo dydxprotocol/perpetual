@@ -27,6 +27,7 @@ pragma experimental ABIEncoderV2;
  * Storage library
  */
 library Storage {
+
     function load(
         bytes32 slot
     )

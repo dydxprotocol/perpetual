@@ -2,7 +2,7 @@ import chai from 'chai';
 import BigNumber from 'bignumber.js';
 chai.use(require('chai-bignumber')(BigNumber));
 
-import { address, BaseValue } from '../../src/lib/types';
+import { address, BaseValue, BigNumberable } from '../../src/lib/types';
 
 let REQUIRE_MSG = 'VM Exception while processing transaction: revert';
 let ASSERT_MSG = 'VM Exception while processing transaction: invalid opcode';
@@ -57,8 +57,8 @@ export function expectAddressesEqual(arg1: address, arg2: address, message?: str
   expect(arg1.toLowerCase()).to.equal(arg2.toLowerCase(), message);
 }
 
-export function expectBN(bn: BigNumber, message?: string): Chai.Assertion {
-  return (chai.expect(bn, message) as any).to.be.bignumber;
+export function expectBN(expectedBN: BigNumberable, message?: string): Chai.Assertion {
+  return (chai.expect(new BigNumber(expectedBN), message) as any).to.be.bignumber;
 }
 
 export function expectBaseValueEqual(arg1: BaseValue, arg2: BaseValue, message?: string) {

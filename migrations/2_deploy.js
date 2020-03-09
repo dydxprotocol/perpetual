@@ -31,6 +31,7 @@ const P1Deleveraging = artifacts.require('P1Deleveraging');
 const P1Liquidation = artifacts.require('P1Liquidation');
 
 // Test Contracts
+const TestLib = artifacts.require('Test_Lib');
 const TestP1Funder = artifacts.require('Test_P1Funder');
 const TestP1Monolith = artifacts.require('Test_P1Monolith');
 const TestP1Oracle = artifacts.require('Test_P1Oracle');
@@ -55,6 +56,7 @@ module.exports = migration;
 async function deployTestContracts(deployer, network) {
   if (isDevNetwork(network)) {
     await Promise.all([
+      deployer.deploy(TestLib),
       deployer.deploy(TestP1Funder),
       deployer.deploy(TestP1Monolith),
       deployer.deploy(TestP1Oracle),

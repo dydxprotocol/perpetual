@@ -1,5 +1,6 @@
 import { Contracts } from '../modules/Contracts';
 import {
+  CallOptions,
   Price,
   TxResult,
   SendOptions,
@@ -30,9 +31,12 @@ export class TestP1Oracle {
     );
   }
 
-  public async getPrice(): Promise<Price> {
+  public async getPrice(
+    options?: CallOptions,
+  ): Promise<Price> {
     const price = await this.contracts.call(
       this.contracts.testP1Oracle.methods.getPrice(),
+      options,
     );
     return Price.fromSolidity(price);
   }

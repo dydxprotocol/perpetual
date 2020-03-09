@@ -42,7 +42,7 @@ export class Proxy {
 
   // ============ Getters ============
 
-  public async admin(
+  public async getAdmin(
     options?: CallOptions,
   ): Promise<address> {
     return this.contracts.call(
