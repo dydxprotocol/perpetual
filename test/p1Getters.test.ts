@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { expect, expectBN, expectBaseValueEqual } from './helpers/Expect';
-import { BaseValue, address } from '../src/lib/types';
+import { BaseValue, address, Price } from '../src/lib/types';
 import { mintAndDeposit } from './helpers/balances';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
@@ -95,5 +95,13 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
     const ordersContract = ctx.perpetual.contracts.p1Orders.options.address;
     hasPermissions = await ctx.perpetual.getters.hasAccountPermissions(account, ordersContract);
     expect(hasPermissions).to.equal(true);
+  });
+
+  it('getFinalSettlementEnabled()', async () => {
+    let enabled = await ctx.perpetual.getters.getFinalSettlementEnabled();
+    expect(enabled).to.equal(false);
+    await ctx.perpetual.admin.enableFinalSettlement(new Price(0));
+    enabled = await ctx.perpetual.getters.getFinalSettlementEnabled();
+    expect(enabled).to.equal(true);
   });
 });
