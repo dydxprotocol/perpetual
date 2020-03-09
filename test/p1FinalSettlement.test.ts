@@ -105,57 +105,76 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
     /**
      * Handle withdrawals for simple cases where _/_ notation represents margin/position.
      */
+    describe('simple cases', () => {
+      it('settles a 0/0 balance', async () => {
+        await enableSettlement(initialPrice);
+        await expectWithdraw(otherAccount, INTEGERS.ZERO);
+      });
 
-    it('settles a 0/0 balance', async () => {
-      await enableSettlement(initialPrice);
-      await expectWithdraw(otherAccount, INTEGERS.ZERO);
+      it('settles a 0/+ balance', async () => {
+        await buy(ctx, otherAccount, long, INTEGERS.ONE, INTEGERS.ZERO);
+        await enableSettlement(initialPrice);
+        await expectWithdraw(otherAccount, initialPrice.value);
+      });
+
+      it('settles a -/+ well-collateralized balance', async () => {
+        await enableSettlement(initialPrice);
+        await expectWithdraw(long, initialMargin);
+      });
+
+      it('settles a -/+ undercollateralized balance', async () => {
+        await enableSettlement(longUndercollateralizedPrice);
+        await expectWithdraw(long, '49');
+      });
+
+      it('settles a -/+ underwater balance', async () => {
+        await enableSettlement(longUnderwaterPrice);
+        await expectWithdraw(long, INTEGERS.ZERO);
+      });
+
+      it('settles a +/0 balance', async () => {
+        await mintAndDeposit(ctx, otherAccount, INTEGERS.ONE);
+        await enableSettlement(initialPrice);
+        await expectWithdraw(otherAccount, INTEGERS.ONE);
+      });
+
+      it('settles a +/- well-collateralized balance', async () => {
+        await enableSettlement(initialPrice);
+        await expectWithdraw(short, initialMargin);
+      });
+
+      it('settles a +/- undercollateralized balance', async () => {
+        await enableSettlement(shortUndercollateralizedPrice);
+        await expectWithdraw(short, '135');
+      });
+
+      it('settles a +/- underwater balance', async () => {
+        await enableSettlement(shortUnderwaterPrice);
+        await expectWithdraw(short, INTEGERS.ZERO);
+      });
+
+      it('settles a +/+ balance', async () => {
+        await mintAndDeposit(ctx, long, initialMargin.times(2));
+        await enableSettlement(initialPrice);
+        await expectWithdraw(long, initialMargin.times(3));
+      });
     });
 
-    it('settles a 0/+ balance', async () => {
-      await buy(ctx, otherAccount, long, INTEGERS.ONE, INTEGERS.ZERO);
-      await enableSettlement(initialPrice);
-      await expectWithdraw(otherAccount, initialPrice.value);
-    });
+    /**
+     * Edge cases and other non-standard situations.
+     */
+    describe('other cases', () => {
 
-    it('settles a -/+ well-collateralized balance', async () => {
-      await enableSettlement(initialPrice);
-      await expectWithdraw(long, initialMargin);
-    });
+      it('does not allow withdrawing a non-zero balance more than once (long)', async () => {
+        await enableSettlement(initialPrice);
+        await expectWithdraw(long, initialMargin);
+        await expectWithdraw(long, INTEGERS.ZERO);
+        await expectWithdraw(long, INTEGERS.ZERO);
+      });
 
-    it('settles a -/+ undercollateralized balance', async () => {
-      await enableSettlement(longUndercollateralizedPrice);
-      await expectWithdraw(long, '49');
-    });
+      it('in absence of underwater accounts, remains solvent despite rounding errors', async () => {
 
-    it('settles a -/+ underwater balance', async () => {
-      await enableSettlement(longUnderwaterPrice);
-      await expectWithdraw(long, INTEGERS.ZERO);
-    });
-
-    it('settles a +/0 balance', async () => {
-      await mintAndDeposit(ctx, otherAccount, INTEGERS.ONE);
-      await expectWithdraw(otherAccount, INTEGERS.ONE);
-    });
-
-    it('settles a +/- well-collateralized balance', async () => {
-      await enableSettlement(initialPrice);
-      await expectWithdraw(short, initialMargin);
-    });
-
-    it('settles a +/- undercollateralized balance', async () => {
-      await enableSettlement(shortUndercollateralizedPrice);
-      await expectWithdraw(short, '135');
-    });
-
-    it('settles a +/- underwater balance', async () => {
-      await enableSettlement(shortUnderwaterPrice);
-      await expectWithdraw(short, INTEGERS.ZERO);
-    });
-
-    it('settles a +/+ balance', async () => {
-      await mintAndDeposit(ctx, long, initialMargin.times(2));
-      await enableSettlement(initialPrice);
-      await expectWithdraw(long, initialMargin.times(3));
+      });
     });
   });
 
