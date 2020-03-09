@@ -22,10 +22,11 @@ import { Contract } from 'web3-eth-contract';
 import { Contracts } from './Contracts';
 import { INTEGERS } from '../lib/Constants';
 import {
+  BigNumberable,
+  CallOptions,
   SendOptions,
   TxResult,
   address,
-  CallOptions,
 } from '../lib/types';
 
 export class Token {
@@ -49,32 +50,32 @@ export class Token {
     spenderAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
-    const allowStr: string = await this.contracts.call(
+    const allowance: string = await this.contracts.call(
       this.token.methods.allowance(ownerAddress, spenderAddress),
       options,
     );
-    return new BigNumber(allowStr);
+    return new BigNumber(allowance);
   }
 
   public async getBalance(
     ownerAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
-    const balStr: string = await this.contracts.call(
+    const balance: string = await this.contracts.call(
       this.token.methods.balanceOf(ownerAddress),
       options,
     );
-    return new BigNumber(balStr);
+    return new BigNumber(balance);
   }
 
   public async getTotalSupply(
     options?: CallOptions,
   ): Promise<BigNumber> {
-    const supplyStr: string = await this.contracts.call(
+    const supply: string = await this.contracts.call(
       this.token.methods.totalSupply(),
       options,
     );
-    return new BigNumber(supplyStr);
+    return new BigNumber(supply);
   }
 
   public async getName(
@@ -98,11 +99,11 @@ export class Token {
   public async getDecimals(
     options?: CallOptions,
   ): Promise<BigNumber> {
-    const decStr: string = await this.contracts.call(
+    const decimals: string = await this.contracts.call(
       this.token.methods.decimals(),
       options,
     );
-    return new BigNumber(decStr);
+    return new BigNumber(decimals);
   }
 
   public async getPerpetualAllowance(
@@ -119,13 +120,13 @@ export class Token {
   public async setAllowance(
     ownerAddress: address,
     spenderAddress: address,
-    amount: BigNumber,
+    amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.contracts.send(
       this.token.methods.approve(
         spenderAddress,
-        amount.toFixed(0),
+        new BigNumber(amount).toFixed(0),
       ),
       { ...options, from: ownerAddress },
     );
@@ -133,7 +134,7 @@ export class Token {
 
   public async setPerpetualAllowance(
     ownerAddress: address,
-    amount: BigNumber,
+    amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
@@ -184,13 +185,13 @@ export class Token {
   public async transfer(
     fromAddress: address,
     toAddress: address,
-    amount: BigNumber,
+    amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.contracts.send(
       this.token.methods.transfer(
         toAddress,
-        amount.toFixed(0),
+        new BigNumber(amount).toFixed(0),
       ),
       { ...options, from: fromAddress },
     );
@@ -200,14 +201,14 @@ export class Token {
     fromAddress: address,
     toAddress: address,
     senderAddress: address,
-    amount: BigNumber,
+    amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.contracts.send(
       this.token.methods.transferFrom(
         fromAddress,
         toAddress,
-        amount.toFixed(0),
+        new BigNumber(amount).toFixed(0),
       ),
       { ...options, from: senderAddress },
     );

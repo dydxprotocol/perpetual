@@ -21,6 +21,7 @@ import BigNumber from 'bignumber.js';
 import { Contracts } from '../modules/Contracts';
 import { Token } from '../modules/Token';
 import {
+  BigNumberable,
   SendOptions,
   TxResult,
   address,
@@ -36,13 +37,13 @@ export class TestToken extends Token {
 
   public mint(
     account: address,
-    amount: BigNumber,
+    amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.contracts.send(
       this.token.methods.mint(
         account,
-        amount.toFixed(0),
+        new BigNumber(amount).toFixed(0),
       ),
       { ...options },
     );
