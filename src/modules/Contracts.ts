@@ -37,6 +37,7 @@ const p1OrdersJson = require(`${jsonFolder}P1Orders.json`);
 const p1DeleveragingJson = require(`${jsonFolder}P1Deleveraging.json`);
 const p1LiquidationJson = require(`${jsonFolder}P1Liquidation.json`);
 const testP1FunderJson = require(`${jsonFolder}Test_P1Funder.json`);
+const testP1MonolithJson = require(`${jsonFolder}Test_P1Monolith.json`);
 const testP1OracleJson = require(`${jsonFolder}Test_P1Oracle.json`);
 const testP1TraderJson = require(`${jsonFolder}Test_P1Trader.json`);
 const testTokenJson = require(`${jsonFolder}Test_Token.json`);
@@ -75,6 +76,7 @@ export class Contracts {
 
   // Testing contract instances
   public testP1Funder: Contract;
+  public testP1Monolith: Contract;
   public testP1Oracle: Contract;
   public testP1Trader: Contract;
   public testToken: Contract;
@@ -105,6 +107,7 @@ export class Contracts {
 
     // Testing contracts
     this.testP1Funder = this.addTestContract(testP1FunderJson);
+    this.testP1Monolith = this.addTestContract(testP1MonolithJson);
     this.testP1Oracle = this.addTestContract(testP1OracleJson);
     this.testP1Trader = this.addTestContract(testP1TraderJson);
     this.testToken = this.addTestContract(testTokenJson);

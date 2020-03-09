@@ -18,6 +18,7 @@
 
 import { EVM } from './EVM';
 import { TestP1Funder } from './TestP1Funder';
+import { TestP1Monolith } from './TestP1Monolith';
 import { TestP1Oracle } from './TestP1Oracle';
 import { TestP1Trader } from './TestP1Trader';
 import { TestToken } from './TestToken';
@@ -27,6 +28,7 @@ import { Contracts } from '../modules/Contracts';
 export class Testing {
   public evm: EVM;
   public funder: TestP1Funder;
+  public monolith: TestP1Monolith;
   public oracle: TestP1Oracle;
   public trader: TestP1Trader;
   public token: TestToken;
@@ -37,6 +39,7 @@ export class Testing {
   ) {
     this.evm = new EVM(provider);
     this.funder = new TestP1Funder(contracts);
+    this.monolith = new TestP1Monolith(contracts);
     this.oracle = new TestP1Oracle(contracts);
     this.trader = new TestP1Trader(contracts);
     this.token = new TestToken(contracts);

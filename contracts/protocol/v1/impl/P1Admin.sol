@@ -21,6 +21,8 @@ pragma experimental ABIEncoderV2;
 
 import { P1Storage } from "./P1Storage.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
+import { I_P1Funder } from "../intf/I_P1Funder.sol";
+import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
 
 
 /**
@@ -72,6 +74,10 @@ contract P1Admin is
         onlyAdmin
         nonReentrant
     {
+        require(
+            I_P1Oracle(oracle).getPrice() != 0,
+            "New oracle cannot return a zero price"
+        );
         _ORACLE_ = oracle;
         emit LogSetOracle(oracle);
     }
@@ -83,6 +89,9 @@ contract P1Admin is
         onlyAdmin
         nonReentrant
     {
+        // call getFunding to ensure that no reverts occur
+        I_P1Funder(funder).getFunding(0);
+
         _FUNDER_ = funder;
         emit LogSetFunder(funder);
     }

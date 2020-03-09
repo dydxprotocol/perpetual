@@ -32,6 +32,7 @@ const P1Liquidation = artifacts.require('P1Liquidation');
 
 // Test Contracts
 const TestP1Funder = artifacts.require('Test_P1Funder');
+const TestP1Monolith = artifacts.require('Test_P1Monolith');
 const TestP1Oracle = artifacts.require('Test_P1Oracle');
 const TestP1Trader = artifacts.require('Test_P1Trader');
 const TestToken = artifacts.require('Test_Token');
@@ -55,6 +56,7 @@ async function deployTestContracts(deployer, network) {
   if (isDevNetwork(network)) {
     await Promise.all([
       deployer.deploy(TestP1Funder),
+      deployer.deploy(TestP1Monolith),
       deployer.deploy(TestP1Oracle),
       deployer.deploy(TestP1Trader),
       deployer.deploy(TestToken),
