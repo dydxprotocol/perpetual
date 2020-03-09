@@ -21,8 +21,8 @@ pragma experimental ABIEncoderV2;
 
 import { P1Storage } from "./P1Storage.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
-import { I_P1Funder } from "../intf/lib/I_P1Funder.sol";
-import { I_P1Oracle } from "../intf/lib/I_P1Oracle.sol";
+import { I_P1Funder } from "../intf/I_P1Funder.sol";
+import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
 
 
 /**
