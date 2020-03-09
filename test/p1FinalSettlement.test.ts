@@ -219,6 +219,9 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
             [long, short, short2, short3],
             [0, 0, 200, 1100],
             [0, 0, 0, 0],
+
+            // During final settlement, margin balances may not match contract token balance.
+            false,
           );
         });
 
@@ -229,11 +232,12 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           await expectWithdraw(short3, 0);
 
           // Admin bails out the contract by depositing token.
-          await ctx.perpetual.testing.token.mint(admin, 1000);
+          const underwaterAmount = new BigNumber(1300);
+          await ctx.perpetual.testing.token.mint(admin, underwaterAmount);
           await ctx.perpetual.testing.token.transfer(
             admin,
             ctx.perpetual.contracts.perpetualProxy.options.address,
-            1000,
+            underwaterAmount,
           );
 
           // Try to withdraw final settlement again.
