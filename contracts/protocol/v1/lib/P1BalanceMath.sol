@@ -37,9 +37,13 @@ library P1BalanceMath {
     using SafeCast for uint256;
     using SafeMath for uint256;
     using SignedMath for SignedMath.Int;
+    using P1BalanceMath for P1Types.Balance;
 
     // ============ Functions ============
 
+    /**
+     * Create a copy of the balance struct
+     */
     function copy(
         P1Types.Balance memory balance
     )
@@ -55,54 +59,69 @@ library P1BalanceMath {
         });
     }
 
-    function marginAdd(
+    /**
+     * In-place add amount to balance.margin
+     */
+    function addToMargin(
         P1Types.Balance memory balance,
         uint256 amount
     )
         internal
         pure
     {
-        SignedMath.Int memory signedMargin = marginToSignedInt(balance);
+        SignedMath.Int memory signedMargin = balance.getMargin();
         signedMargin = signedMargin.add(amount);
-        signedIntToMargin(balance, signedMargin);
+        balance.setMargin(signedMargin);
     }
 
-    function marginSub(
+    /**
+     * In-place subtract amount from balance.margin
+     */
+    function subFromMargin(
         P1Types.Balance memory balance,
         uint256 amount
     )
         internal
         pure
     {
-        SignedMath.Int memory signedMargin = marginToSignedInt(balance);
+        SignedMath.Int memory signedMargin = balance.getMargin();
         signedMargin = signedMargin.sub(amount);
-        signedIntToMargin(balance, signedMargin);
+        balance.setMargin(signedMargin);
     }
 
-    function positionAdd(
+    /**
+     * In-place add amount to balance.position
+     */
+    function addToPosition(
         P1Types.Balance memory balance,
         uint256 amount
     )
         internal
         pure
     {
-        SignedMath.Int memory signedPosition = positionToSignedInt(balance);
+        SignedMath.Int memory signedPosition = balance.getPosition();
         signedPosition = signedPosition.add(amount);
-        signedIntToPosition(balance, signedPosition);
+        balance.setPosition(signedPosition);
     }
 
-    function positionSub(
+    /**
+     * In-place subtract amount from balance.position
+     */
+    function subFromPosition(
         P1Types.Balance memory balance,
         uint256 amount
     )
         internal
         pure
     {
-        SignedMath.Int memory signedPosition = positionToSignedInt(balance);
+        SignedMath.Int memory signedPosition = balance.getPosition();
         signedPosition = signedPosition.sub(amount);
-        signedIntToPosition(balance, signedPosition);
+        balance.setPosition(signedPosition);
     }
 
+    /**
+     * Returns the relative positive and negative values of the position given a price
+     */
     function getPositiveAndNegativeValue(
         P1Types.Balance memory balance,
         uint256 price
@@ -134,10 +153,10 @@ library P1BalanceMath {
 
     // ============ Helper Functions ============
 
-    function marginToSignedInt(
+    function getMargin(
         P1Types.Balance memory balance
     )
-        private
+        internal
         pure
         returns (SignedMath.Int memory)
     {
@@ -147,21 +166,10 @@ library P1BalanceMath {
         });
     }
 
-    function signedIntToMargin(
-        P1Types.Balance memory balance,
-        SignedMath.Int memory signedInt
-    )
-        private
-        pure
-    {
-        balance.margin = signedInt.value.toUint120();
-        balance.marginIsPositive = signedInt.isPositive;
-    }
-
-    function positionToSignedInt(
+    function getPosition(
         P1Types.Balance memory balance
     )
-        private
+        internal
         pure
         returns (SignedMath.Int memory)
     {
@@ -171,11 +179,22 @@ library P1BalanceMath {
         });
     }
 
-    function signedIntToPosition(
+    function setMargin(
         P1Types.Balance memory balance,
         SignedMath.Int memory signedInt
     )
-        private
+        internal
+        pure
+    {
+        balance.margin = signedInt.value.toUint120();
+        balance.marginIsPositive = signedInt.isPositive;
+    }
+
+    function setPosition(
+        P1Types.Balance memory balance,
+        SignedMath.Int memory signedInt
+    )
+        internal
         pure
     {
         balance.position = signedInt.value.toUint120();

@@ -111,15 +111,15 @@ contract P1Trade is
             P1Types.Balance memory takerBalance = currentBalances[tradeArg.takerIndex];
 
             if (tradeResult.isBuy) {
-                makerBalance.marginAdd(tradeResult.marginAmount);
-                makerBalance.positionSub(tradeResult.positionAmount);
-                takerBalance.marginSub(tradeResult.marginAmount);
-                takerBalance.positionAdd(tradeResult.positionAmount);
+                makerBalance.addToMargin(tradeResult.marginAmount);
+                makerBalance.subFromPosition(tradeResult.positionAmount);
+                takerBalance.subFromMargin(tradeResult.marginAmount);
+                takerBalance.addToPosition(tradeResult.positionAmount);
             } else {
-                makerBalance.marginSub(tradeResult.marginAmount);
-                makerBalance.positionAdd(tradeResult.positionAmount);
-                takerBalance.marginAdd(tradeResult.marginAmount);
-                takerBalance.positionSub(tradeResult.positionAmount);
+                makerBalance.subFromMargin(tradeResult.marginAmount);
+                makerBalance.addToPosition(tradeResult.positionAmount);
+                takerBalance.addToMargin(tradeResult.marginAmount);
+                takerBalance.subFromPosition(tradeResult.positionAmount);
             }
 
             _BALANCES_[maker] = makerBalance;
@@ -189,7 +189,7 @@ contract P1Trade is
         view
     {
         for (uint256 i = 0; i < accounts.length; i++) {
-            if (_isCollateralized(context, accounts[i])) {
+            if (_isCollateralized(context, currentBalances[i])) {
                 continue;
             }
 

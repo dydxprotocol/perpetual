@@ -170,9 +170,9 @@ contract P1Settlement is
 
         // calculate the new balance of the account with updated margin
         if (settlementIsPositive) {
-            balance.marginAdd(settlementAmount);
+            balance.addToMargin(settlementAmount);
         } else {
-            balance.marginSub(settlementAmount);
+            balance.subFromMargin(settlementAmount);
         }
         _BALANCES_[account] = balance;
 
@@ -188,13 +188,12 @@ contract P1Settlement is
 
     function _isCollateralized(
         P1Types.Context memory context,
-        address account
+        P1Types.Balance memory balance
     )
         internal
-        view
+        pure
         returns (bool)
     {
-        P1Types.Balance memory balance = _BALANCES_[account];
         (uint256 positive, uint256 negative) = balance.getPositiveAndNegativeValue(context.price);
         return positive.mul(BaseMath.base()) >= negative.mul(context.minCollateral);
     }
