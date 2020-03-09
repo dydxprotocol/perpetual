@@ -13,7 +13,6 @@ async function init(ctx: ITestContext): Promise<void> {
 }
 
 perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
-  const monolith = ctx.perpetual.contracts.testP1Monolith.options.address;
 
   describe('setGlobalOperator()', () => {
     it('sets the Global Operator', async () => {
@@ -38,8 +37,10 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
 
   describe('setOracle()', () => {
     it('sets the Oracle', async () => {
+      const monolith = ctx.perpetual.contracts.testP1Monolith.options.address;
       const originalOracle = await ctx.perpetual.getters.getOracleContract();
       await ctx.perpetual.testing.monolith.setPrice(new Price(1));
+      console.log(await ctx.perpetual.testing.monolith.getPrice());
       const txResult = await ctx.perpetual.admin.setOracle(monolith, { from: admin });
 
       // Check result
@@ -55,6 +56,7 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
     });
 
     it('fails if new oracle returns 0 as price', async () => {
+      const monolith = ctx.perpetual.contracts.testP1Monolith.options.address;
       await expectThrow(
         ctx.perpetual.admin.setOracle(monolith, { from: admin }),
         'New oracle cannot return a zero price',
@@ -72,8 +74,10 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
     });
 
     it('fails if called by non-admin', async () => {
+      const monolith = ctx.perpetual.contracts.testP1Monolith.options.address;
+      await ctx.perpetual.testing.monolith.setPrice(new Price(1));
       await expectThrow(
-        ctx.perpetual.admin.setOracle(monolith, { from: admin }),
+        ctx.perpetual.admin.setOracle(monolith),
         'Adminable: caller is not admin',
       );
     });
@@ -81,6 +85,7 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
 
   describe('setFunder()', () => {
     it('sets the Funder', async () => {
+      const monolith = ctx.perpetual.contracts.testP1Monolith.options.address;
       const originalFunder = await ctx.perpetual.getters.getFunderContract();
       const txResult = await ctx.perpetual.admin.setFunder(monolith, { from: admin });
 
@@ -107,6 +112,7 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
     });
 
     it('fails if called by non-admin', async () => {
+      const monolith = ctx.perpetual.contracts.testP1Monolith.options.address;
       await expectThrow(
         ctx.perpetual.admin.setFunder(monolith),
         'Adminable: caller is not admin',

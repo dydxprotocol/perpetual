@@ -75,7 +75,7 @@ contract P1Admin is
         nonReentrant
     {
         require(
-            I_P1Oracle(_ORACLE_).getPrice() != 0,
+            I_P1Oracle(oracle).getPrice() != 0,
             "New oracle cannot return a zero price"
         );
         _ORACLE_ = oracle;
