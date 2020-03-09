@@ -68,7 +68,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
   describe('noFinalSettlement', () => {
 
     beforeEach(async () => {
-      await ctx.perpetual.admin.enableFinalSettlement(initialPrice, { from: admin });
+      await ctx.perpetual.admin.enableFinalSettlement(initialPrice, initialPrice, { from: admin });
       await ctx.perpetual.contracts.resetGasUsed();
     });
 
@@ -263,7 +263,11 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
    */
   async function enableSettlement(settlementPrice: Price): Promise<TxResult> {
     await ctx.perpetual.testing.oracle.setPrice(settlementPrice);
-    return ctx.perpetual.admin.enableFinalSettlement(settlementPrice, { from: admin });
+    return ctx.perpetual.admin.enableFinalSettlement(
+      settlementPrice,
+      settlementPrice,
+      { from: admin },
+    );
   }
 
   /**

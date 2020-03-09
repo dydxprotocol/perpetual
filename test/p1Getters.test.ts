@@ -102,7 +102,7 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
   it('getFinalSettlementEnabled()', async () => {
     let enabled = await ctx.perpetual.getters.getFinalSettlementEnabled();
     expect(enabled).to.equal(false);
-    await ctx.perpetual.admin.enableFinalSettlement(new Price(0), { from: admin });
+    await ctx.perpetual.admin.enableFinalSettlement(new Price(0), new Price(0), { from: admin });
     enabled = await ctx.perpetual.getters.getFinalSettlementEnabled();
     expect(enabled).to.equal(true);
   });
