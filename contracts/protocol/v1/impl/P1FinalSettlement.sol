@@ -89,23 +89,24 @@ contract P1FinalSettlement is
         );
 
         // Determine the amount to be withdrawn.
-        uint256 amount;
+        uint256 amount = 0;
         if (positive > negative) {
             amount = positive.sub(negative);
 
+            // Edge case: if contract balance is insufficient, pay out as much as possible and
+            // store the amount still owed.
             uint256 contractBalance = IERC20(_TOKEN_).balanceOf(address(this));
             if (amount > contractBalance) {
+                _BALANCES_[msg.sender].margin = amount.sub(contractBalance);
                 amount = contractBalance;
             }
-        } else {
-            amount = 0;
-        }
 
-        SafeERC20.safeTransfer(
-            IERC20(_TOKEN_),
-            msg.sender,
-            amount
-        );
+            SafeERC20.safeTransfer(
+                IERC20(_TOKEN_),
+                msg.sender,
+                amount
+            );
+        }
 
         emit LogWithdrawFinalSettlement(
             msg.sender,
