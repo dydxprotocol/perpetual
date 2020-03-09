@@ -116,7 +116,8 @@ contract P1Admin is
     }
 
     function enableFinalSettlement(
-        uint256 expectedPrice
+        uint256 priceLowerBound,
+        uint256 priceUpperBound
     )
         public
         onlyAdmin
@@ -125,8 +126,12 @@ contract P1Admin is
         _FINAL_SETTLEMENT_PRICE_ = I_P1Oracle(_ORACLE_).getPrice();
         _FINAL_SETTLEMENT_ENABLED_ = true;
         require(
-            _FINAL_SETTLEMENT_PRICE_ == expectedPrice,
-            "Oracle price not equal to the expected final settlement price"
+            _FINAL_SETTLEMENT_PRICE_ >= priceLowerBound,
+            "Oracle price is less than the provided lower bound"
+        );
+        require(
+            _FINAL_SETTLEMENT_PRICE_ <= priceUpperBound,
+            "Oracle price is greater than the provided upper bound"
         );
         emit LogFinalSettlementEnabled(_FINAL_SETTLEMENT_PRICE_);
     }

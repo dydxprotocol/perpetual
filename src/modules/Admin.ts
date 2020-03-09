@@ -88,12 +88,14 @@ export class Admin {
   }
 
   public async enableFinalSettlement(
-    expectedPrice: Price,
+    priceLowerBound: Price,
+    priceUpperBound: Price,
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
       this.perpetual.methods.enableFinalSettlement(
-        expectedPrice.toSolidity(),
+        priceLowerBound.toSolidity(),
+        priceUpperBound.toSolidity(),
       ),
       options,
     );
