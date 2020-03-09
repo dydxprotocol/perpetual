@@ -186,7 +186,7 @@ contract P1Trade is
         P1Types.Balance[] memory currentBalances
     )
         private
-        view
+        pure
     {
         for (uint256 i = 0; i < accounts.length; i++) {
             if (_isCollateralized(context, currentBalances[i])) {
