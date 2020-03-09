@@ -147,7 +147,7 @@ contract P1Deleveraging is
             marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
         }
 
-        if (_isMarked(maker) && amount == makerBalance.position) {
+        if (amount == makerBalance.position && _isMarked(maker)) {
             _unmark(maker);
         }
 
