@@ -14,11 +14,11 @@ const TX_OPTIONS = { gas: 4000000 };
 
 const MIN_COLLATERAL = new BigNumber('1.1');
 
-const ERROR_NON_POSITIVE = 'account has no positive value';
-const ERROR_POSITION_SIZE = 'account is undercollateralized and absolute position size increased';
-const ERROR_POSITION_SIGN = 'account is undercollateralized and position changed signs';
-const ERROR_NEWLY_UNDERCOLLATERLIZED = 'account is undercollateralized and was not previously';
-const ERROR_COLLATERALIZATION_DECREASED = 'account is undercollateralized and collateralization decreased';
+let ERROR_NON_POSITIVE = 'account has no positive value';
+let ERROR_POSITION_SIZE = 'account is undercollateralized and absolute position size increased';
+let ERROR_POSITION_SIGN = 'account is undercollateralized and position changed signs';
+let ERROR_NEWLY_UNDERCOLLATERLIZED = 'account is undercollateralized and was not previously';
+let ERROR_COLLATERALIZATION_DECREASED = 'account is undercollateralized and collateralization decreased';
 
 const depositAmount = new BigNumber('1e18');
 const oraclePrice = new Price('10');
@@ -32,11 +32,19 @@ const undercollateralizedNeg: Balance = ['12099', '-1100'];
 
 let maker: address;
 let riskyAccount: address;
+let errorAddress: string;
 
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
   maker = ctx.accounts[2];
   riskyAccount = ctx.accounts[3];
+
+  errorAddress = `: ${riskyAccount.substr(0, 10)}...${riskyAccount.substr(-8)}`.toLowerCase();
+  ERROR_NON_POSITIVE += errorAddress;
+  ERROR_POSITION_SIZE += errorAddress;
+  ERROR_POSITION_SIGN += errorAddress;
+  ERROR_NEWLY_UNDERCOLLATERLIZED += errorAddress;
+  ERROR_COLLATERALIZATION_DECREASED += errorAddress;
 
   await mintAndDeposit(ctx, maker, depositAmount),
   await ctx.perpetual.testing.oracle.setPrice(oraclePrice);

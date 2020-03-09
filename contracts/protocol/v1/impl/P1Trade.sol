@@ -22,6 +22,7 @@ pragma experimental ABIEncoderV2;
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { P1Settlement } from "./P1Settlement.sol";
 import { P1Storage } from "./P1Storage.sol";
+import { Require } from "../../lib/Require.sol";
 import { I_P1Trader } from "../intf/I_P1Trader.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
@@ -192,43 +193,50 @@ contract P1Trade is
                 continue;
             }
 
+            address account = accounts[i];
             P1Types.Balance memory initialBalance = initialBalances[i];
             P1Types.Balance memory finalBalance = currentBalances[i];
 
             // Let margin be zero for now but require position to be non-zero.
-            require(
+            Require.that(
                 finalBalance.marginIsPositive ||
                     (finalBalance.positionIsPositive && finalBalance.position > 0),
-                "account has no positive value"
+                "account has no positive value",
+                account
             );
             // Note: Final margin/position is now either -/+, +/-, or 0/-.
-            require(
+            Require.that(
                 finalBalance.position <= initialBalance.position,
-                "account is undercollateralized and absolute position size increased"
+                "account is undercollateralized and absolute position size increased",
+                account
             );
             // Note: Initial margin/position is now one of +/+, 0/+, -/+, or +/-.
             // Note: Both finalBalance.position and initialBalance.position are now nonzero.
-            require(
+            Require.that(
                 finalBalance.positionIsPositive == initialBalance.positionIsPositive,
-                "account is undercollateralized and position changed signs"
+                "account is undercollateralized and position changed signs",
+                account
             );
 
             uint256 finalBalanceInitialMargin = finalBalance.position.mul(initialBalance.margin);
             uint256 finalMarginInitialBalance = finalBalance.margin.mul(initialBalance.position);
 
             if (finalBalance.positionIsPositive) {
-                require(
+                Require.that(
                     !initialBalance.marginIsPositive,
-                    "account is undercollateralized and was not previously"
+                    "account is undercollateralized and was not previously",
+                    account
                 );
-                require(
+                Require.that(
                     finalBalanceInitialMargin >= finalMarginInitialBalance,
-                    "account is undercollateralized and collateralization decreased"
+                    "account is undercollateralized and collateralization decreased",
+                    account
                 );
             } else {
-                require(
+                Require.that(
                     finalMarginInitialBalance >= finalBalanceInitialMargin,
-                    "account is undercollateralized and collateralization decreased"
+                    "account is undercollateralized and collateralization decreased",
+                    account
                 );
             }
         }
