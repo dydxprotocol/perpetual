@@ -156,8 +156,8 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
     });
   });
 
-  describe.only('enableFinalSettlement()', () => {
-    it('enables final settlement', async () => {
+  describe('enableFinalSettlement()', () => {
+    it('enables final settlement at the oracle price', async () => {
       const txResult = await ctx.perpetual.admin.enableFinalSettlement(
         oraclePrice,
         { from: admin },
@@ -177,16 +177,16 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
       );
     });
 
-    it('fails to enable settlement at a price much below the oracle price', async () => {
+    it('fails to enable settlement at a price below the oracle price', async () => {
       await expectThrow(
-        ctx.perpetual.admin.enableFinalSettlement(oraclePrice.times('1.05')),
+        ctx.perpetual.admin.enableFinalSettlement(oraclePrice.times('1.01')),
         'Adminable: caller is not admin',
       );
     });
 
-    it('fails to enable settlement at a price much above the oracle price', async () => {
+    it('fails to enable settlement at a price above the oracle price', async () => {
       await expectThrow(
-        ctx.perpetual.admin.enableFinalSettlement(oraclePrice.times('0.95')),
+        ctx.perpetual.admin.enableFinalSettlement(oraclePrice.times('0.99')),
         'Adminable: caller is not admin',
       );
     });

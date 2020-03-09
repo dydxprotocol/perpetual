@@ -27,6 +27,8 @@ const shortUnderwaterPrice = new Price(150.1);
 let admin: address;
 let long: address;
 let short: address;
+let short2: address;
+let short3: address;
 let otherAccount: address;
 
 async function init(ctx: ITestContext): Promise<void> {
@@ -34,7 +36,9 @@ async function init(ctx: ITestContext): Promise<void> {
   admin = ctx.accounts[0];
   long = ctx.accounts[2];
   short = ctx.accounts[3];
-  otherAccount = ctx.accounts[4];
+  short2 = ctx.accounts[4];
+  short3 = ctx.accounts[5];
+  otherAccount = ctx.accounts[6];
 
   // Set up initial balances:
   // +---------+--------+----------+-------------------+
@@ -172,8 +176,80 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
         await expectWithdraw(long, INTEGERS.ZERO);
       });
 
-      it('in absence of underwater accounts, remains solvent despite rounding errors', async () => {
+      it('does not allow withdrawing a non-zero balance more than once (short)', async () => {
+        await enableSettlement(initialPrice);
+        await expectWithdraw(short, initialMargin);
+        await expectWithdraw(short, INTEGERS.ZERO);
+        await expectWithdraw(short, INTEGERS.ZERO);
+      });
 
+      describe('when the contract is insolvent due to underwater accounts', async () => {
+
+        beforeEach(async () => {
+          // Set up initial balances:
+          // +---------+--------+----------+-------------------+---------------+
+          // | account | margin | position | collateralization | account value |
+          // |---------+--------+----------+-------------------|---------------|
+          // | long    |  -2500 |       30 |               48% |         -1300 |
+          // | short   |   1500 |      -10 |              375% |          1100 |
+          // | short2  |   1500 |      -10 |              375% |          1100 |
+          // | short3  |   1500 |      -10 |              375% |          1100 |
+          // +---------+--------+----------+-------------------+---------------+
+          await Promise.all([
+            mintAndDeposit(ctx, short2, initialMargin),
+            mintAndDeposit(ctx, short3, initialMargin),
+          ]);
+          await Promise.all([
+            await buy(ctx, long, short2, positionSize, initialMargin.times(2)),
+            await buy(ctx, long, short3, positionSize, initialMargin.times(2)),
+          ]);
+          await enableSettlement(new Price(40));
+          await ctx.perpetual.contracts.resetGasUsed();
+        });
+
+        it('will return partial balances, as long as funds remain', async () => {
+          await expectWithdraw(long, 0);
+          await expectWithdraw(short, 1100);
+          await expectWithdraw(short2, 900);
+          await expectWithdraw(short3, 0);
+
+          // Check that the balances reflect the amount owed.
+          await expectBalances(
+            ctx,
+            [long, short, short2, short3],
+            [0, 0, 200, 1100],
+            [0, 0, 0, 0],
+          );
+        });
+
+        it('can be bailed out, allowing all balances to be withdrawn', async () => {
+          await expectWithdraw(long, 0);
+          await expectWithdraw(short, 1100);
+          await expectWithdraw(short2, 900);
+          await expectWithdraw(short3, 0);
+
+          // Admin bails out the contract by depositing token.
+          await ctx.perpetual.testing.token.mint(admin, 1000);
+          await ctx.perpetual.testing.token.transfer(
+            admin,
+            ctx.perpetual.contracts.perpetualProxy.options.address,
+            1000,
+          );
+
+          // Try to withdraw final settlement again.
+          await expectWithdraw(long, 0);
+          await expectWithdraw(short, 0);
+          await expectWithdraw(short2, 200);
+          await expectWithdraw(short3, 1100);
+
+          // Check balances.
+          await expectBalances(
+            ctx,
+            [long, short, short2, short3],
+            [0, 0, 0, 0],
+            [0, 0, 0, 0],
+          );
+        });
       });
     });
   });
@@ -188,6 +264,8 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
 
   /**
    * Withdraw final settlement and check that withdrawn amount is as expected.
+   *
+   * Checks that the account's balance on the token contract is updated as expected.
    */
   async function expectWithdraw(account: address, expectedAmount: BigNumberable): Promise<void> {
     const expectedAmountBN = new BigNumber(expectedAmount);
