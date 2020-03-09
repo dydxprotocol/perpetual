@@ -71,12 +71,12 @@ contract P1Trade is
     {
         _verifyAccounts(accounts);
         P1Types.Context memory context = _loadContext();
-        _settleAccounts(context, accounts);
+        P1Types.Balance[] memory initialBalances = _settleAccounts(context, accounts);
+        P1Types.Balance[] memory currentBalances = new P1Types.Balance[](initialBalances.length);
 
-        P1Types.Balance[] memory initialBalances = new P1Types.Balance[](accounts.length);
         uint256 i;
-        for (i = 0; i < accounts.length; i++) {
-            initialBalances[i] = _BALANCES_[accounts[i]];
+        for (i = 0; i < currentBalances.length; i++) {
+            currentBalances[i] = initialBalances[i].copy();
         }
 
         bytes32 traderFlags = 0;
@@ -102,26 +102,27 @@ contract P1Trade is
 
             traderFlags |= tradeResult.traderFlags;
 
-            // if the accounts are equal no need to update balances
+            // If the accounts are equal, no need to update balances.
             if (maker == taker) {
                 continue;
             }
 
-            P1Types.Balance memory makerBalance = _BALANCES_[maker];
-            P1Types.Balance memory takerBalance = _BALANCES_[taker];
-
+            // Modify currentBalances in-place.
+            P1Types.Balance memory makerBalance = currentBalances[tradeArg.makerIndex];
+            P1Types.Balance memory takerBalance = currentBalances[tradeArg.takerIndex];
             if (tradeResult.isBuy) {
-                makerBalance = makerBalance.marginAdd(tradeResult.marginAmount);
-                makerBalance = makerBalance.positionSub(tradeResult.positionAmount);
-                takerBalance = takerBalance.marginSub(tradeResult.marginAmount);
-                takerBalance = takerBalance.positionAdd(tradeResult.positionAmount);
+                makerBalance.addToMargin(tradeResult.marginAmount);
+                makerBalance.subFromPosition(tradeResult.positionAmount);
+                takerBalance.subFromMargin(tradeResult.marginAmount);
+                takerBalance.addToPosition(tradeResult.positionAmount);
             } else {
-                makerBalance = makerBalance.marginSub(tradeResult.marginAmount);
-                makerBalance = makerBalance.positionAdd(tradeResult.positionAmount);
-                takerBalance = takerBalance.marginAdd(tradeResult.marginAmount);
-                takerBalance = takerBalance.positionSub(tradeResult.positionAmount);
+                makerBalance.subFromMargin(tradeResult.marginAmount);
+                makerBalance.addToPosition(tradeResult.positionAmount);
+                takerBalance.addToMargin(tradeResult.marginAmount);
+                takerBalance.subFromPosition(tradeResult.positionAmount);
             }
 
+            // Store the new balances in storage.
             _BALANCES_[maker] = makerBalance;
             _BALANCES_[taker] = takerBalance;
 
@@ -135,7 +136,12 @@ contract P1Trade is
             );
         }
 
-        _verifyAccountsFinalBalances(context, accounts, initialBalances);
+        _verifyAccountsFinalBalances(
+            context,
+            accounts,
+            initialBalances,
+            currentBalances
+        );
     }
 
     function _verifyAccounts(
@@ -175,18 +181,19 @@ contract P1Trade is
     function _verifyAccountsFinalBalances(
         P1Types.Context memory context,
         address[] memory accounts,
-        P1Types.Balance[] memory initialBalances
+        P1Types.Balance[] memory initialBalances,
+        P1Types.Balance[] memory currentBalances
     )
         private
-        view
+        pure
     {
         for (uint256 i = 0; i < accounts.length; i++) {
-            if (_isCollateralized(context, accounts[i])) {
+            if (_isCollateralized(context, currentBalances[i])) {
                 continue;
             }
 
             P1Types.Balance memory initialBalance = initialBalances[i];
-            P1Types.Balance memory finalBalance = _BALANCES_[accounts[i]];
+            P1Types.Balance memory finalBalance = currentBalances[i];
 
             // Let margin be zero for now but require position to be non-zero.
             require(

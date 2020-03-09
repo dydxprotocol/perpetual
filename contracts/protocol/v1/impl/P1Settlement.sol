@@ -115,10 +115,16 @@ contract P1Settlement is
         address[] memory accounts
     )
         internal
+        returns (P1Types.Balance[] memory)
     {
-        for (uint256 i = 0; i < accounts.length; i++) {
-            _settleAccount(context, accounts[i]);
+        uint256 numAccounts = accounts.length;
+        P1Types.Balance[] memory result = new P1Types.Balance[](numAccounts);
+
+        for (uint256 i = 0; i < numAccounts; i++) {
+            result[i] = _settleAccount(context, accounts[i]);
         }
+
+        return result;
     }
 
     function _settleAccount(
@@ -126,23 +132,23 @@ contract P1Settlement is
         address account
     )
         internal
+        returns (P1Types.Balance memory)
     {
         P1Types.Index memory newIndex = context.index;
         P1Types.Index memory oldIndex = _LOCAL_INDEXES_[account];
+        P1Types.Balance memory balance = _BALANCES_[account];
 
         // do nothing if no settlement is needed
         if (oldIndex.timestamp == newIndex.timestamp) {
-            return;
+            return balance;
         }
 
         // store a cached copy of the index for this account
         _LOCAL_INDEXES_[account] = newIndex;
 
-        P1Types.Balance memory balance = _BALANCES_[account];
-
         // no need for settlement if balance is zero
         if (balance.position == 0) {
-            return;
+            return balance;
         }
 
         // get the difference between the newIndex and oldIndex
@@ -161,11 +167,14 @@ contract P1Settlement is
         // and negative funding (index decreases) means shorts pay longs.
         uint256 settlementAmount = signedIndexDiff.value.baseMul(balance.position);
         bool settlementIsPositive = signedIndexDiff.isPositive != balance.positionIsPositive;
+
+        // calculate the new balance of the account with updated margin
         if (settlementIsPositive) {
-            _BALANCES_[account] = balance.marginAdd(settlementAmount);
+            balance.addToMargin(settlementAmount);
         } else {
-            _BALANCES_[account] = balance.marginSub(settlementAmount);
+            balance.subFromMargin(settlementAmount);
         }
+        _BALANCES_[account] = balance;
 
         // Log the change to the account balance, which is the negative of the change in the index.
         emit LogAccountSettled(
@@ -173,17 +182,18 @@ contract P1Settlement is
             settlementIsPositive,
             settlementAmount
         );
+
+        return balance;
     }
 
     function _isCollateralized(
         P1Types.Context memory context,
-        address account
+        P1Types.Balance memory balance
     )
         internal
-        view
+        pure
         returns (bool)
     {
-        P1Types.Balance memory balance = _BALANCES_[account];
         (uint256 positive, uint256 negative) = balance.getPositiveAndNegativeValue(context.price);
         return positive.mul(BaseMath.base()) >= negative.mul(context.minCollateral);
     }

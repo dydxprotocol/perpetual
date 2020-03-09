@@ -223,6 +223,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
 
     it('Does not settle an account with no position', async () => {
       // Accumulate interest on long and short accounts.
+      const localIndexBefore = await ctx.perpetual.getters.getAccountIndex(otherAccount);
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.05'));
       const txResult = await triggerIndexUpdate(otherAccount);
 
@@ -235,6 +236,11 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       const { margin, position } = await ctx.perpetual.getters.getAccountBalance(otherAccount);
       expectBN(margin).to.eq(INTEGERS.ZERO);
       expectBN(position).to.eq(INTEGERS.ZERO);
+
+      // Check local index.
+      const localIndexAfter = await ctx.perpetual.getters.getAccountIndex(otherAccount);
+      expectBN(localIndexAfter.baseValue.value).to.not.eq(localIndexBefore.baseValue.value);
+      expectBN(localIndexAfter.timestamp).to.not.eq(localIndexBefore.timestamp);
     });
   });
 
