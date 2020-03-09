@@ -194,7 +194,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
     });
 
     it('Does not settle an account if its local index is up-to-date', async () => {
-      await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.05'));
+      await ctx.perpetual.testing.funder.setFunding(new BaseValue('-0.05'));
 
       // Wait until we get two deposits with the same timestamp.
       let result1: TxResult;
