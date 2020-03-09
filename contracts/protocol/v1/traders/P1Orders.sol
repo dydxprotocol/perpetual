@@ -199,7 +199,7 @@ contract P1Orders is
         if (taker != sender) {
             require(
                 P1Getters(perpetual).hasAccountPermissions(taker, sender),
-                "Sender must equal taker"
+                "Sender does not have permissions for the taker"
             );
         }
 

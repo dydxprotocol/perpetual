@@ -375,7 +375,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fails if sender is not the taker or an authorized operator', async () => {
         await expectThrow(
           fillOrder(defaultSignedOrder, { sender: otherUser }),
-          'Sender must equal taker',
+          'Sender does not have permissions for the taker',
         );
       });
 
