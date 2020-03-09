@@ -189,15 +189,19 @@ contract P1Orders is
         external
         returns(P1Types.TradeResult memory)
     {
+        address perpetual = _PERPETUAL_V1_;
+
         require(
-            msg.sender == _PERPETUAL_V1_,
+            msg.sender == perpetual,
             "msg.sender must be PerpetualV1"
         );
 
-        require(
-            sender == taker,
-            "Sender must equal taker"
-        );
+        if (taker != sender) {
+            require(
+                P1Getters(perpetual).hasAccountPermissions(taker, sender),
+                "Sender does not have permissions for the taker"
+            );
+        }
 
         TradeData memory tradeData = abi.decode(data, (TradeData));
         bytes32 orderHash = _getOrderHash(tradeData.order);
@@ -211,6 +215,7 @@ contract P1Orders is
             tradeData,
             maker,
             taker,
+            perpetual,
             price
         );
 
@@ -322,6 +327,7 @@ contract P1Orders is
         TradeData memory tradeData,
         address maker,
         address taker,
+        address perpetual,
         uint256 price
     )
         private
@@ -368,7 +374,7 @@ contract P1Orders is
         }
 
         if (_isDecreaseOnly(tradeData.order)) {
-            P1Types.Balance memory balance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
+            P1Types.Balance memory balance = P1Getters(perpetual).getAccountBalance(maker);
             require(
                 isBuyOrder != balance.positionIsPositive
                 && tradeData.fill.amount <= balance.position,

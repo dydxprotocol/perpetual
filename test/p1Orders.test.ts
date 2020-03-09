@@ -307,6 +307,36 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         );
       });
 
+      it('succeeds if sender is a local operator', async () => {
+        await ctx.perpetual.operator.setLocalOperator(
+          otherUser,
+          true,
+          { from: defaultOrder.taker },
+        );
+        const { expectedMarginAmount } = await fillOrder(defaultSignedOrder, { sender: otherUser });
+        await expectBalances(
+          ctx,
+          [defaultOrder.maker, defaultOrder.taker],
+          [initialMargin.minus(expectedMarginAmount), initialMargin.plus(expectedMarginAmount)],
+          [orderAmount, orderAmount.negated()],
+        );
+      });
+
+      it('succeeds if sender is a global operator', async () => {
+        await ctx.perpetual.admin.setGlobalOperator(
+          otherUser,
+          true,
+          { from: admin },
+        );
+        const { expectedMarginAmount } = await fillOrder(defaultSignedOrder, { sender: otherUser });
+        await expectBalances(
+          ctx,
+          [defaultOrder.maker, defaultOrder.taker],
+          [initialMargin.minus(expectedMarginAmount), initialMargin.plus(expectedMarginAmount)],
+          [orderAmount, orderAmount.negated()],
+        );
+      });
+
       it('succeeds with an invalid signature for an order approved on-chain', async () => {
         await ctx.perpetual.orders.approveOrder(defaultOrder, { from: defaultOrder.maker });
         const order = {
@@ -342,10 +372,10 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         );
       });
 
-      it('fails for sender not equal to taker', async () => {
+      it('fails if sender is not the taker or an authorized operator', async () => {
         await expectThrow(
           fillOrder(defaultSignedOrder, { sender: otherUser }),
-          'Sender must equal taker',
+          'Sender does not have permissions for the taker',
         );
       });
 

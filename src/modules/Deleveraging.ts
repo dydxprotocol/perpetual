@@ -105,7 +105,7 @@ export class Deleveraging {
     options?: CallOptions,
   ): Promise<number> {
     const timelockSeconds: string = await this.contracts.call(
-      this.deleveraging.methods._DELEVERAGING_TIMELOCK_S_(),
+      this.deleveraging.methods.DELEVERAGING_TIMELOCK_S(),
       options,
     );
     return Number.parseInt(timelockSeconds, 10);

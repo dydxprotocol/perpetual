@@ -75,7 +75,7 @@ contract P1Deleveraging is
     address public _PERPETUAL_V1_;
 
     // Waiting period for non-admin to deleverage an account after marking it.
-    uint256 constant public _DELEVERAGING_TIMELOCK_S_ = 1800; // 30 minutes
+    uint256 constant public DELEVERAGING_TIMELOCK_S = 1800; // 30 minutes
 
     // ============ Mutable Storage ============
 
@@ -106,8 +106,9 @@ contract P1Deleveraging is
         external
         returns(P1Types.TradeResult memory)
     {
+        address perpetual = _PERPETUAL_V1_;
         require(
-            msg.sender == _PERPETUAL_V1_,
+            msg.sender == perpetual,
             "msg.sender must be PerpetualV1"
         );
         require(
@@ -121,8 +122,8 @@ contract P1Deleveraging is
         );
 
         TradeData memory tradeData = abi.decode(data, (TradeData));
-        P1Types.Balance memory makerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(maker);
-        P1Types.Balance memory takerBalance = P1Getters(_PERPETUAL_V1_).getAccountBalance(taker);
+        P1Types.Balance memory makerBalance = P1Getters(perpetual).getAccountBalance(maker);
+        P1Types.Balance memory takerBalance = P1Getters(perpetual).getAccountBalance(taker);
 
         _verifyTrade(
             tradeData,
@@ -146,7 +147,7 @@ contract P1Deleveraging is
             marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
         }
 
-        if (_isMarked(maker) && amount == makerBalance.position) {
+        if (amount == makerBalance.position && _isMarked(maker)) {
             _unmark(maker);
         }
 
@@ -196,6 +197,15 @@ contract P1Deleveraging is
         _unmark(account);
     }
 
+    function _unmark(
+        address account
+    )
+        private
+    {
+        _MARKED_TIMESTAMP_[account] = 0;
+        emit LogUnmarkedForDeleveraging(account);
+    }
+
     function _isMarked(
         address account
     )
@@ -204,15 +214,6 @@ contract P1Deleveraging is
         returns (bool)
     {
         return _MARKED_TIMESTAMP_[account] != 0;
-    }
-
-    function _unmark(
-        address account
-    )
-        private
-    {
-        _MARKED_TIMESTAMP_[account] = 0;
-        emit LogUnmarkedForDeleveraging(account);
     }
 
     function _verifyPermissions(
@@ -224,13 +225,14 @@ contract P1Deleveraging is
     {
         // The contract admin may deleverage underwater accounts at any time.
         if (sender != owner()) {
+            uint256 markedTimestamp = _MARKED_TIMESTAMP_[maker];
             require(
-                _MARKED_TIMESTAMP_[maker] != 0,
+                markedTimestamp != 0,
                 "Cannot deleverage since account is not marked"
             );
-            uint256 timeDelta = block.timestamp.sub(_MARKED_TIMESTAMP_[maker]);
+            uint256 timeDelta = block.timestamp.sub(markedTimestamp);
             require(
-                timeDelta >= _DELEVERAGING_TIMELOCK_S_,
+                timeDelta >= DELEVERAGING_TIMELOCK_S,
                 "Cannot deleverage since account has not been marked for the timelock period"
             );
         }
@@ -282,8 +284,9 @@ contract P1Deleveraging is
         view
         returns (bool)
     {
-        P1Types.Balance memory balance = P1Getters(_PERPETUAL_V1_).getAccountBalance(account);
-        address oracle = P1Getters(_PERPETUAL_V1_).getOracleContract();
+        address perpetual = _PERPETUAL_V1_;
+        P1Types.Balance memory balance = P1Getters(perpetual).getAccountBalance(account);
+        address oracle = P1Getters(perpetual).getOracleContract();
         uint256 price = I_P1Oracle(oracle).getPrice();
         return _isUnderwater(balance, price);
     }
