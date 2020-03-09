@@ -66,7 +66,7 @@ contract P1Trade is
         address[] memory accounts,
         TradeArg[] memory trades
     )
-        external
+        public
         nonReentrant
     {
         _verifyAccounts(accounts);
