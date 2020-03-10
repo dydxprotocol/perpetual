@@ -1,21 +1,22 @@
 import BigNumber from 'bignumber.js';
-import { keccak256 } from 'web3-utils';
 
 import { bnToBytes32 } from '../src/lib/BytesHelper';
 import { ADDRESSES } from '../src/lib/Constants';
-import { createTypedSignature, SIGNATURE_TYPES } from '../src/lib/SignatureHelper';
+import {
+  createTypedSignature,
+  getPrependedHash,
+  SIGNATURE_TYPES,
+} from '../src/lib/SignatureHelper';
 import { address, BaseValue, Balance, Price } from '../src/lib/types';
 import { expectBN, expectAddressesEqual, expectThrow, expect } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 
 let admin: address;
-let otherAccount: address;
 
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
   admin = ctx.accounts[0];
-  otherAccount = ctx.accounts[2];
 }
 
 perpetualDescribe('Solidity libraries', init, (ctx: ITestContext) => {
@@ -187,42 +188,34 @@ perpetualDescribe('Solidity libraries', init, (ctx: ITestContext) => {
   });
 
   describe('TypedSignature', () => {
-    const hash = keccak256('test_string_to_sign');
+    const hash = '0x1234567812345678123456781234567812345678123456781234567812345678';
+    const r = '0x30755ed65396facf86c53e6217c52b4daebe72aa4941d89635409de4c9c7f946';
+    const s = '0x6d4e9aaec7977f05e923889b33c0d0dd27d7226b6e6f56ce737465c5cfd04be4';
+    const v = '0x1b';
+    const rawSignature = `${r}${s.substr(2)}${v.substr(2)}`;
 
-    // TODO: Fix.
-    // AssertionError: expected '0x3789cc7cb32ab2b0b4dfffb54c953a3f100d7617' to equal
-    //   '0x22d491bde2303f2f43325b2108d26f1eaba1e32b'
-    xit('recover() no prepend', async () => {
-      const rawSignature = await ctx.perpetual.web3.eth.sign(hash, otherAccount);
-      const signature = createTypedSignature(rawSignature, SIGNATURE_TYPES.NO_PREPEND);
-      const signatureData = signature + '0'.repeat(60);
-      expectAddressesEqual(
-        await ctx.perpetual.testing.lib.recover(hash, signatureData),
-        otherAccount,
-      );
+    it('recover() no prepend', async () => {
+      const signatureData = createTypedSignature(rawSignature, SIGNATURE_TYPES.NO_PREPEND) +
+        '0'.repeat(60);
+      const messageHash = getPrependedHash(hash, SIGNATURE_TYPES.NO_PREPEND);
+      const signer = ctx.perpetual.web3.eth.accounts.recover({ r, s, v, messageHash });
+      expectAddressesEqual(signer, await ctx.perpetual.testing.lib.recover(hash, signatureData));
     });
 
     it('recover() decimal', async () => {
-      const rawSignature = await ctx.perpetual.web3.eth.sign(hash, otherAccount);
-      const signature = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL);
-      const signatureData = signature + '0'.repeat(60);
-      expectAddressesEqual(
-        await ctx.perpetual.testing.lib.recover(hash, signatureData),
-        otherAccount,
-      );
+      const signatureData = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL) +
+        '0'.repeat(60);
+      const messageHash = getPrependedHash(hash, SIGNATURE_TYPES.DECIMAL);
+      const signer = ctx.perpetual.web3.eth.accounts.recover({ r, s, v, messageHash });
+      expectAddressesEqual(signer, await ctx.perpetual.testing.lib.recover(hash, signatureData));
     });
 
-    // TODO: Fix.
-    // AssertionError: expected '0x984ea63e802ae814630c300991a7ac6587b57878' to equal
-    //   '0x22d491bde2303f2f43325b2108d26f1eaba1e32b'
-    xit('recover() hexadecimal', async () => {
-      const rawSignature = await ctx.perpetual.web3.eth.sign(hash, otherAccount);
-      const signature = createTypedSignature(rawSignature, SIGNATURE_TYPES.HEXADECIMAL);
-      const signatureData = signature + '0'.repeat(60);
-      expectAddressesEqual(
-        await ctx.perpetual.testing.lib.recover(hash, signatureData),
-        otherAccount,
-      );
+    it('recover() hexadecimal', async () => {
+      const signatureData = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL) +
+        '0'.repeat(60);
+      const messageHash = getPrependedHash(hash, SIGNATURE_TYPES.DECIMAL);
+      const signer = ctx.perpetual.web3.eth.accounts.recover({ r, s, v, messageHash });
+      expectAddressesEqual(signer, await ctx.perpetual.testing.lib.recover(hash, signatureData));
     });
   });
 
