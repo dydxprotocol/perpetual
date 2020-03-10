@@ -181,23 +181,23 @@ library P1BalanceMath {
 
     function setMargin(
         P1Types.Balance memory balance,
-        SignedMath.Int memory signedInt
+        SignedMath.Int memory newMargin
     )
         internal
         pure
     {
-        balance.margin = signedInt.value.toUint120();
-        balance.marginIsPositive = signedInt.isPositive;
+        balance.margin = newMargin.value.toUint120();
+        balance.marginIsPositive = newMargin.isPositive;
     }
 
     function setPosition(
         P1Types.Balance memory balance,
-        SignedMath.Int memory signedInt
+        SignedMath.Int memory newPosition
     )
         internal
         pure
     {
-        balance.position = signedInt.value.toUint120();
-        balance.positionIsPositive = signedInt.isPositive;
+        balance.position = newPosition.value.toUint120();
+        balance.positionIsPositive = newPosition.isPositive;
     }
 }

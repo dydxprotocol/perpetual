@@ -44,23 +44,13 @@ export class Getters {
     account: address,
     options?: CallOptions,
   ): Promise<Balance> {
-    const [
-      marginIsPositive,
-      positionIsPositive,
-      margin,
-      position,
-    ] = await this.contracts.call(
+    const balance = await this.contracts.call(
       this.perpetual.methods.getAccountBalance(
         account,
       ),
       options,
     );
-    const marginBN = new BigNumber(margin);
-    const positionBN = new BigNumber(position);
-    return {
-      margin: marginIsPositive ? marginBN : marginBN.negated(),
-      position: positionIsPositive ? positionBN : positionBN.negated(),
-    };
+    return Balance.fromSolidity(balance);
   }
 
   public async getAccountIndex(

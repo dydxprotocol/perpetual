@@ -118,6 +118,18 @@ export interface CallOptions extends TxOptions {
 
 // ============ Solidity Interfaces ============
 
+export interface SignedIntStruct {
+  value: string;
+  isPositive: boolean;
+}
+
+export interface BalanceStruct {
+  marginIsPositive: boolean;
+  positionIsPositive: boolean;
+  margin: string;
+  position: string;
+}
+
 export interface TradeArg {
   makerIndex: number;
   takerIndex: number;
@@ -130,11 +142,6 @@ export interface TradeResult {
   positionAmount: BigNumber;
   isBuy: boolean;
   traderFlags: BigNumber;
-}
-
-export interface Balance {
-  position: BigNumber;
-  margin: BigNumber;
 }
 
 export interface Index {
@@ -159,7 +166,52 @@ export interface SignedOrder extends Order {
   typedSignature: string;
 }
 
+// ============ Helper Functions ============
+
+export function bnToSoliditySignedInt(value: BigNumberable): SignedIntStruct {
+  const bn = new BigNumber(value);
+  return {
+    value: bn.abs().toFixed(0),
+    isPositive: bn.isPositive(),
+  };
+}
+
+export function bnFromSoliditySignedInt(struct: SignedIntStruct): BigNumber {
+  if (struct.isPositive) {
+    return new BigNumber(struct.value);
+  }
+  return new BigNumber(struct.value).negated();
+}
+
 // ============ Classes ============
+
+export class Balance {
+  public margin: BigNumber;
+  public position: BigNumber;
+
+  constructor(margin: BigNumberable, position: BigNumberable) {
+    this.margin = new BigNumber(margin);
+    this.position = new BigNumber(position);
+  }
+
+  public toSolidity(): BalanceStruct {
+    return {
+      marginIsPositive: this.margin.isPositive(),
+      positionIsPositive: this.position.isPositive(),
+      margin: this.margin.abs().toFixed(0),
+      position: this.position.abs().toFixed(0),
+    };
+  }
+
+  static fromSolidity(struct: BalanceStruct): Balance {
+    const marginBN = new BigNumber(struct.margin);
+    const positionBN = new BigNumber(struct.position);
+    return new Balance(
+      struct.marginIsPositive ? marginBN : marginBN.negated(),
+      struct.positionIsPositive ? positionBN : positionBN.negated(),
+    );
+  }
+}
 
 // From BaseMath.sol.
 export const BASE_DECIMALS = 18;

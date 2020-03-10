@@ -1,10 +1,16 @@
 import BigNumber from 'bignumber.js';
 
 import {
+  Balance,
+  BalanceStruct,
   CallOptions,
   BigNumberable,
+  Price,
   SendOptions,
+  SignedIntStruct,
   address,
+  bnFromSoliditySignedInt,
+  bnToSoliditySignedInt,
 } from '../lib/types';
 import { Contracts } from '../modules/Contracts';
 
@@ -180,21 +186,14 @@ export class TestLib {
     value: BigNumberable,
     options?: CallOptions,
   ): Promise<BigNumber> {
-    const sintBN = new BigNumber(sint);
-    const result: { isPositive: boolean, value: string } = await this.contracts.call(
+    const result: SignedIntStruct = await this.contracts.call(
       this.contracts.testLib.methods.add(
-        {
-          value: sintBN.abs().toFixed(0),
-          isPositive: sintBN.isPositive(),
-        },
+        bnToSoliditySignedInt(sint),
         new BigNumber(value).toFixed(0),
       ),
       options,
     );
-    if (result.isPositive) {
-      return new BigNumber(result.value);
-    }
-    return new BigNumber(result.value).negated();
+    return bnFromSoliditySignedInt(result);
   }
 
   public async sub(
@@ -202,21 +201,14 @@ export class TestLib {
     value: BigNumberable,
     options?: CallOptions,
   ): Promise<BigNumber> {
-    const sintBN = new BigNumber(sint);
-    const result: { isPositive: boolean, value: string } = await this.contracts.call(
+    const result: SignedIntStruct = await this.contracts.call(
       this.contracts.testLib.methods.sub(
-        {
-          value: sintBN.abs().toFixed(0),
-          isPositive: sintBN.isPositive(),
-        },
+        bnToSoliditySignedInt(sint),
         new BigNumber(value).toFixed(0),
       ),
       options,
     );
-    if (result.isPositive) {
-      return new BigNumber(result.value);
-    }
-    return new BigNumber(result.value).negated();
+    return bnFromSoliditySignedInt(result);
   }
 
   // ============ Storage.sol ============
@@ -262,5 +254,154 @@ export class TestLib {
       ),
       options,
     );
+  }
+
+  // ============ P1BalanceMath.sol ============
+
+  public async copy(
+    balance: Balance,
+    options?: CallOptions,
+  ): Promise<Balance> {
+    const result: BalanceStruct = await this.contracts.call(
+      this.contracts.testLib.methods.copy(
+        balance.toSolidity(),
+      ),
+      options,
+    );
+    return Balance.fromSolidity(result);
+  }
+
+  public async addToMargin(
+    balance: Balance,
+    amount: BigNumberable,
+    options?: CallOptions,
+  ): Promise<Balance> {
+    const result: BalanceStruct = await this.contracts.call(
+      this.contracts.testLib.methods.addToMargin(
+        balance.toSolidity(),
+        new BigNumber(amount).toFixed(0),
+      ),
+      options,
+    );
+    return Balance.fromSolidity(result);
+  }
+
+  public async subFromMargin(
+    balance: Balance,
+    amount: BigNumberable,
+    options?: CallOptions,
+  ): Promise<Balance> {
+    const result: BalanceStruct = await this.contracts.call(
+      this.contracts.testLib.methods.subFromMargin(
+        balance.toSolidity(),
+        new BigNumber(amount).toFixed(0),
+      ),
+      options,
+    );
+    return Balance.fromSolidity(result);
+  }
+
+  public async addToPosition(
+    balance: Balance,
+    amount: BigNumberable,
+    options?: CallOptions,
+  ): Promise<Balance> {
+    const result: BalanceStruct = await this.contracts.call(
+      this.contracts.testLib.methods.addToPosition(
+        balance.toSolidity(),
+        new BigNumber(amount).toFixed(0),
+      ),
+      options,
+    );
+    return Balance.fromSolidity(result);
+  }
+
+  public async subFromPosition(
+    balance: Balance,
+    amount: BigNumberable,
+    options?: CallOptions,
+  ): Promise<Balance> {
+    const result: BalanceStruct = await this.contracts.call(
+      this.contracts.testLib.methods.subFromPosition(
+        balance.toSolidity(),
+        new BigNumber(amount).toFixed(0),
+      ),
+      options,
+    );
+    return Balance.fromSolidity(result);
+  }
+
+  public async getPositiveAndNegativeValue(
+    balance: Balance,
+    price: Price,
+    options?: CallOptions,
+  ): Promise<{ positive: BigNumber, negative: BigNumber }> {
+    const [positive, negative]: [string, string] = await this.contracts.call(
+      this.contracts.testLib.methods.getPositiveAndNegativeValue(
+        balance.toSolidity(),
+        price.toSolidity(),
+      ),
+      options,
+    );
+    return {
+      positive: new BigNumber(positive),
+      negative: new BigNumber(negative),
+    };
+  }
+
+  public async getMargin(
+    balance: Balance,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: SignedIntStruct = await this.contracts.call(
+      this.contracts.testLib.methods.getMargin(
+        balance.toSolidity(),
+      ),
+      options,
+    );
+    return bnFromSoliditySignedInt(result);
+  }
+
+  public async getPosition(
+    balance: Balance,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: SignedIntStruct = await this.contracts.call(
+      this.contracts.testLib.methods.getPosition(
+        balance.toSolidity(),
+      ),
+      options,
+    );
+    return bnFromSoliditySignedInt(result);
+  }
+
+  public async setMargin(
+    balance: Balance,
+    newMarginSignedInt: BigNumberable,
+    options?: CallOptions,
+  ): Promise<Balance> {
+    const result: BalanceStruct = await this.contracts.call(
+      this.contracts.testLib.methods.setMargin(
+        balance.toSolidity(),
+        bnToSoliditySignedInt(newMarginSignedInt),
+      ),
+      options,
+    );
+    return Balance.fromSolidity(result);
+  }
+
+  public async setPosition(
+    balance: Balance,
+    newPositionSignedInt: BigNumberable,
+    options?: CallOptions,
+  ): Promise<Balance> {
+    const result: BalanceStruct = await this.contracts.call(
+      this.contracts.testLib.methods.setPosition(
+        balance.toSolidity(),
+        bnToSoliditySignedInt(newPositionSignedInt),
+      ),
+      options,
+    );
+    return Balance.fromSolidity(result);
   }
 }

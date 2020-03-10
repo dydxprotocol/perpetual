@@ -26,7 +26,8 @@ import { SafeCast } from "../protocol/lib/SafeCast.sol";
 import { SignedMath } from "../protocol/lib/SignedMath.sol";
 import { Storage } from "../protocol/lib/Storage.sol";
 import { TypedSignature } from "../protocol/lib/TypedSignature.sol";
-// import { P1BalanceMath } from "../protocol/v1/lib/P1BalanceMath.sol";
+import { P1BalanceMath } from "../protocol/v1/lib/P1BalanceMath.sol";
+import { P1Types } from "../protocol/v1/lib/P1Types.sol";
 
 
 /**
@@ -213,5 +214,132 @@ contract Test_Lib {
             (TypedSignature.Signature)
         );
         return TypedSignature.recover(hash, signature);
+    }
+
+    // ============ P1BalanceMath.sol ============
+
+    function copy(
+        P1Types.Balance calldata balance
+    )
+        external
+        pure
+        returns (P1Types.Balance memory)
+    {
+        return P1BalanceMath.copy(balance);
+    }
+
+    function addToMargin(
+        P1Types.Balance calldata balance,
+        uint256 amount
+    )
+        external
+        pure
+        returns (P1Types.Balance memory)
+    {
+        // Copy to memory, modify in place, and return the memory object.
+        P1Types.Balance memory _balance = balance;
+        P1BalanceMath.addToMargin(_balance, amount);
+        return _balance;
+    }
+
+    function subFromMargin(
+        P1Types.Balance calldata balance,
+        uint256 amount
+    )
+        external
+        pure
+        returns (P1Types.Balance memory)
+    {
+        // Copy to memory, modify in place, and return the memory object.
+        P1Types.Balance memory _balance = balance;
+        P1BalanceMath.subFromMargin(_balance, amount);
+        return _balance;
+    }
+
+    function addToPosition(
+        P1Types.Balance calldata balance,
+        uint256 amount
+    )
+        external
+        pure
+        returns (P1Types.Balance memory)
+    {
+        // Copy to memory, modify in place, and return the memory object.
+        P1Types.Balance memory _balance = balance;
+        P1BalanceMath.addToPosition(_balance, amount);
+        return _balance;
+    }
+
+    function subFromPosition(
+        P1Types.Balance calldata balance,
+        uint256 amount
+    )
+        external
+        pure
+        returns (P1Types.Balance memory)
+    {
+        // Copy to memory, modify in place, and return the memory object.
+        P1Types.Balance memory _balance = balance;
+        P1BalanceMath.subFromPosition(_balance, amount);
+        return _balance;
+    }
+
+    function getPositiveAndNegativeValue(
+        P1Types.Balance calldata balance,
+        uint256 price
+    )
+        external
+        pure
+        returns (uint256, uint256)
+    {
+        return P1BalanceMath.getPositiveAndNegativeValue(balance, price);
+    }
+
+    function getMargin(
+        P1Types.Balance calldata balance
+    )
+        external
+        pure
+        returns (SignedMath.Int memory)
+    {
+        return P1BalanceMath.getMargin(balance);
+    }
+
+    function getPosition(
+        P1Types.Balance calldata balance
+    )
+        external
+        pure
+        returns (SignedMath.Int memory)
+    {
+        return P1BalanceMath.getPosition(balance);
+    }
+
+    function setMargin(
+        P1Types.Balance calldata balance,
+        SignedMath.Int calldata newMargin
+    )
+        external
+        pure
+        returns (P1Types.Balance memory)
+    {
+        // Copy to memory, modify in place, and return the memory object.
+        P1Types.Balance memory _balance = balance;
+        P1BalanceMath.setMargin(_balance, newMargin);
+        return _balance;
+    }
+
+    function setPosition(
+        P1Types.Balance calldata balance,
+        SignedMath.Int calldata newPosition
+    )
+        external
+        pure
+        returns (P1Types.Balance memory)
+    {
+        // Copy to memory, modify in place, and return the memory object.
+        P1Types.Balance memory _balance = balance;
+        P1BalanceMath.setPosition(_balance, newPosition);
+        return _balance;
     }
 }
