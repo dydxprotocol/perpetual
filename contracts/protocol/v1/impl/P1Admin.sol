@@ -19,6 +19,7 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { P1FinalSettlement } from "./P1FinalSettlement.sol";
 import { P1Storage } from "./P1Storage.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { I_P1Funder } from "../intf/I_P1Funder.sol";
@@ -32,7 +33,8 @@ import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
  * Admin logic contract
  */
 contract P1Admin is
-    P1Storage
+    P1Storage,
+    P1FinalSettlement
 {
     // ============ Events ============
 
@@ -121,6 +123,7 @@ contract P1Admin is
     )
         public
         onlyAdmin
+        noFinalSettlement
         nonReentrant
     {
         _FINAL_SETTLEMENT_PRICE_ = I_P1Oracle(_ORACLE_).getPrice();

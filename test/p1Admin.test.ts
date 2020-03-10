@@ -180,6 +180,18 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
       expect(await ctx.perpetual.getters.getFinalSettlementEnabled()).to.be.true;
     });
 
+    it('fails if final settlement is already enabled', async () => {
+      await ctx.perpetual.admin.enableFinalSettlement(
+        oraclePrice,
+        oraclePrice,
+        { from: admin },
+      );
+      await expectThrow(
+        ctx.perpetual.admin.enableFinalSettlement(oraclePrice, oraclePrice, { from: admin }),
+        'Not permitted during final settlement',
+      );
+    });
+
     it('fails if the oracle price is below the provided lower bound', async () => {
       await expectThrow(
         ctx.perpetual.admin.enableFinalSettlement(
