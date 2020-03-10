@@ -23,6 +23,7 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { P1Storage } from "./P1Storage.sol";
+import { SafeCast } from "../../lib/SafeCast.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
@@ -97,8 +98,7 @@ contract P1FinalSettlement is
             // store the amount still owed.
             uint256 contractBalance = IERC20(_TOKEN_).balanceOf(address(this));
             if (amount > contractBalance) {
-                // Don't bother with SafeCast here for uint120 conversion.
-                _BALANCES_[msg.sender].margin = uint120(amount.sub(contractBalance));
+                _BALANCES_[msg.sender].margin = SafeCast.toUint120(amount.sub(contractBalance));
                 amount = contractBalance;
             }
 
