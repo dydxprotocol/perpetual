@@ -84,7 +84,7 @@ contract P1Margin is
         emit LogDeposit(
             account,
             amount,
-            balance.compress()
+            balance.toBytes32()
         );
     }
 
@@ -123,7 +123,7 @@ contract P1Margin is
             account,
             destination,
             amount,
-            balance.compress()
+            balance.toBytes32()
         );
     }
 }

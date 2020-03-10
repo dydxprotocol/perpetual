@@ -161,7 +161,7 @@ library P1BalanceMath {
     /**
      * Returns a compressed bytes32 representation of the balance for logging.
      */
-    function compress(
+    function toBytes32(
         P1Types.Balance memory balance
     )
         internal
@@ -169,10 +169,10 @@ library P1BalanceMath {
         returns (bytes32)
     {
         uint256 result =
-            balance.position
-            & (balance.margin << 128)
-            & (balance.marginIsPositive ? FLAG_MARGIN_IS_POSITIVE : 0)
-            & (balance.positionIsPositive ? FLAG_POSITION_IS_POSITIVE : 0);
+            uint256(balance.position)
+            | (uint256(balance.margin) << 128)
+            | (balance.marginIsPositive ? FLAG_MARGIN_IS_POSITIVE : 0)
+            | (balance.positionIsPositive ? FLAG_POSITION_IS_POSITIVE : 0);
         return bytes32(result);
     }
 

@@ -40,7 +40,7 @@ library P1IndexMath {
     /**
      * Returns a compressed bytes32 representation of the index for logging.
      */
-    function compress(
+    function toBytes32(
         P1Types.Index memory index
     )
         internal
@@ -49,8 +49,8 @@ library P1IndexMath {
     {
         uint256 result =
             index.value
-            & (index.isPositive ? FLAG_IS_POSITIVE : 0)
-            & (index.timestamp << 136);
+            | (index.isPositive ? FLAG_IS_POSITIVE : 0)
+            | (uint256(index.timestamp) << 136);
         return bytes32(result);
     }
 }

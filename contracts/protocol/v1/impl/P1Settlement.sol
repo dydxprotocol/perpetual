@@ -102,7 +102,7 @@ contract P1Settlement is
             });
             _GLOBAL_INDEX_ = index;
 
-            emit LogIndexUpdated(index.compress());
+            emit LogIndexUpdated(index.toBytes32());
         }
 
         return P1Types.Context({

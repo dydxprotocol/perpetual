@@ -52,13 +52,12 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
     it('Updates the global index for a positive funding rate', async () => {
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.005'));
       let txResult = await triggerIndexUpdate(otherAccount);
-      console.log(txResult);
       await expectIndexUpdated(txResult, new BaseValue('0.5'));
       txResult = await triggerIndexUpdate(otherAccount);
       await expectIndexUpdated(txResult, new BaseValue('1.0'));
     });
 
-    it('Updates the global index for a positive funding rate', async () => {
+    it('Updates the global index for a negative funding rate', async () => {
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('-0.005'));
       let txResult = await triggerIndexUpdate(otherAccount);
       await expectIndexUpdated(txResult, new BaseValue('-0.5'));

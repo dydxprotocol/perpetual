@@ -182,9 +182,10 @@ export class Logs {
     const marginIsPositive = !new BigNumber(balance.substr(2, 1), 16).isZero();
     const positionIsPositive = !new BigNumber(balance.substr(34, 1), 16).isZero();
     return {
+      rawValue: balance,
       margin: marginIsPositive ? margin : margin.negated(),
       position: positionIsPositive ? position : position.negated(),
-    };
+    } as Balance;
   }
 
   private parseIndex(index: string): Index {
@@ -193,8 +194,9 @@ export class Logs {
     const isPositive = !new BigNumber(index.substr(32, 2), 16).isZero();
     return {
       timestamp,
+      rawValue: index,
       baseValue: BaseValue.fromSolidity(value, isPositive),
-    };
+    } as Index;
   }
 
   private parseOrderFlags(flags: string): any {

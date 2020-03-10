@@ -202,7 +202,7 @@ contract P1Trade is
 
             emit LogFinalBalance(
                 account,
-                finalBalance.compress()
+                finalBalance.toBytes32()
             );
 
             if (_isCollateralized(context, finalBalance)) {
