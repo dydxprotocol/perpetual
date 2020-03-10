@@ -6,7 +6,7 @@ import { Contract } from 'web3-eth-contract';
 import { AbiInput, AbiItem } from 'web3-utils';
 
 import { Contracts } from '../modules/Contracts';
-import { TxResult } from '../lib/types';
+import { Balance, BaseValue, Index, TxResult } from '../lib/types';
 import { ORDER_FLAGS } from '../lib/Constants';
 
 type IContractsByAddress = { [address: string]: Contract };
@@ -130,6 +130,17 @@ export class Logs {
   }
 
   private parseValue(input: AbiInput, argValue: any): any {
+    if (input.type === 'bytes32') {
+      switch (input.name) {
+        case 'index':
+          return this.parseIndex(argValue);
+        case 'balance':
+          return this.parseBalance(argValue);
+        case 'flags':
+          return this.parseOrderFlags(argValue);
+      }
+    }
+
     if (input.type === 'address') {
       return argValue;
     }
@@ -137,9 +148,6 @@ export class Logs {
       return argValue;
     }
     if (input.type.match(/^bytes[0-9]*$/)) {
-      if (input.name === 'flags') {
-        return this.parseOrderFlags(argValue);
-      }
       return argValue;
     }
     if (input.type.match(/^uint[0-9]*$/)) {
@@ -166,6 +174,27 @@ export class Logs {
     }
 
     return this.parseArgs(input.components, argValue);
+  }
+
+  private parseBalance(balance: string): Balance {
+    const margin = new BigNumber(balance.substr(3, 31), 16);
+    const position = new BigNumber(balance.substr(35, 31), 16);
+    const marginIsPositive = !new BigNumber(balance.substr(2, 1), 16).isZero();
+    const positionIsPositive = !new BigNumber(balance.substr(34, 1), 16).isZero();
+    return {
+      margin: marginIsPositive ? margin : margin.negated(),
+      position: positionIsPositive ? position : position.negated(),
+    };
+  }
+
+  private parseIndex(index: string): Index {
+    const timestamp = new BigNumber(index.substr(2, 30), 16);
+    const value = new BigNumber(index.substr(34, 32), 16);
+    const isPositive = !new BigNumber(index.substr(32, 2), 16).isZero();
+    return {
+      timestamp,
+      baseValue: BaseValue.fromSolidity(value, isPositive),
+    };
   }
 
   private parseOrderFlags(flags: string): any {
