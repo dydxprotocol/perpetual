@@ -179,9 +179,7 @@ perpetualDescribe('Solidity libraries', init, (ctx: ITestContext) => {
       expectBN(await ctx.perpetual.testing.lib.load(testSlot)).to.equal(0);
     });
 
-    // TODO(fix).
-    // AssertionError: expected '0' to equal '9876543210987655000'
-    xit('store()', async () => {
+    it('store()', async () => {
       const value = bnToBytes32(9876543210987654321);
       await ctx.perpetual.testing.lib.store(testSlot, value);
       expectBN(await ctx.perpetual.testing.lib.load(testSlot)).to.equal(value);

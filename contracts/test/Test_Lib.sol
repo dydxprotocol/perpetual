@@ -187,7 +187,7 @@ contract Test_Lib {
         view
         returns (bytes32)
     {
-        Storage.load(slot);
+        return Storage.load(slot);
     }
 
     function store(
