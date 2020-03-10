@@ -63,6 +63,11 @@ contract P1Trade is
         bool isBuy // from taker's perspective
     );
 
+    event LogFinalBalance(
+        address indexed account,
+        bytes32 balance
+    );
+
     // ============ Functions ============
 
     function trade(
@@ -73,13 +78,12 @@ contract P1Trade is
         noFinalSettlement
         nonReentrant
     {
-        _verifyAccounts(accounts);
         P1Types.Context memory context = _loadContext();
         P1Types.Balance[] memory initialBalances = _settleAccounts(context, accounts);
-        P1Types.Balance[] memory currentBalances = new P1Types.Balance[](initialBalances.length);
+        P1Types.Balance[] memory currentBalances = new P1Types.Balance[](accounts.length);
 
         uint256 i;
-        for (i = 0; i < currentBalances.length; i++) {
+        for (i = 0; i < accounts.length; i++) {
             currentBalances[i] = initialBalances[i].copy();
         }
 
@@ -140,7 +144,7 @@ contract P1Trade is
             );
         }
 
-        _verifyAccountsFinalBalances(
+        _verifyAndLogFinalBalances(
             context,
             accounts,
             initialBalances,
@@ -158,6 +162,8 @@ contract P1Trade is
             accounts.length > 0,
             "Accounts must have non-zero length"
         );
+
+        // Check that accounts are unique
         address prevAccount = accounts[0];
         for (uint256 i = 1; i < accounts.length; i++) {
             address account = accounts[i];
@@ -181,23 +187,28 @@ contract P1Trade is
      *
      * TODO: Use getPositiveAndNegativeValue() if it uses less gas and/or is more readable.
      */
-    function _verifyAccountsFinalBalances(
+    function _verifyAndLogFinalBalances(
         P1Types.Context memory context,
         address[] memory accounts,
         P1Types.Balance[] memory initialBalances,
         P1Types.Balance[] memory currentBalances
     )
         private
-        pure
     {
         for (uint256 i = 0; i < accounts.length; i++) {
-            if (_isCollateralized(context, currentBalances[i])) {
+            address account = accounts[i];
+            P1Types.Balance memory finalBalance = currentBalances[i];
+
+            emit LogFinalBalance(
+                account,
+                finalBalance.compress()
+            );
+
+            if (_isCollateralized(context, finalBalance)) {
                 continue;
             }
 
-            address account = accounts[i];
             P1Types.Balance memory initialBalance = initialBalances[i];
-            P1Types.Balance memory finalBalance = currentBalances[i];
 
             // Let margin be zero for now but require position to be non-zero.
             Require.that(
