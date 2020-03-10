@@ -37,6 +37,7 @@ perpetualDescribe('P1Trade', init, (ctx: ITestContext) => {
 
       await expectBalances(
         ctx,
+        txResult,
         [maker, taker],
         [depositAmount.plus(marginAmount), depositAmount.minus(marginAmount)],
         [positionAmount.negated(), positionAmount],
@@ -64,6 +65,7 @@ perpetualDescribe('P1Trade', init, (ctx: ITestContext) => {
 
       await expectBalances(
         ctx,
+        txResult,
         [maker, taker],
         [depositAmount.minus(marginAmount), depositAmount.plus(marginAmount)],
         [positionAmount, positionAmount.negated()],
@@ -90,6 +92,7 @@ perpetualDescribe('P1Trade', init, (ctx: ITestContext) => {
 
       await expectBalances(
         ctx,
+        txResult,
         [maker, taker],
         [depositAmount, depositAmount],
         [INTEGERS.ZERO, INTEGERS.ZERO],

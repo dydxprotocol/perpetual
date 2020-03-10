@@ -76,6 +76,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
       const txResult = await liquidate(long, short, liquidationAmount);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(-250), new BigNumber(1250)],
         [new BigNumber(5), new BigNumber(-5)],
@@ -97,6 +98,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
       const txResult = await liquidate(short, long, liquidationAmount);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(250), new BigNumber(750)],
         [new BigNumber(5), new BigNumber(-5)],
@@ -114,9 +116,10 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
     it('Succeeds fully liquidating an undercollateralized long position', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
-      await liquidate(long, short, positionSize);
+      const txResult = await liquidate(long, short, positionSize);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(0), new BigNumber(1000)],
         [new BigNumber(0), new BigNumber(0)],
@@ -125,9 +128,10 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
     it('Succeeds fully liquidating an undercollateralized short position', async () => {
       await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
-      await liquidate(short, long, positionSize);
+      const txResult = await liquidate(short, long, positionSize);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(1000), new BigNumber(0)],
         [new BigNumber(0), new BigNumber(0)],
@@ -136,9 +140,10 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
     it('Succeeds fully liquidating an underwater long position', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
-      await liquidate(long, short, positionSize);
+      const txResult = await liquidate(long, short, positionSize);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(0), new BigNumber(1000)],
         [new BigNumber(0), new BigNumber(0)],
@@ -147,9 +152,10 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
     it('Succeeds fully liquidating an underwater short position', async () => {
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
-      await liquidate(short, long, positionSize);
+      const txResult = await liquidate(short, long, positionSize);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(1000), new BigNumber(0)],
         [new BigNumber(0), new BigNumber(0)],
@@ -158,9 +164,10 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
     it('Succeeds with all-or-nothing', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
-      await liquidate(long, short, positionSize, { allOrNothing: true });
+      const txResult = await liquidate(long, short, positionSize, { allOrNothing: true });
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(0), new BigNumber(1000)],
         [new BigNumber(0), new BigNumber(0)],
@@ -169,9 +176,10 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
     it('Succeeds when the amount is zero and the maker is long', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
-      await liquidate(long, short, 0);
+      const txResult = await liquidate(long, short, 0);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(-500), new BigNumber(1500)],
         [new BigNumber(10), new BigNumber(-10)],
@@ -180,9 +188,10 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
     it('Succeeds when the amount is zero and the maker is short', async () => {
       await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
-      await liquidate(short, long, 0);
+      const txResult = await liquidate(short, long, 0);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(-500), new BigNumber(1500)],
         [new BigNumber(10), new BigNumber(-10)],
@@ -202,11 +211,12 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
       // Liquidate the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
-      await liquidate(short, long, positionSize);
+      const txResult = await liquidate(short, long, positionSize);
 
       // The actual amount executed should be bounded by the maker position.
       await expectBalances(
         ctx,
+        txResult,
         [long, short, thirdParty],
         [new BigNumber(850), new BigNumber(0), new BigNumber(10150)],
         [new BigNumber(1), new BigNumber(0), new BigNumber(-1)],
@@ -226,11 +236,12 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
       // Liquidate the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
-      await liquidate(short, long, positionSize);
+      const txResult = await liquidate(short, long, positionSize);
 
       // Liquidiation amount should NOT be bounded by the taker position.
       await expectBalances(
         ctx,
+        txResult,
         [long, short, thirdParty],
         [new BigNumber(1150), new BigNumber(0), new BigNumber(9850)],
         [new BigNumber(-1), new BigNumber(0), new BigNumber(1)],
@@ -281,7 +292,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
     it('With all-or-nothing, succeeds even if amount is greater than taker position', async () => {
       // Sell off some of the long position.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
-      await sell(ctx, long, thirdParty, new BigNumber(1), new BigNumber(150));
+      await sell(ctx, long, thirdParty, 1, 150);
 
       // Liquidate the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
@@ -291,11 +302,12 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
     it('Succeeds liquidating a long against a long', async () => {
       // Turn the short into a long.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
-      await buy(ctx, short, thirdParty, positionSize.times(2), new BigNumber(500));
+      const txResult = await buy(ctx, short, thirdParty, positionSize.times(2), new BigNumber(500));
 
       // Sanity check.
       await expectPositions(
         ctx,
+        txResult,
         [long, short],
         [positionSize, positionSize],
         false, // positionsSumToZero
@@ -308,11 +320,12 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
     it('Succeeds liquidating a short against a short', async () => {
       // Turn the long into a short.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
-      await sell(ctx, long, thirdParty, positionSize.times(2), new BigNumber(2500));
+      const txResult = await sell(ctx, long, thirdParty, positionSize.times(2), 2500);
 
       // Sanity check.
       await expectPositions(
         ctx,
+        txResult,
         [long, short],
         [positionSize.negated(), positionSize.negated()],
         false, // positionsSumToZero
@@ -362,9 +375,10 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
       it('Succeeds liquidating if the sender is a global operator', async () => {
         await ctx.perpetual.admin.setGlobalOperator(thirdParty, true, { from: admin });
-        await liquidate(long, short, positionSize, { sender: thirdParty });
+        const txResult = await liquidate(long, short, positionSize, { sender: thirdParty });
         await expectBalances(
           ctx,
+          txResult,
           [long, short],
           [new BigNumber(0), new BigNumber(1000)],
           [new BigNumber(0), new BigNumber(0)],
@@ -373,9 +387,10 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
       it('Succeeds liquidating if the sender is a local operator', async () => {
         await ctx.perpetual.operator.setLocalOperator(thirdParty, true, { from: short });
-        await liquidate(long, short, positionSize, { sender: thirdParty });
+        const txResult = await liquidate(long, short, positionSize, { sender: thirdParty });
         await expectBalances(
           ctx,
+          txResult,
           [long, short],
           [new BigNumber(0), new BigNumber(1000)],
           [new BigNumber(0), new BigNumber(0)],

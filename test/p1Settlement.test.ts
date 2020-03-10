@@ -35,11 +35,12 @@ async function init(ctx: ITestContext): Promise<void> {
     mintAndDeposit(ctx, long, marginAmount),
     mintAndDeposit(ctx, short, marginAmount),
   ]);
-  await buy(ctx, long, short, positionSize, marginAmount);
+  const txResult = await buy(ctx, long, short, positionSize, marginAmount);
 
   // Sanity check balances.
   await expectBalances(
     ctx,
+    txResult,
     [long, short],
     [0, 2000],
     [12, -12],
@@ -140,6 +141,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       // Check balances after settlement of the long. Note that the short is not yet settled.
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [expectedInterest.negated(), marginAmount.times(2)],
         [positionSize, positionSize.negated()],
@@ -154,6 +156,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       // Check balances after settlement of the short account.
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [expectedInterest.negated(), marginAmount.times(2).plus(expectedInterest)],
         [positionSize, positionSize.negated()],
@@ -163,8 +166,9 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
     it('Can settle accounts with a different frequency for each account', async () => {
       // Accumulate interest and settle the long account.
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.05'));
+      let txResult: TxResult;
       for (let i = 0; i < 9; i += 1) {
-        await triggerIndexUpdate(long);
+        txResult = await triggerIndexUpdate(long);
       }
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0'));
 
@@ -173,6 +177,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       // Check balances after settlement of the long. Note that the short is not yet settled.
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [expectedInterest.negated(), marginAmount.times(2)],
         [positionSize, positionSize.negated()],
@@ -181,12 +186,13 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       );
 
       // Settle the short account and check account settlement log.
-      const txResult = await triggerIndexUpdate(short);
+      txResult = await triggerIndexUpdate(short);
       expectAccountSettledLog(txResult, short, expectedInterest);
 
       // Check balances after settlement of the short account.
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [expectedInterest.negated(), marginAmount.times(2).plus(expectedInterest)],
         [positionSize, positionSize.negated()],
