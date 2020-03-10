@@ -284,6 +284,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           // Long position can withdraw the rest of their account value.
           await expectWithdraw(short, 0);
           await expectWithdraw(long, 300);
+          await expectWithdraw(long, 0);
 
           // Check balances.
           await expectBalances(

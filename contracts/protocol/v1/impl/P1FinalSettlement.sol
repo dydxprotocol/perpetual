@@ -80,8 +80,12 @@ contract P1FinalSettlement is
         P1Types.Balance memory balance = _BALANCES_[msg.sender];
 
         // Zero-out balances as early in the function as possible.
-        _BALANCES_[msg.sender].margin = 0;
-        _BALANCES_[msg.sender].position = 0;
+        _BALANCES_[msg.sender] = P1Types.Balance({
+            marginIsPositive: false,
+            positionIsPositive: false,
+            margin: 0,
+            position: 0
+        });
 
         // Determine the account net value.
         (uint256 positive, uint256 negative) = P1BalanceMath.getPositiveAndNegativeValue(
@@ -90,28 +94,39 @@ contract P1FinalSettlement is
         );
 
         // Determine the amount to be withdrawn.
-        uint256 amount = 0;
-        if (positive > negative) {
-            amount = positive.sub(negative);
+        uint256 amountToWithdraw = 0;
 
-            // Edge case: if contract balance is insufficient, pay out as much as possible and
-            // store the amount still owed.
+        if (positive > negative) {
+
+            uint256 accountValue = positive.sub(negative);
             uint256 contractBalance = IERC20(_TOKEN_).balanceOf(address(this));
-            if (amount > contractBalance) {
-                _BALANCES_[msg.sender].margin = SafeCast.toUint120(amount.sub(contractBalance));
-                amount = contractBalance;
+
+            if (accountValue <= contractBalance) {
+                amountToWithdraw = accountValue;
+            } else {
+                // Edge case: if contract balance is insufficient, pay out as much as possible and
+                // store the amount still owed.
+                uint120 remainingAmount = SafeCast.toUint120(accountValue.sub(contractBalance));
+                _BALANCES_[msg.sender] = P1Types.Balance({
+                    marginIsPositive: true,
+                    positionIsPositive: false,
+                    margin: remainingAmount,
+                    position: 0
+                });
+                amountToWithdraw = contractBalance;
+                assert(amountToWithdraw.add(remainingAmount) == accountValue);
             }
 
             SafeERC20.safeTransfer(
                 IERC20(_TOKEN_),
                 msg.sender,
-                amount
+                amountToWithdraw
             );
         }
 
         emit LogWithdrawFinalSettlement(
             msg.sender,
-            amount
+            amountToWithdraw
         );
     }
 }
