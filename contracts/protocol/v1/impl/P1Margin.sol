@@ -50,6 +50,7 @@ contract P1Margin is
 
     event LogWithdraw(
         address indexed account,
+        address destination,
         uint256 amount
     );
 
@@ -79,6 +80,7 @@ contract P1Margin is
 
     function withdraw(
         address account,
+        address destination,
         uint256 amount
     )
         external
@@ -94,7 +96,7 @@ contract P1Margin is
 
         SafeERC20.safeTransfer(
             IERC20(_TOKEN_),
-            msg.sender,
+            destination,
             amount
         );
 
@@ -106,6 +108,6 @@ contract P1Margin is
             "account not collateralized"
         );
 
-        emit LogWithdraw(account, amount);
+        emit LogWithdraw(account, destination, amount);
     }
 }

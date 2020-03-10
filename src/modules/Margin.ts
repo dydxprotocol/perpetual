@@ -54,12 +54,14 @@ export class Margin {
 
   public async withdraw(
     account: address,
+    destination: address,
     amount: BigNumber,
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
       this.perpetual.methods.withdraw(
         account,
+        destination,
         amount.toFixed(0),
       ),
       options,
