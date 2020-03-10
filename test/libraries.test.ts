@@ -211,9 +211,9 @@ perpetualDescribe('Solidity libraries', init, (ctx: ITestContext) => {
     });
 
     it('recover() hexadecimal', async () => {
-      const signatureData = createTypedSignature(rawSignature, SIGNATURE_TYPES.DECIMAL) +
+      const signatureData = createTypedSignature(rawSignature, SIGNATURE_TYPES.HEXADECIMAL) +
         '0'.repeat(60);
-      const messageHash = getPrependedHash(hash, SIGNATURE_TYPES.DECIMAL);
+      const messageHash = getPrependedHash(hash, SIGNATURE_TYPES.HEXADECIMAL);
       const signer = ctx.perpetual.web3.eth.accounts.recover({ r, s, v, messageHash });
       expectAddressesEqual(signer, await ctx.perpetual.testing.lib.recover(hash, signatureData));
     });
