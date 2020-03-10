@@ -127,7 +127,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       expect(logs.length).to.equal(1);
       expect(logs[0].name).to.equal('LogOrderApproved');
       expect(logs[0].args.orderHash).to.equal(ctx.perpetual.orders.getOrderHash(fullFlagOrder));
-      expect(logs[0].args.approver).to.equal(fullFlagOrder.maker);
+      expect(logs[0].args.maker).to.equal(fullFlagOrder.maker);
     });
 
     it('Succeeds in double-approving order', async () => {
@@ -165,7 +165,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       expect(logs.length).to.equal(1);
       expect(logs[0].name).to.equal('LogOrderCanceled');
       expect(logs[0].args.orderHash).to.equal(ctx.perpetual.orders.getOrderHash(fullFlagOrder));
-      expect(logs[0].args.canceler).to.equal(fullFlagOrder.maker);
+      expect(logs[0].args.maker).to.equal(fullFlagOrder.maker);
     });
 
     it('Succeeds in double-canceling order', async () => {

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import _ from 'lodash';
 
 import { INTEGERS } from '../src/lib/Constants';
-import { BaseValue, Price, TxResult, address } from '../src/lib/types';
+import { BaseValue, Index, Price, TxResult, address } from '../src/lib/types';
 import { mineAvgBlock } from './helpers/EVM';
 import { expect, expectBN, expectBaseValueEqual } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
@@ -52,6 +52,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
     it('Updates the global index for a positive funding rate', async () => {
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.005'));
       let txResult = await triggerIndexUpdate(otherAccount);
+      console.log(txResult);
       await expectIndexUpdated(txResult, new BaseValue('0.5'));
       txResult = await triggerIndexUpdate(otherAccount);
       await expectIndexUpdated(txResult, new BaseValue('1.0'));
@@ -275,21 +276,27 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
    */
   async function expectIndexUpdated(
     txResult: TxResult,
-    expectedIndex: BaseValue,
+    expectedBaseValue: BaseValue,
   ): Promise<void> {
+    // Construct expected Index.
+    const { timestamp } = await ctx.perpetual.web3.eth.getBlock(txResult.blockNumber);
+    const expectedIndex: Index = {
+      timestamp: new BigNumber(timestamp),
+      baseValue: expectedBaseValue,
+    };
+
     // Check the getter function.
     const globalIndex = await ctx.perpetual.getters.getGlobalIndex();
-    expectBaseValueEqual(globalIndex.baseValue, expectedIndex, 'global index from getter');
+    expectBaseValueEqual(globalIndex.baseValue, expectedIndex.baseValue, 'index value from getter');
+    expectBN(globalIndex.timestamp, 'index timestamp from logs').to.eq(expectedIndex.timestamp);
 
     // Check the logs.
     const logs = ctx.perpetual.logs.parseLogs(txResult);
     const filteredLogs = _.filter(logs, { name: 'LogIndexUpdated' });
     expect(filteredLogs.length, 'filter for LogIndexUpdated').to.equal(1);
-    const indexUpdatedLog = filteredLogs[0];
-
-    const loggedIndexRaw = indexUpdatedLog.args.index;
-    const loggedIndex = BaseValue.fromSolidity(loggedIndexRaw.value, loggedIndexRaw.isPositive);
-    expectBaseValueEqual(loggedIndex, expectedIndex, 'global index from logs');
+    const loggedIndex: Index = filteredLogs[0].args.index;
+    expectBaseValueEqual(loggedIndex.baseValue, expectedIndex.baseValue, 'index value from logs');
+    expectBN(loggedIndex.timestamp, 'index timestamp from logs').to.eq(expectedIndex.timestamp);
   }
 
   function expectAccountSettledLog(

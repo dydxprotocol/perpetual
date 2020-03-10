@@ -78,6 +78,7 @@ contract P1Trade is
         noFinalSettlement
         nonReentrant
     {
+        _verifyAccounts(accounts);
         P1Types.Context memory context = _loadContext();
         P1Types.Balance[] memory initialBalances = _settleAccounts(context, accounts);
         P1Types.Balance[] memory currentBalances = new P1Types.Balance[](accounts.length);
