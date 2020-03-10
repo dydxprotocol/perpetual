@@ -186,7 +186,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
       describe('when the contract is insolvent due to underwater accounts', async () => {
 
         beforeEach(async () => {
-          // Set up initial balances:
+          // Set up initial balances (settlement price of 40):
           // +---------+--------+----------+-------------------+---------------+
           // | account | margin | position | collateralization | account value |
           // |---------+--------+----------+-------------------|---------------|
@@ -203,11 +203,14 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
             await buy(ctx, long, short2, positionSize, initialMargin.times(2)),
             await buy(ctx, long, short3, positionSize, initialMargin.times(2)),
           ]);
-          await enableSettlement(new Price(40));
           await ctx.perpetual.contracts.resetGasUsed();
         });
 
         it('will return partial balances, as long as funds remain', async () => {
+          // Enable settlement at price where long is underwater.
+          await enableSettlement(new Price(40));
+
+          // Some short positions can withdraw funds.
           await expectWithdraw(long, 0);
           await expectWithdraw(short, 1100);
           await expectWithdraw(short2, 900);
@@ -226,12 +229,15 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
         });
 
         it('can be bailed out, allowing all balances to be withdrawn', async () => {
+          await enableSettlement(new Price(40));
+
+          // Some short positions can withdraw funds.
           await expectWithdraw(long, 0);
           await expectWithdraw(short, 1100);
           await expectWithdraw(short2, 900);
           await expectWithdraw(short3, 0);
 
-          // Admin bails out the contract by depositing token.
+          // Admin bails out the contract.
           const underwaterAmount = new BigNumber(1300);
           await ctx.perpetual.testing.token.mint(admin, underwaterAmount);
           await ctx.perpetual.testing.token.transfer(
@@ -240,7 +246,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
             underwaterAmount,
           );
 
-          // Try to withdraw final settlement again.
+          // Short positions can withdraw the rest of their account value.
           await expectWithdraw(long, 0);
           await expectWithdraw(short, 0);
           await expectWithdraw(short2, 200);
@@ -252,6 +258,41 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
             [long, short, short2, short3],
             [0, 0, 0, 0],
             [0, 0, 0, 0],
+          );
+        });
+
+        it('allows negative margin account to withdraw partial balances', async () => {
+          // Enable settlement at price where shorts are underwater.
+          //
+          // Account value:
+          // - long:        2300
+          // - each short:  -100
+          await enableSettlement(new Price(160));
+
+          // Long position can partially withdraw.
+          await expectWithdraw(long, 2000);
+
+          // Admin bails out the contract.
+          const underwaterAmount = new BigNumber(300);
+          await ctx.perpetual.testing.token.mint(admin, underwaterAmount);
+          await ctx.perpetual.testing.token.transfer(
+            admin,
+            ctx.perpetual.contracts.perpetualProxy.options.address,
+            underwaterAmount,
+          );
+
+          // Long position can withdraw the rest of their account value.
+          await expectWithdraw(short, 0);
+          await expectWithdraw(long, 300);
+
+          // Check balances.
+          await expectBalances(
+            ctx,
+            [long, short, short2, short3],
+            [0, 0, 1500, 1500],
+            [0, 0, -10, -10],
+            false,
+            false,
           );
         });
       });
