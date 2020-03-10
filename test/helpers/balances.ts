@@ -76,6 +76,22 @@ export async function expectPositions(
   }
 }
 
+/**
+ * Verify that the account test token balances match the expected values.
+ */
+export async function expectTokenBalances(
+  ctx: ITestContext,
+  accounts: address[],
+  expectedBalances: BigNumberable[],
+) {
+  const balances = await Promise.all(accounts.map((account: address) =>
+    ctx.perpetual.testing.token.getBalance(account),
+  ));
+  for (const i in expectedBalances) {
+    expectBN(balances[i], `accounts[${i}] token balance`).to.eq(expectedBalances[i]);
+  }
+}
+
 export async function mintAndDeposit(
   ctx: ITestContext,
   account: address,
