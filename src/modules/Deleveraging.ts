@@ -23,16 +23,17 @@ import { Contracts } from './Contracts';
 import { bnToBytes32, boolToBytes32, stripHexPrefix } from '../lib/BytesHelper';
 import { ADDRESSES, INTEGERS } from '../lib/Constants';
 import {
-  address,
+  BigNumberable,
   CallOptions,
-  SendOptions,
   Price,
+  SendOptions,
   TradeResult,
   TxResult,
+  address,
 } from '../lib/types';
 
 export function makeDeleverageTradeData(
-  amount: BigNumber,
+  amount: BigNumberable,
   allOrNothing: boolean,
 ): string {
   const amountData = bnToBytes32(amount);

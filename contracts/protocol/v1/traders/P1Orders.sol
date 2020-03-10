@@ -235,6 +235,7 @@ contract P1Orders is
             tradeData.fill
         );
 
+        // `isBuyOrder` is from the maker's perspective.
         bool isBuyOrder = _isBuy(tradeData.order);
         uint256 marginPerPosition = (isBuyOrder == tradeData.fill.isNegativeFee)
             ? tradeData.fill.price.sub(tradeData.fill.fee)
@@ -346,6 +347,7 @@ contract P1Orders is
             "Order has expired"
         );
 
+        // `isBuyOrder` is from the maker's perspective.
         bool isBuyOrder = _isBuy(tradeData.order);
         bool validPrice = isBuyOrder
             ? tradeData.fill.price <= tradeData.order.limitPrice

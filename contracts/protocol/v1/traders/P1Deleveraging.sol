@@ -47,9 +47,7 @@ contract P1Deleveraging is
 
     struct TradeData {
         uint256 amount;
-
-        // If true, the trade will revert if the maker or taker position is less than the amount.
-        bool allOrNothing;
+        bool allOrNothing; // if true, will revert if maker's position is less than the amount
     }
 
     // ============ Events ============
@@ -58,7 +56,7 @@ contract P1Deleveraging is
         address indexed maker,
         address indexed taker,
         uint256 amount,
-        bool isBuy
+        bool isBuy // from taker's perspective
     );
 
     event LogMarkedForDeleveraging(
@@ -132,6 +130,7 @@ contract P1Deleveraging is
             price
         );
 
+        // Bound the execution amount by the size of the maker and taker positions.
         uint256 amount = Math.min(
             tradeData.amount,
             Math.min(makerBalance.position, takerBalance.position)

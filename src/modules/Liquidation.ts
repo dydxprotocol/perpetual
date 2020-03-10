@@ -20,22 +20,25 @@ import BigNumber from 'bignumber.js';
 import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from './Contracts';
-import { bnToBytes32, boolToBytes32, stripHexPrefix } from '../lib/BytesHelper';
+import { bnToBytes32, boolToBytes32, combineHexStrings } from '../lib/BytesHelper';
 import { INTEGERS } from '../lib/Constants';
 import {
-  address,
+  BigNumberable,
   CallOptions,
   Price,
   TradeResult,
+  address,
 } from '../lib/types';
 
 export function makeLiquidateTradeData(
-  amount: BigNumber,
+  amount: BigNumberable,
+  isBuy: boolean,
   allOrNothing: boolean,
 ): string {
   const amountData = bnToBytes32(amount);
+  const isBuyData = boolToBytes32(isBuy);
   const allOrNothingData = boolToBytes32(allOrNothing);
-  return `0x${stripHexPrefix(amountData)}${stripHexPrefix(allOrNothingData)}`;
+  return combineHexStrings(amountData, isBuyData, allOrNothingData);
 }
 
 export class Liquidation {
@@ -59,6 +62,7 @@ export class Liquidation {
     taker: address,
     price: Price,
     amount: BigNumber,
+    isBuy: boolean,
     allOrNothing: boolean = false,
     traderFlags: BigNumber = INTEGERS.ZERO,
     options?: CallOptions,
@@ -69,7 +73,7 @@ export class Liquidation {
         maker,
         taker,
         price.toSolidity(),
-        makeLiquidateTradeData(amount, allOrNothing),
+        makeLiquidateTradeData(amount, isBuy, allOrNothing),
         bnToBytes32(traderFlags),
       ),
       options,
