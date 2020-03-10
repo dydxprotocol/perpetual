@@ -20,7 +20,7 @@ import BigNumber from 'bignumber.js';
 import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from './Contracts';
-import { bnToBytes32, boolToBytes32, stripHexPrefix } from '../lib/BytesHelper';
+import { bnToBytes32, boolToBytes32, combineHexStrings } from '../lib/BytesHelper';
 import { ADDRESSES, INTEGERS } from '../lib/Constants';
 import {
   BigNumberable,
@@ -34,11 +34,13 @@ import {
 
 export function makeDeleverageTradeData(
   amount: BigNumberable,
+  isBuy: boolean,
   allOrNothing: boolean,
 ): string {
   const amountData = bnToBytes32(amount);
+  const isBuyData = boolToBytes32(isBuy);
   const allOrNothingData = boolToBytes32(allOrNothing);
-  return `0x${stripHexPrefix(amountData)}${stripHexPrefix(allOrNothingData)}`;
+  return combineHexStrings(amountData, isBuyData, allOrNothingData);
 }
 
 export class Deleveraging {
@@ -61,6 +63,7 @@ export class Deleveraging {
     taker: address,
     price: Price,
     amount: BigNumber,
+    isBuy: boolean,
     allOrNothing: boolean = false,
     traderFlags: BigNumber = INTEGERS.ZERO,
     options?: CallOptions,
@@ -71,7 +74,7 @@ export class Deleveraging {
         maker,
         taker,
         price.toSolidity(),
-        makeDeleverageTradeData(amount, allOrNothing),
+        makeDeleverageTradeData(amount, isBuy, allOrNothing),
         bnToBytes32(traderFlags),
       ),
       options,

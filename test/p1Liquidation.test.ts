@@ -350,7 +350,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
           defaultSignedOrder.limitPrice,
           defaultSignedOrder.limitFee,
         )
-        .liquidate(long, short, positionSize.plus(new BigNumber(1)), true)
+        .liquidate(long, short, positionSize.plus(new BigNumber(1)), true, false)
         .commit({ from: short });
     });
 

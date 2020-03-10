@@ -70,7 +70,7 @@ export class TradeOperation {
     taker: address,
     amount: BigNumberable,
     isBuy: boolean,
-    allOrNothing: boolean = false,
+    allOrNothing: boolean,
   ): this {
     return this.addTradeArg({
       maker,
@@ -84,12 +84,13 @@ export class TradeOperation {
     maker: address,
     taker: address,
     amount: BigNumberable,
-    allOrNothing: boolean = false,
+    isBuy: boolean,
+    allOrNothing: boolean,
   ): this {
     return this.addTradeArg({
       maker,
       taker,
-      data: makeDeleverageTradeData(amount, allOrNothing),
+      data: makeDeleverageTradeData(amount, isBuy, allOrNothing),
       trader: this.contracts.p1Deleveraging.options.address,
     });
   }

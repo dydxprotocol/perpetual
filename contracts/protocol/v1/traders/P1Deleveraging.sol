@@ -47,6 +47,7 @@ contract P1Deleveraging is
 
     struct TradeData {
         uint256 amount;
+        bool isBuy; // from taker's perspective
         bool allOrNothing; // if true, will revert if maker's position is less than the amount
     }
 
@@ -135,12 +136,11 @@ contract P1Deleveraging is
             tradeData.amount,
             Math.min(makerBalance.position, takerBalance.position)
         );
-        bool isBuy = makerBalance.positionIsPositive;
 
         // When partially deleveraging the maker, maintain the same position/margin ratio.
         // Ensure the collateralization of the maker does not decrease.
         uint256 marginAmount;
-        if (isBuy) {
+        if (tradeData.isBuy) {
             marginAmount = uint256(makerBalance.margin).getFractionRoundUp(amount, makerBalance.position);
         } else {
             marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
@@ -154,13 +154,13 @@ contract P1Deleveraging is
             maker,
             taker,
             amount,
-            isBuy
+            tradeData.isBuy
         );
 
         return P1Types.TradeResult({
             marginAmount: marginAmount,
             positionAmount: amount,
-            isBuy: isBuy,
+            isBuy: tradeData.isBuy,
             traderFlags: TRADER_FLAG_DELEVERAGING
         });
     }
@@ -261,6 +261,10 @@ contract P1Deleveraging is
         require(
             !tradeData.allOrNothing || takerBalance.position >= tradeData.amount,
             "allOrNothing is set and taker position is less than amount"
+        );
+        require(
+            tradeData.isBuy == makerBalance.positionIsPositive,
+            "deleveraging must not increase maker's position size"
         );
     }
 
