@@ -45,7 +45,7 @@ jobs:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Coverage
-          command: npm run coverage
+          command: python util/fix_contracts_for_coverage.py && npm run coverage
           no_output_timeout: 60m
       - run:
           name: Coveralls
