@@ -37,6 +37,28 @@ export function isValidSigType(
   }
 }
 
+export function getPrependedHash(
+  hash: string,
+  sigType: SIGNATURE_TYPES,
+): string {
+  switch (sigType) {
+    case SIGNATURE_TYPES.NO_PREPEND:
+      return hash;
+    case SIGNATURE_TYPES.DECIMAL:
+      return Web3.utils.soliditySha3(
+        { t: 'string', v: PREPEND_DEC },
+        { t: 'bytes32', v: hash },
+      );
+    case SIGNATURE_TYPES.HEXADECIMAL:
+      return Web3.utils.soliditySha3(
+        { t: 'string', v: PREPEND_HEX },
+        { t: 'bytes32', v: hash },
+      );
+    default:
+      throw Error(`invalid sigType ${sigType}`);
+  }
+}
+
 export function ecRecoverTypedSignature(
   hash: string,
   typedSignature: string,
@@ -48,24 +70,10 @@ export function ecRecoverTypedSignature(
   const sigType = parseInt(typedSignature.slice(-2), 16);
 
   let prependedHash: string;
-  switch (sigType) {
-    case SIGNATURE_TYPES.NO_PREPEND:
-      prependedHash = hash;
-      break;
-    case SIGNATURE_TYPES.DECIMAL:
-      prependedHash = Web3.utils.soliditySha3(
-        { t: 'string', v: PREPEND_DEC },
-        { t: 'bytes32', v: hash },
-      );
-      break;
-    case SIGNATURE_TYPES.HEXADECIMAL:
-      prependedHash = Web3.utils.soliditySha3(
-        { t: 'string', v: PREPEND_HEX },
-        { t: 'bytes32', v: hash },
-      );
-      break;
-    default:
-      return '0x'; // return invalid address instead of throwing error
+  try {
+    prependedHash = getPrependedHash(hash, sigType);
+  } catch (e) {
+    return '0x'; // return invalid address instead of throwing error
   }
 
   const signature = typedSignature.slice(0, -2);
