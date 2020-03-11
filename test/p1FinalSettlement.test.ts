@@ -10,6 +10,7 @@ import {
 } from '../src/lib/types';
 import { expectThrow, expect, expectAddressesEqual, expectBN } from './helpers/Expect';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
+import { mineAvgBlock } from './helpers/EVM';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy } from './helpers/trade';
@@ -346,11 +347,13 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
    */
   async function enableSettlement(settlementPrice: Price): Promise<TxResult> {
     await ctx.perpetual.testing.oracle.setPrice(settlementPrice);
-    return ctx.perpetual.admin.enableFinalSettlement(
+    const txResult = ctx.perpetual.admin.enableFinalSettlement(
       settlementPrice,
       settlementPrice,
       { from: admin },
     );
+    await mineAvgBlock();
+    return txResult;
   }
 
   /**
@@ -365,11 +368,13 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
 
     // Check logs.
     const logs = ctx.perpetual.logs.parseLogs(txResult);
-    expect(logs.length).to.equal(1);
-    const log = logs[0];
-    expect(log.name).to.equal('LogWithdrawFinalSettlement');
-    expectAddressesEqual(log.args.account, account);
-    expectBN(log.args.amount, 'logged final settlement amount').to.equal(expectedAmountBN);
+    expect(logs.length).to.equal(2);
+    const [logSettle, logWithdraw] = logs;
+    expect(logSettle.name).to.equal('LogAccountSettled');
+    expectAddressesEqual(logSettle.args.account, account);
+    expect(logWithdraw.name).to.equal('LogWithdrawFinalSettlement');
+    expectAddressesEqual(logWithdraw.args.account, account);
+    expectBN(logWithdraw.args.amount, 'logged final settlement amount').to.equal(expectedAmountBN);
 
     // Check that token balance is updated as expected.
     const balanceAfter = await ctx.perpetual.testing.token.getBalance(account);

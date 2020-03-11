@@ -24,6 +24,7 @@ import { P1Storage } from "./P1Storage.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { I_P1Funder } from "../intf/I_P1Funder.sol";
 import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
+import { P1Types } from "../lib/P1Types.sol";
 
 
 /**
@@ -126,16 +127,23 @@ contract P1Admin is
         noFinalSettlement
         nonReentrant
     {
-        _FINAL_SETTLEMENT_PRICE_ = I_P1Oracle(_ORACLE_).getPrice();
-        _FINAL_SETTLEMENT_ENABLED_ = true;
+        // Update the Global Index and grab the Price.
+        P1Types.Context memory context = _loadContext();
+
+        // Check price bounds.
         require(
-            _FINAL_SETTLEMENT_PRICE_ >= priceLowerBound,
+            context.price >= priceLowerBound,
             "Oracle price is less than the provided lower bound"
         );
         require(
-            _FINAL_SETTLEMENT_PRICE_ <= priceUpperBound,
+            context.price <= priceUpperBound,
             "Oracle price is greater than the provided upper bound"
         );
+
+        // Save storage variables.
+        _FINAL_SETTLEMENT_PRICE_ = context.price;
+        _FINAL_SETTLEMENT_ENABLED_ = true;
+
         emit LogFinalSettlementEnabled(_FINAL_SETTLEMENT_PRICE_);
     }
 }

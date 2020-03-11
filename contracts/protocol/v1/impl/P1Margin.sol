@@ -23,8 +23,6 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { P1FinalSettlement } from "./P1FinalSettlement.sol";
 import { P1Getters } from "./P1Getters.sol";
-import { P1Settlement } from "./P1Settlement.sol";
-import { P1Storage } from "./P1Storage.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
@@ -36,10 +34,8 @@ import { P1Types } from "../lib/P1Types.sol";
  * Margin logic contract
  */
 contract P1Margin is
-    P1Storage,
     P1FinalSettlement,
-    P1Getters,
-    P1Settlement
+    P1Getters
 {
     using P1BalanceMath for P1Types.Balance;
 
