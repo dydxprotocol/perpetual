@@ -78,10 +78,10 @@ contract P1Trade is
         _verifyAccounts(accounts);
         P1Types.Context memory context = _loadContext();
         P1Types.Balance[] memory initialBalances = _settleAccounts(context, accounts);
-        P1Types.Balance[] memory currentBalances = new P1Types.Balance[](accounts.length);
+        P1Types.Balance[] memory currentBalances = new P1Types.Balance[](initialBalances.length);
 
         uint256 i;
-        for (i = 0; i < accounts.length; i++) {
+        for (i = 0; i < initialBalances.length; i++) {
             currentBalances[i] = initialBalances[i].copy();
         }
 
@@ -144,7 +144,7 @@ contract P1Trade is
             );
         }
 
-        _verifyFinalBalances(
+        _verifyAccountsFinalBalances(
             context,
             accounts,
             initialBalances,
@@ -152,6 +152,10 @@ contract P1Trade is
         );
     }
 
+    /**
+     * Verify that the accounts array has at least one address and that the accounts are unique.
+     * It verifies uniqueness by requiring that the accounts are sorted.
+     */
     function _verifyAccounts(
         address[] memory accounts
     )
@@ -187,7 +191,7 @@ contract P1Trade is
      *
      * TODO: Use getPositiveAndNegativeValue() if it uses less gas and/or is more readable.
      */
-    function _verifyFinalBalances(
+    function _verifyAccountsFinalBalances(
         P1Types.Context memory context,
         address[] memory accounts,
         P1Types.Balance[] memory initialBalances,
