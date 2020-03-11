@@ -24,10 +24,13 @@ pragma experimental ABIEncoderV2;
  * @title Storage
  * @author dYdX
  *
- * Storage library
+ * Storage library for reading/writing at a low level.
  */
 library Storage {
 
+    /**
+     * SLOADs and returns the data in the slot.
+     */
     function load(
         bytes32 slot
     )
@@ -43,6 +46,9 @@ library Storage {
         return result;
     }
 
+    /**
+     * SSTOREs the value to the slot.
+     */
     function store(
         bytes32 slot,
         bytes32 value
