@@ -81,7 +81,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
 
     it('prevents withdrawals during final settlement', async () => {
       await expectThrow(
-        ctx.perpetual.margin.withdraw(long, INTEGERS.ONE),
+        ctx.perpetual.margin.withdraw(long, long, INTEGERS.ONE),
         'Not permitted during final settlement',
       );
     });
