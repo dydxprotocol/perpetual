@@ -83,13 +83,32 @@ export async function expectTokenBalances(
   ctx: ITestContext,
   accounts: address[],
   expectedBalances: BigNumberable[],
-) {
+): Promise<void> {
   const balances = await Promise.all(accounts.map((account: address) =>
     ctx.perpetual.testing.token.getBalance(account),
   ));
   for (const i in expectedBalances) {
     expectBN(balances[i], `accounts[${i}] token balance`).to.eq(expectedBalances[i]);
   }
+}
+
+/**
+ * Check that the contract has a surplus (or deficit) relative to the current margin balances.
+ */
+export async function expectContractSurplus(
+  ctx: ITestContext,
+  accounts: address[],
+  expectedSurplus: BigNumberable,
+): Promise<void> {
+  const marginBalances = await Promise.all(accounts.map((account: address) => {
+    return ctx.perpetual.getters.getAccountBalance(account).then(balance => balance.margin);
+  }));
+  const accountSumMargin = marginBalances.reduce((a, b) => a.plus(b), INTEGERS.ZERO);
+  const perpetualTokenBalance = await ctx.perpetual.testing.token.getBalance(
+    ctx.perpetual.contracts.perpetualV1.options.address,
+  );
+  const actualSurplus = perpetualTokenBalance.minus(accountSumMargin);
+  expectBN(actualSurplus, 'contract margin token surplus').eq(expectedSurplus);
 }
 
 export async function mintAndDeposit(

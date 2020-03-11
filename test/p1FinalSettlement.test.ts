@@ -209,6 +209,8 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           false,
         );
 
+        // If positive and negative value are rounded separately, this could result in accounts
+        // A and B each withdrawing 1 token, rendering the contract insolvent before C can withdraw.
         await enableSettlement(new Price(1.5));
         await expectWithdraw(otherAccountA, 0);
         await expectWithdraw(otherAccountB, 0);

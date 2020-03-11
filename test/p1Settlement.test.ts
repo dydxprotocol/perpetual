@@ -8,20 +8,24 @@ import { expect, expectBN, expectBaseValueEqual } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
-import { expectBalances, mintAndDeposit } from './helpers/balances';
+import { expectBalances, mintAndDeposit, expectMarginBalances, expectContractSurplus } from './helpers/balances';
 
 const marginAmount = new BigNumber(1000);
 const positionSize = new BigNumber(12);
 
-let long;
-let short;
-let otherAccount;
+let long: address;
+let short: address;
+let otherAccountA: address;
+let otherAccountB: address;
+let otherAccountC: address;
 
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
   long = ctx.accounts[2];
   short = ctx.accounts[3];
-  otherAccount = ctx.accounts[4];
+  otherAccountA = ctx.accounts[4];
+  otherAccountB = ctx.accounts[5];
+  otherAccountC = ctx.accounts[6];
 
   // Set up initial balances:
   // +---------+--------+----------+
@@ -51,40 +55,111 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
   describe('_loadContext()', () => {
     it('Updates the global index for a positive funding rate', async () => {
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.005'));
-      let txResult = await triggerIndexUpdate(otherAccount);
+      let txResult = await triggerIndexUpdate(otherAccountA);
       await expectIndexUpdated(txResult, new BaseValue('0.5'));
-      txResult = await triggerIndexUpdate(otherAccount);
+      txResult = await triggerIndexUpdate(otherAccountA);
       await expectIndexUpdated(txResult, new BaseValue('1.0'));
     });
 
     it('Updates the global index for a positive funding rate', async () => {
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('-0.005'));
-      let txResult = await triggerIndexUpdate(otherAccount);
+      let txResult = await triggerIndexUpdate(otherAccountA);
       await expectIndexUpdated(txResult, new BaseValue('-0.5'));
-      txResult = await triggerIndexUpdate(otherAccount);
+      txResult = await triggerIndexUpdate(otherAccountA);
       await expectIndexUpdated(txResult, new BaseValue('-1.0'));
     });
 
     it('Updates the global index over time with a variable funding rate and price', async () => {
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.000001'));
-      let txResult = await triggerIndexUpdate(otherAccount);
+      let txResult = await triggerIndexUpdate(otherAccountA);
       await expectIndexUpdated(txResult, new BaseValue('0.0001'));
 
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('4'));
-      txResult = await triggerIndexUpdate(otherAccount);
+      txResult = await triggerIndexUpdate(otherAccountA);
       await expectIndexUpdated(txResult, new BaseValue('400.0001'));
 
       await ctx.perpetual.testing.oracle.setPrice(new Price('40'));
-      txResult = await triggerIndexUpdate(otherAccount);
+      txResult = await triggerIndexUpdate(otherAccountA);
       await expectIndexUpdated(txResult, new BaseValue('560.0001'));
 
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('-10.5'));
-      txResult = await triggerIndexUpdate(otherAccount);
+      txResult = await triggerIndexUpdate(otherAccountA);
       await expectIndexUpdated(txResult, new BaseValue('140.0001'));
 
       await ctx.perpetual.testing.oracle.setPrice(new Price('0.00001'));
-      txResult = await triggerIndexUpdate(otherAccount);
+      txResult = await triggerIndexUpdate(otherAccountA);
       await expectIndexUpdated(txResult, new BaseValue('139.999995'));
+    });
+
+    it('Maintains solvency despite rounding errors in interest calculation', async () => {
+      // Set up balances:
+      // +---------------+--------+----------+
+      // | account       | margin | position |
+      // |---------------+--------+----------+
+      // | otherAccountA |     10 |        7 |
+      // | otherAccountB |     10 |       -3 |
+      // | otherAccountC |     10 |       -4 |
+      // +---------------+--------+----------+
+      await Promise.all([
+        ctx.perpetual.testing.oracle.setPrice(new Price(1)),
+        mintAndDeposit(ctx, otherAccountA, 10),
+        mintAndDeposit(ctx, otherAccountB, 10),
+        mintAndDeposit(ctx, otherAccountC, 10),
+      ]);
+      await buy(ctx, otherAccountA, otherAccountB, 3, 0);
+      await buy(ctx, otherAccountA, otherAccountC, 4, 0);
+
+      // Check balances.
+      await expectBalances(
+        ctx,
+        [otherAccountA, otherAccountB, otherAccountC],
+        [10, 10, 10],
+        [7, -3, -4],
+        false,
+      );
+
+      // Time period 1, global index is 0.7
+      //
+      // Settle account A, paying 5 margin in interest. New balances:
+      // +---------------+--------+----------+-------------+--------------+
+      // | account       | margin | position | local index | interest due |
+      // |---------------+--------+----------+-------------+--------------+
+      // | otherAccountA |      5 |        7 |         0.7 |            0 |
+      // | otherAccountB |     10 |       -3 |           0 |          2.1 |
+      // | otherAccountC |     10 |       -4 |           0 |          2.8 |
+      // +---------------+--------+----------+-------------+--------------+
+      await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.7'));
+      await triggerIndexUpdate(otherAccountA);
+      await expectMarginBalances(ctx, [otherAccountA], [5], false);
+
+      // Time period 1, global index is 1.4
+      //
+      // Settle all accounts. New balances:
+      // +---------------+--------+----------+-------------+--------------+
+      // | account       | margin | position | local index | interest due |
+      // |---------------+--------+----------+-------------+--------------+
+      // | otherAccountA |      0 |        7 |         1.4 |            0 |
+      // | otherAccountB |     14 |       -3 |         1.4 |            0 |
+      // | otherAccountC |     15 |       -4 |         1.4 |            0 |
+      // +---------------+--------+----------+-------------+--------------+
+      await triggerIndexUpdate(otherAccountA);
+      await ctx.perpetual.testing.funder.setFunding(new BaseValue(0));
+      await triggerIndexUpdate(otherAccountB);
+      await triggerIndexUpdate(otherAccountC);
+
+      // Check balances.
+      await expectBalances(
+        ctx,
+        [otherAccountA, otherAccountB, otherAccountC],
+        [0, 14, 15],
+        [7, -3, -4],
+        false,
+      );
+      await expectContractSurplus(
+        ctx,
+        [long, short, otherAccountA, otherAccountB, otherAccountC],
+        1,
+      );
     });
 
     it('Does not update the global index if the timestamp has not increased', async () => {
@@ -223,9 +298,9 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
 
     it('Does not settle an account with no position', async () => {
       // Accumulate interest on long and short accounts.
-      const localIndexBefore = await ctx.perpetual.getters.getAccountIndex(otherAccount);
+      const localIndexBefore = await ctx.perpetual.getters.getAccountIndex(otherAccountA);
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.05'));
-      const txResult = await triggerIndexUpdate(otherAccount);
+      const txResult = await triggerIndexUpdate(otherAccountA);
 
       // Check logs.
       const logs = ctx.perpetual.logs.parseLogs(txResult);
@@ -233,12 +308,12 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       expect(filteredLogs.length, 'filter for LogAccountSettled').to.equal(0);
 
       // Check balance.
-      const { margin, position } = await ctx.perpetual.getters.getAccountBalance(otherAccount);
+      const { margin, position } = await ctx.perpetual.getters.getAccountBalance(otherAccountA);
       expectBN(margin).to.eq(INTEGERS.ZERO);
       expectBN(position).to.eq(INTEGERS.ZERO);
 
       // Check local index.
-      const localIndexAfter = await ctx.perpetual.getters.getAccountIndex(otherAccount);
+      const localIndexAfter = await ctx.perpetual.getters.getAccountIndex(otherAccountA);
       expectBN(localIndexAfter.baseValue.value).to.not.eq(localIndexBefore.baseValue.value);
       expectBN(localIndexAfter.timestamp).to.not.eq(localIndexBefore.timestamp);
     });
@@ -248,14 +323,14 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
     const largeValue = new BigNumber(2).pow(120).minus(1);
 
     it('can handle large values', async () => {
-      await mintAndDeposit(ctx, otherAccount, largeValue);
-      await buy(ctx, otherAccount, long, 1, 100);
-      await sell(ctx, otherAccount, long, 1, 100);
+      await mintAndDeposit(ctx, otherAccountA, largeValue);
+      await buy(ctx, otherAccountA, long, 1, 100);
+      await sell(ctx, otherAccountA, long, 1, 100);
       await ctx.perpetual.margin.withdraw(
-        otherAccount,
-        otherAccount,
+        otherAccountA,
+        otherAccountA,
         largeValue,
-        { from: otherAccount },
+        { from: otherAccountA },
       );
     });
   });

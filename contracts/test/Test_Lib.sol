@@ -60,6 +60,17 @@ contract Test_Lib {
         return BaseMath.baseMul(value, basedValue);
     }
 
+    function baseMulRoundUp(
+        uint256 value,
+        uint256 basedValue
+    )
+        external
+        pure
+        returns (uint256)
+    {
+        return BaseMath.baseMulRoundUp(value, basedValue);
+    }
+
     // ============ Math.sol ============
 
     function getFraction(
