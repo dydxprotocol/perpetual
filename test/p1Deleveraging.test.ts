@@ -153,9 +153,10 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Succeeds when the amount is zero and the maker is long', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
-      await deleverage(long, short, 0);
+      const txResult = await deleverage(long, short, 0);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(-500), new BigNumber(1500)],
         [new BigNumber(10), new BigNumber(-10)],
@@ -164,9 +165,10 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Succeeds when the amount is zero and the maker is short', async () => {
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
-      await deleverage(short, long, 0);
+      const txResult = await deleverage(short, long, 0);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(-500), new BigNumber(1500)],
         [new BigNumber(10), new BigNumber(-10)],

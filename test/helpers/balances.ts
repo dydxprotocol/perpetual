@@ -121,6 +121,11 @@ function getBalanceEvents(
   txResult: TxResult,
   accounts: address[],
 ): Balance[] {
+  // If no transaction, return no events
+  if (!txResult) {
+    return [];
+  }
+
   const logs = ctx.perpetual.logs.parseLogs(txResult)
     .filter((log: any) => ['LogFinalBalance', 'LogWithdaw', 'LogDeposit'].includes(log.name));
 

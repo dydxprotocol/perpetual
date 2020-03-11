@@ -52,11 +52,12 @@ async function init(ctx: ITestContext): Promise<void> {
     mintAndDeposit(ctx, long, initialMargin),
     mintAndDeposit(ctx, short, initialMargin),
   ]);
-  await buy(ctx, long, short, positionSize, initialMargin.times(2));
+  const txResult = await buy(ctx, long, short, positionSize, initialMargin.times(2));
 
   // Sanity check balances.
   await expectBalances(
     ctx,
+    txResult,
     [long, short],
     [-500, 1500],
     [10, -10],
@@ -69,7 +70,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
 
     beforeEach(async () => {
       await ctx.perpetual.admin.enableFinalSettlement(initialPrice, initialPrice, { from: admin });
-      await ctx.perpetual.contracts.resetGasUsed();
+      ctx.perpetual.contracts.resetGasUsed();
     });
 
     it('prevents deposits during final settlement', async () => {
@@ -237,7 +238,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
             await buy(ctx, long, otherAccountA, positionSize, initialMargin.times(2)),
             await buy(ctx, long, otherAccountB, positionSize, initialMargin.times(2)),
           ]);
-          await ctx.perpetual.contracts.resetGasUsed();
+          ctx.perpetual.contracts.resetGasUsed();
         });
 
         it('will return partial balances, as long as funds remain', async () => {
@@ -253,6 +254,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           // Check that the balances reflect the amount owed.
           await expectBalances(
             ctx,
+            null,
             [long, short, otherAccountA, otherAccountB],
             [0, 0, 200, 1100],
             [0, 0, 0, 0],
@@ -289,6 +291,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           // Check balances.
           await expectBalances(
             ctx,
+            null,
             [long, short, otherAccountA, otherAccountB],
             [0, 0, 0, 0],
             [0, 0, 0, 0],
@@ -323,6 +326,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           // Check balances.
           await expectBalances(
             ctx,
+            null,
             [long, short, otherAccountA, otherAccountB],
             [0, 0, 1500, 1500],
             [0, 0, -10, -10],
