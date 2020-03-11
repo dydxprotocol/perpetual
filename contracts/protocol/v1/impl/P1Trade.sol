@@ -242,24 +242,17 @@ contract P1Trade is
             uint256 finalBalanceInitialMargin = finalBalance.position.mul(initialBalance.margin);
             uint256 finalMarginInitialBalance = finalBalance.margin.mul(initialBalance.position);
 
-            if (finalBalance.positionIsPositive) {
-                Require.that(
-                    !initialBalance.marginIsPositive,
-                    "account is undercollateralized and was not previously",
-                    account
-                );
-                Require.that(
-                    finalBalanceInitialMargin >= finalMarginInitialBalance,
-                    "account is undercollateralized and collateralization decreased",
-                    account
-                );
-            } else {
-                Require.that(
-                    finalMarginInitialBalance >= finalBalanceInitialMargin,
-                    "account is undercollateralized and collateralization decreased",
-                    account
-                );
-            }
+            Require.that(
+                !(initialBalance.marginIsPositive && initialBalance.positionIsPositive),
+                "account is undercollateralized and was not previously",
+                account
+            );
+            Require.that(
+                finalBalanceInitialMargin == finalMarginInitialBalance ||
+                    finalBalanceInitialMargin > finalMarginInitialBalance == finalBalance.positionIsPositive,
+                "account is undercollateralized and collateralization decreased",
+                account
+            );
         }
     }
 }
