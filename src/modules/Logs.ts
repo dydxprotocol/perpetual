@@ -177,15 +177,16 @@ export class Logs {
   }
 
   private parseBalance(balance: string): Balance {
-    const margin = new BigNumber(balance.substr(3, 31), 16);
-    const position = new BigNumber(balance.substr(35, 31), 16);
-    const marginIsPositive = !new BigNumber(balance.substr(2, 1), 16).isZero();
-    const positionIsPositive = !new BigNumber(balance.substr(34, 1), 16).isZero();
-    return {
-      rawValue: balance,
-      margin: marginIsPositive ? margin : margin.negated(),
-      position: positionIsPositive ? position : position.negated(),
-    } as Balance;
+    const margin = new BigNumber(balance.substr(4, 30), 16);
+    const position = new BigNumber(balance.substr(36, 30), 16);
+    const marginIsPositive = !new BigNumber(balance.substr(2, 2), 16).isZero();
+    const positionIsPositive = !new BigNumber(balance.substr(34, 2), 16).isZero();
+    const result = new Balance(
+      marginIsPositive ? margin : margin.negated(),
+      positionIsPositive ? position : position.negated(),
+    );
+    (result as any).rawValue = balance;
+    return result;
   }
 
   private parseIndex(index: string): Index {

@@ -41,7 +41,9 @@ export async function expectMarginBalances(
   for (const i in expectedMargins) {
     const expectedMargin = new BigNumber(expectedMargins[i]);
     expectBN(actualMargins[i], `accounts[${i}] actual margin`).eq(expectedMargin);
-    expectBN(eventBalances[i].margin, `accounts[${i}] event margin`).eq(expectedMargin);
+    if (eventBalances[i]) {
+      expectBN(eventBalances[i].margin, `accounts[${i}] event margin`).eq(expectedMargin);
+    }
   }
 
   // Contract solvency check
@@ -76,7 +78,9 @@ export async function expectPositions(
   for (const i in expectedPositions) {
     const expectedPosition = new BigNumber(expectedPositions[i]);
     expectBN(actualPositions[i], `accounts[${i}] actual position`).eq(expectedPosition);
-    expectBN(eventBalances[i].position, `accounts[${i}] event position`).eq(expectedPosition);
+    if (eventBalances[i]) {
+      expectBN(eventBalances[i].position, `accounts[${i}] event position`).eq(expectedPosition);
+    }
   }
 
   if (sumToZero) {
@@ -122,7 +126,10 @@ function getBalanceEvents(
 
   const result = [];
   for (const i in accounts) {
-    result[i] = logs.find((log: any) => log.account === accounts[i]).balance;
+    const log = logs.find((log: any) =>
+      log.args.account.toLowerCase() === accounts[i].toLowerCase(),
+    );
+    result[i] = log ? log.args.balance : null;
   }
   return result;
 }
