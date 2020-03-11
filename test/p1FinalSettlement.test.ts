@@ -114,7 +114,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
     describe('simple cases', () => {
       it('settles a 0/0 balance', async () => {
         await enableSettlement(initialPrice);
-        await expectWithdraw(otherAccountA, INTEGERS.ZERO);
+        await expectWithdraw(otherAccountA, INTEGERS.ZERO, false);
       });
 
       it('settles a 0/+ balance', async () => {
@@ -135,13 +135,13 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
 
       it('settles a -/+ underwater balance', async () => {
         await enableSettlement(longUnderwaterPrice);
-        await expectWithdraw(long, INTEGERS.ZERO);
+        await expectWithdraw(long, -1);
       });
 
       it('settles a +/0 balance', async () => {
         await mintAndDeposit(ctx, otherAccountA, INTEGERS.ONE);
         await enableSettlement(initialPrice);
-        await expectWithdraw(otherAccountA, INTEGERS.ONE);
+        await expectWithdraw(otherAccountA, INTEGERS.ONE, false);
       });
 
       it('settles a +/- well-collateralized balance', async () => {
@@ -156,7 +156,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
 
       it('settles a +/- underwater balance', async () => {
         await enableSettlement(shortUnderwaterPrice);
-        await expectWithdraw(short, INTEGERS.ZERO);
+        await expectWithdraw(short, -1);
       });
 
       it('settles a +/+ balance', async () => {
@@ -174,15 +174,15 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
       it('does not allow withdrawing a non-zero balance more than once (long)', async () => {
         await enableSettlement(initialPrice);
         await expectWithdraw(long, initialMargin);
-        await expectWithdraw(long, INTEGERS.ZERO);
-        await expectWithdraw(long, INTEGERS.ZERO);
+        await expectWithdraw(long, INTEGERS.ZERO, false);
+        await expectWithdraw(long, INTEGERS.ZERO, false);
       });
 
       it('does not allow withdrawing a non-zero balance more than once (short)', async () => {
         await enableSettlement(initialPrice);
         await expectWithdraw(short, initialMargin);
-        await expectWithdraw(short, INTEGERS.ZERO);
-        await expectWithdraw(short, INTEGERS.ZERO);
+        await expectWithdraw(short, INTEGERS.ZERO, false);
+        await expectWithdraw(short, INTEGERS.ZERO, false);
       });
 
       it('avoids insolvency resulting from rounding errors', async () => {
@@ -250,7 +250,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           await enableSettlement(new Price(40));
 
           // Some short positions can withdraw funds.
-          await expectWithdraw(long, 0);
+          await expectWithdraw(long, -1300);
           await expectWithdraw(short, 1100);
           await expectWithdraw(otherAccountA, 900);
           await expectWithdraw(otherAccountB, 0);
@@ -260,8 +260,8 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
             ctx,
             null,
             [long, short, otherAccountA, otherAccountB],
-            [0, 0, 200, 1100],
-            [0, 0, 0, 0],
+            [-2500, 0, 200, 1100],
+            [30, 0, 0, 0],
 
             // During final settlement, margin balances may not match contract token balance.
             false,
@@ -272,7 +272,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           await enableSettlement(new Price(40));
 
           // Some short positions can withdraw funds.
-          await expectWithdraw(long, 0);
+          await expectWithdraw(long, -1300);
           await expectWithdraw(short, 1100);
           await expectWithdraw(otherAccountA, 900);
           await expectWithdraw(otherAccountB, 0);
@@ -287,18 +287,18 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           );
 
           // Short positions can withdraw the rest of their account value.
-          await expectWithdraw(long, 0);
-          await expectWithdraw(short, 0);
-          await expectWithdraw(otherAccountA, 200);
-          await expectWithdraw(otherAccountB, 1100);
+          await expectWithdraw(long, -1300, false);
+          await expectWithdraw(short, 0, false);
+          await expectWithdraw(otherAccountA, 200, false);
+          await expectWithdraw(otherAccountB, 1100, false);
 
           // Check balances.
           await expectBalances(
             ctx,
             null,
             [long, short, otherAccountA, otherAccountB],
-            [0, 0, 0, 0],
-            [0, 0, 0, 0],
+            [-2500, 0, 0, 0],
+            [30, 0, 0, 0],
           );
         });
 
@@ -323,17 +323,17 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           );
 
           // Long position can withdraw the rest of their account value.
-          await expectWithdraw(short, 0);
-          await expectWithdraw(long, 300);
-          await expectWithdraw(long, 0);
+          await expectWithdraw(short, -100);
+          await expectWithdraw(long, 300, false);
+          await expectWithdraw(long, 0, false);
 
           // Check balances.
           await expectBalances(
             ctx,
             null,
             [long, short, otherAccountA, otherAccountB],
-            [0, 0, 1500, 1500],
-            [0, 0, -10, -10],
+            [0, 1500, 1500, 1500],
+            [0, -10, -10, -10],
             false,
             false,
           );
@@ -361,24 +361,46 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
    *
    * Checks that the account's balance on the token contract is updated as expected.
    */
-  async function expectWithdraw(account: address, expectedAmount: BigNumberable): Promise<void> {
+  async function expectWithdraw(
+    account: address,
+    expectedAmount: BigNumberable,
+    expectSettle = true,
+  ): Promise<void> {
     const expectedAmountBN = new BigNumber(expectedAmount);
+    const withdrawAmount = BigNumber.max(expectedAmountBN, 0);
     const balanceBefore = await ctx.perpetual.testing.token.getBalance(account);
     const txResult = await ctx.perpetual.finalSettlement.withdrawFinalSettlement({ from: account });
 
-    // Check logs.
+    // Check logs length.
     const logs = ctx.perpetual.logs.parseLogs(txResult);
-    expect(logs.length).to.equal(2);
-    const [logSettle, logWithdraw] = logs;
-    expect(logSettle.name).to.equal('LogAccountSettled');
-    expectAddressesEqual(logSettle.args.account, account);
-    expect(logWithdraw.name).to.equal('LogWithdrawFinalSettlement');
-    expectAddressesEqual(logWithdraw.args.account, account);
-    expectBN(logWithdraw.args.amount, 'logged final settlement amount').to.equal(expectedAmountBN);
+    const logsLength = (expectSettle ? 1 : 0) + (expectedAmountBN.isNegative() ? 0 : 1);
+    expect(logs.length).to.equal(logsLength);
+
+    // Get logs.
+    let logWithdraw: any;
+    let logSettle: any;
+    if (logsLength === 2) {
+      [logSettle, logWithdraw] = logs;
+    } else if (expectSettle) {
+      [logSettle] = logs;
+    } else {
+      [logWithdraw] = logs;
+    }
+
+    // Check Logs.
+    if (logSettle) {
+      expect(logSettle.name).to.equal('LogAccountSettled');
+      expectAddressesEqual(logSettle.args.account, account);
+    }
+    if (logWithdraw) {
+      expect(logWithdraw.name).to.equal('LogWithdrawFinalSettlement');
+      expectAddressesEqual(logWithdraw.args.account, account);
+      expectBN(logWithdraw.args.amount, 'final settlement amount log').to.equal(withdrawAmount);
+    }
 
     // Check that token balance is updated as expected.
     const balanceAfter = await ctx.perpetual.testing.token.getBalance(account);
     const balanceDiff = balanceAfter.minus(balanceBefore);
-    expectBN(balanceDiff, 'change in token balance').to.equal(expectedAmountBN);
+    expectBN(balanceDiff, 'change in token balance').to.equal(withdrawAmount);
   }
 });

@@ -101,7 +101,7 @@ contract P1FinalSettlement is
             return;
         }
 
-        // Get the account value will be rounded down to the nearest token amount.
+        // Get the account value, which is rounded down to the nearest token amount.
         uint256 accountValue = positive.sub(negative).div(BaseMath.base());
 
         // Get the number of tokens in the Perpetual Contract.
