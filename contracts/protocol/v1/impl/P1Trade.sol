@@ -223,7 +223,7 @@ contract P1Trade is
             );
 
             // Note that finalPosition can't be zero at this point since that would imply either
-            // finalPositive != 0 or the account is well-collateralized.
+            // finalPositive is zero or the account is well-collateralized.
 
             Require.that(
                 finalBalance.positionIsPositive == initialBalance.positionIsPositive,
