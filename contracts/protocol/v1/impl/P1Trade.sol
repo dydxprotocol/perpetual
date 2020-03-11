@@ -230,26 +230,30 @@ contract P1Trade is
                 "account is undercollateralized and position changed signs",
                 account
             );
-
-            // Note that at this point:
-            //   Initial margin/position must be one of +/+, 0/+, -/+, or +/-.
-            //   Final margin/position must now be either -/+ or +/-.
-            //
-            // Which implies one of the following [intial] -> [final] configurations:
-            //   [+/+, 0,+, -/+] -> [-/+]
-            //             [+/-] -> [+/-]
-
-            uint256 finalBalanceInitialMargin = finalBalance.position.mul(initialBalance.margin);
-            uint256 finalMarginInitialBalance = finalBalance.margin.mul(initialBalance.position);
-
             Require.that(
                 !(initialBalance.marginIsPositive && initialBalance.positionIsPositive),
                 "account is undercollateralized and was not previously",
                 account
             );
+
+            // Note that at this point:
+            //   Initial margin/position must be one of 0/+, -/+, or +/-.
+            //   Final margin/position must now be either -/+ or +/-.
+            //
+            // Which implies one of the following [intial] -> [final] configurations:
+            //   [0,+, -/+] -> [-/+]
+            //        [+/-] -> [+/-]
+
+            (uint256 initialPositive, uint256 initialNegative) =
+                initialBalance.getPositiveAndNegativeValue(context.price);
+
+            // Either initialNegative and finalNegative represent the margin values,
+            // or initialPositive and finalPositive do. Either way, a margin value is
+            // on either side of the equation. Since the margin is multiplied by the base
+            // value (see getPositiveAndNegativeValue()) it is safe to use baseMul() without
+            // any rounding occurring. This is important to avoid the possibility of overflow.
             Require.that(
-                finalBalanceInitialMargin == finalMarginInitialBalance ||
-                    finalBalanceInitialMargin > finalMarginInitialBalance == finalBalance.positionIsPositive,
+                finalPositive.baseMul(initialNegative) >= initialPositive.baseMul(finalNegative),
                 "account is undercollateralized and collateralization decreased",
                 account
             );
