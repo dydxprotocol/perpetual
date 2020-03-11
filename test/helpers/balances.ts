@@ -127,14 +127,29 @@ function getBalanceEvents(
   }
 
   const logs = ctx.perpetual.logs.parseLogs(txResult)
-    .filter((log: any) => ['LogFinalBalance', 'LogWithdaw', 'LogDeposit'].includes(log.name));
+    .filter((log: any) => ['LogTrade', 'LogWithdaw', 'LogDeposit'].includes(log.name));
 
   const result = [];
   for (const i in accounts) {
-    const log = logs.find((log: any) =>
-      log.args.account.toLowerCase() === accounts[i].toLowerCase(),
-    );
-    result[i] = log ? log.args.balance : null;
+    const account = accounts[i].toLowerCase();
+    let balance = null;
+
+    for (let j = logs.length - 1; j >= 0; j -= 1) {
+      const log = logs[j];
+      if (log.args.account && log.args.account.toLowerCase() === account) {
+        balance = log.args.balance;
+        break;
+      }
+      if (log.args.maker && log.args.maker.toLowerCase() === account) {
+        balance = log.args.makerBalance;
+        break;
+      }
+      if (log.args.taker && log.args.taker.toLowerCase() === account) {
+        balance = log.args.takerBalance;
+        break;
+      }
+    }
+    result[i] = balance;
   }
   return result;
 }

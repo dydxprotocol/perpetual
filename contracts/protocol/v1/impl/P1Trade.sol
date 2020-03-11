@@ -60,12 +60,9 @@ contract P1Trade is
         address trader,
         uint256 marginAmount,
         uint256 positionAmount,
-        bool isBuy // from taker's perspective
-    );
-
-    event LogFinalBalance(
-        address indexed account,
-        bytes32 balance
+        bool isBuy, // from taker's perspective
+        bytes32 makerBalance,
+        bytes32 takerBalance
     );
 
     // ============ Functions ============
@@ -141,11 +138,13 @@ contract P1Trade is
                 tradeArg.trader,
                 tradeResult.marginAmount,
                 tradeResult.positionAmount,
-                tradeResult.isBuy
+                tradeResult.isBuy,
+                makerBalance.toBytes32(),
+                takerBalance.toBytes32()
             );
         }
 
-        _verifyAndLogFinalBalances(
+        _verifyFinalBalances(
             context,
             accounts,
             initialBalances,
@@ -188,27 +187,23 @@ contract P1Trade is
      *
      * TODO: Use getPositiveAndNegativeValue() if it uses less gas and/or is more readable.
      */
-    function _verifyAndLogFinalBalances(
+    function _verifyFinalBalances(
         P1Types.Context memory context,
         address[] memory accounts,
         P1Types.Balance[] memory initialBalances,
         P1Types.Balance[] memory currentBalances
     )
         private
+        pure
     {
         for (uint256 i = 0; i < accounts.length; i++) {
-            address account = accounts[i];
             P1Types.Balance memory finalBalance = currentBalances[i];
-
-            emit LogFinalBalance(
-                account,
-                finalBalance.toBytes32()
-            );
 
             if (_isCollateralized(context, finalBalance)) {
                 continue;
             }
 
+            address account = accounts[i];
             P1Types.Balance memory initialBalance = initialBalances[i];
 
             // Let margin be zero for now but require position to be non-zero.

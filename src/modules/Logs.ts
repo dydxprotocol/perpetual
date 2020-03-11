@@ -135,6 +135,8 @@ export class Logs {
         case 'index':
           return this.parseIndex(argValue);
         case 'balance':
+        case 'makerBalance':
+        case 'takerBalance':
           return this.parseBalance(argValue);
         case 'flags':
           return this.parseOrderFlags(argValue);

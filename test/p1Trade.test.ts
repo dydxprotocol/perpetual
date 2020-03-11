@@ -45,11 +45,9 @@ perpetualDescribe('P1Trade', init, (ctx: ITestContext) => {
 
       // Check logs.
       const logs = ctx.perpetual.logs.parseLogs(txResult);
-      expect(logs.length).to.equal(4);
-      const [indexUpdatedLog, tradeLog, logFinalBalance1, logFinalBalance2] = logs;
+      expect(logs.length).to.equal(2);
+      const [indexUpdatedLog, tradeLog] = logs;
       expect(indexUpdatedLog.name).to.equal('LogIndexUpdated');
-      expect(logFinalBalance1.name).to.equal('LogFinalBalance');
-      expect(logFinalBalance2.name).to.equal('LogFinalBalance');
       expect(tradeLog.name).to.equal('LogTrade');
       expect(tradeLog.args.maker).to.equal(maker);
       expect(tradeLog.args.taker).to.equal(taker);
@@ -73,11 +71,9 @@ perpetualDescribe('P1Trade', init, (ctx: ITestContext) => {
 
       // Check logs.
       const logs = ctx.perpetual.logs.parseLogs(txResult);
-      expect(logs.length).to.equal(4);
-      const [indexUpdatedLog, tradeLog, logFinalBalance1, logFinalBalance2] = logs;
+      expect(logs.length).to.equal(2);
+      const [indexUpdatedLog, tradeLog] = logs;
       expect(indexUpdatedLog.name).to.equal('LogIndexUpdated');
-      expect(logFinalBalance1.name).to.equal('LogFinalBalance');
-      expect(logFinalBalance2.name).to.equal('LogFinalBalance');
       expect(tradeLog.name).to.equal('LogTrade');
       expect(tradeLog.args.maker).to.equal(maker);
       expect(tradeLog.args.taker).to.equal(taker);
@@ -100,11 +96,9 @@ perpetualDescribe('P1Trade', init, (ctx: ITestContext) => {
 
       // Check logs.
       const logs = ctx.perpetual.logs.parseLogs(txResult);
-      expect(logs.length).to.equal(2);
-      const [indexUpdatedLog, logFinalBalance] = logs;
+      expect(logs.length).to.equal(1);
+      const [indexUpdatedLog] = logs;
       expect(indexUpdatedLog.name).to.equal('LogIndexUpdated');
-      expect(logFinalBalance.name).to.equal('LogFinalBalance');
-      expect(logFinalBalance.args.account).to.equal(taker);
     });
 
     it('fails if the specified trader contract is not a global operator', async () => {
