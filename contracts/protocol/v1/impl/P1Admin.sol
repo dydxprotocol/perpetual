@@ -31,7 +31,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Admin
  * @author dYdX
  *
- * Admin logic contract
+ * Contract allowing the Admin address to set certain parameters.
  */
 contract P1Admin is
     P1Storage,
@@ -62,6 +62,9 @@ contract P1Admin is
 
     // ============ Functions ============
 
+    /**
+     * Add or remove a Global Operator address.
+     */
     function setGlobalOperator(
         address operator,
         bool approved
@@ -74,6 +77,9 @@ contract P1Admin is
         emit LogSetGlobalOperator(operator, approved);
     }
 
+    /**
+     * Sets a new price oracle contract.
+     */
     function setOracle(
         address oracle
     )
@@ -89,6 +95,9 @@ contract P1Admin is
         emit LogSetOracle(oracle);
     }
 
+    /**
+     * Sets a new funding contract.
+     */
     function setFunder(
         address funder
     )
@@ -103,6 +112,9 @@ contract P1Admin is
         emit LogSetFunder(funder);
     }
 
+    /**
+     * Sets a new value for the minimum collateralization percentage.
+     */
     function setMinCollateral(
         uint256 minCollateral
     )
@@ -118,11 +130,14 @@ contract P1Admin is
         emit LogSetMinCollateral(minCollateral);
     }
 
+    /**
+     * Enables final settlement if the oracle price is between the two bounds.
+     */
     function enableFinalSettlement(
         uint256 priceLowerBound,
         uint256 priceUpperBound
     )
-        public
+        external
         onlyAdmin
         noFinalSettlement
         nonReentrant

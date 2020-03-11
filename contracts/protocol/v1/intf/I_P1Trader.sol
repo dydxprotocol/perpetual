@@ -26,9 +26,13 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title I_P1Trader
  * @author dYdX
  *
- * Trader interface
+ * Interface that PerpetualV1 Traders must implement.
  */
 interface I_P1Trader {
+
+    /**
+     * Returns the result of the trade between the maker and the taker.
+     */
     function trade(
         address sender,
         address maker,

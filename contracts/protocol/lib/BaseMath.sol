@@ -26,13 +26,17 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
  * @title BaseMath
  * @author dYdX
  *
- * Math contract
+ * BaseMath contract for working with numbers that support up to 18 decimal places.
  */
 library BaseMath {
     using SafeMath for uint256;
 
+    // The number One in the BaseMath system.
     uint256 constant internal BASE = 10 ** 18;
 
+    /**
+     * Getter since constants can't be gotten directly from libraries.
+     */
     function base()
         internal
         pure
@@ -41,6 +45,9 @@ library BaseMath {
         return BASE;
     }
 
+    /**
+     * Multiplies a value by a base value (result rounded down)
+     */
     function baseMul(
         uint256 value,
         uint256 basedValue
@@ -52,6 +59,9 @@ library BaseMath {
         return value.mul(basedValue).div(BASE);
     }
 
+    /**
+     * Multiplies a value by a base value (result rounded up).
+     */
     function baseMulRoundUp(
         uint256 value,
         uint256 basedValue

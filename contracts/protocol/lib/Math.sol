@@ -67,6 +67,9 @@ library Math {
         return target.mul(numerator).sub(1).div(denominator).add(1);
     }
 
+    /**
+     * Returns the minimum between a and b.
+     */
     function min(
         uint256 a,
         uint256 b
@@ -78,6 +81,9 @@ library Math {
         return a < b ? a : b;
     }
 
+    /**
+     * Returns the maximum between a and b.
+     */
     function max(
         uint256 a,
         uint256 b

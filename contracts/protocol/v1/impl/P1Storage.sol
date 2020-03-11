@@ -28,7 +28,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Storage
  * @author dYdX
  *
- * Storage contract. Contains or inherits from all contracts that have storage
+ * Storage contract. Contains or inherits from all contracts that have ordered storage.
  */
 contract P1Storage is
     Adminable,

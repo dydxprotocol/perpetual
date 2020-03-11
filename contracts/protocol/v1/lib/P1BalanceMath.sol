@@ -30,7 +30,7 @@ import { SignedMath } from "../../lib/SignedMath.sol";
  * @title P1BalanceMath
  * @author dYdX
  *
- * BalanceMath library
+ * Library for manipulating P1Types.Balance structs.
  */
 library P1BalanceMath {
     using BaseMath for uint256;
@@ -178,6 +178,9 @@ library P1BalanceMath {
 
     // ============ Helper Functions ============
 
+    /**
+     * Returns a SignedMath.Int version of the margin in balance.
+     */
     function getMargin(
         P1Types.Balance memory balance
     )
@@ -191,6 +194,9 @@ library P1BalanceMath {
         });
     }
 
+    /**
+     * Returns a SignedMath.Int version of the position in balance.
+     */
     function getPosition(
         P1Types.Balance memory balance
     )
@@ -204,6 +210,9 @@ library P1BalanceMath {
         });
     }
 
+    /**
+     * In-place overwrites the signed margin values in balance.
+     */
     function setMargin(
         P1Types.Balance memory balance,
         SignedMath.Int memory newMargin
@@ -215,6 +224,9 @@ library P1BalanceMath {
         balance.marginIsPositive = newMargin.isPositive;
     }
 
+    /**
+     * In-place overwrites the signed position values in balance.
+     */
     function setPosition(
         P1Types.Balance memory balance,
         SignedMath.Int memory newPosition

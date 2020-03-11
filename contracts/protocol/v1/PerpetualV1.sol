@@ -33,7 +33,7 @@ import { P1Types } from "./lib/P1Types.sol";
  * @title PerpetualV1
  * @author dYdX
  *
- * Main contract that inherits from other contracts
+ * Main Perpetual implementation contract that inherits from other contracts.
  */
 contract PerpetualV1 is
     P1FinalSettlement,
@@ -43,9 +43,14 @@ contract PerpetualV1 is
     P1Operator,
     P1Trade
 {
+    // Non-colliding storage slot.
     bytes32 internal constant PERPETUAL_V1_INITIALIZE_SLOT =
     bytes32(uint256(keccak256("dYdX.PerpetualV1.initialize")) - 1);
 
+    /**
+     * Once-only initializer function that replaces the constructor since this contract is proxied.
+     * Uses a non-colliding storage slot to store if this version has been initialized yet.
+     */
     function initializeV1(
         address token,
         address oracle,

@@ -32,7 +32,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Trade
  * @author dYdX
  *
- * Trade logic contract
+ * Contract for trading between two accounts.
  */
 contract P1Trade is
     P1FinalSettlement
