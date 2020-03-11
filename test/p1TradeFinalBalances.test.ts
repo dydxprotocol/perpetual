@@ -14,7 +14,7 @@ const TX_OPTIONS = { gas: 4000000 };
 
 const MIN_COLLATERAL = new BigNumber('1.1');
 
-let ERROR_NON_POSITIVE = 'account has no positive value';
+let ERROR_NO_POSITIVE_VALUE = 'account is undercollateralized and has no positive value';
 let ERROR_POSITION_SIZE = 'account is undercollateralized and absolute position size increased';
 let ERROR_POSITION_SIGN = 'account is undercollateralized and position changed signs';
 let ERROR_NEWLY_UNDERCOLLATERLIZED = 'account is undercollateralized and was not previously';
@@ -40,7 +40,7 @@ async function init(ctx: ITestContext): Promise<void> {
   riskyAccount = ctx.accounts[3];
 
   errorAddress = `: ${riskyAccount.substr(0, 10)}...${riskyAccount.substr(-8)}`.toLowerCase();
-  ERROR_NON_POSITIVE += errorAddress;
+  ERROR_NO_POSITIVE_VALUE += errorAddress;
   ERROR_POSITION_SIZE += errorAddress;
   ERROR_POSITION_SIGN += errorAddress;
   ERROR_NEWLY_UNDERCOLLATERLIZED += errorAddress;
@@ -98,15 +98,21 @@ perpetualDescribe('P1Trade._verifyAccountsFinalBalances()', init, (ctx: ITestCon
 
     it('[-> 0/-, -/0, -/-] fails if final state is undercollateralized', async () => {
       const minusOne = INTEGERS.ONE.negated();
-      await expectFailures(
-        wcStates,
-        [
-          [INTEGERS.ZERO, minusOne],
-          [minusOne, INTEGERS.ZERO],
-          [minusOne, minusOne],
-        ],
-        ERROR_NON_POSITIVE,
-      );
+      await expectFailure([INTEGERS.ZERO, minusOne], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, INTEGERS.ZERO], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, minusOne], ERROR_NO_POSITIVE_VALUE);
+      await tradeToState(wcStates[1]);
+      await expectFailure([INTEGERS.ZERO, minusOne], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, INTEGERS.ZERO], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, minusOne], ERROR_NO_POSITIVE_VALUE);
+      await tradeToState(wcStates[2]);
+      await expectFailure([INTEGERS.ZERO, minusOne], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, INTEGERS.ZERO], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, minusOne], ERROR_NO_POSITIVE_VALUE);
+      await tradeToState(wcStates[3]);
+      await expectFailure([INTEGERS.ZERO, minusOne], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, INTEGERS.ZERO], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, minusOne], ERROR_NO_POSITIVE_VALUE);
     });
 
     it('[-> -/+] succeeds if final state is well-collateralized', async () => {
@@ -153,15 +159,10 @@ perpetualDescribe('P1Trade._verifyAccountsFinalBalances()', init, (ctx: ITestCon
 
     it('[-> 0/-, -/0, -/-] fails if final state is undercollateralized', async () => {
       const minusOne = INTEGERS.ONE.negated();
-      await expectFailures(
-        [undercollateralizedPos],
-        [
-          [INTEGERS.ZERO, minusOne],
-          [minusOne, INTEGERS.ZERO],
-          [minusOne, minusOne],
-        ],
-        ERROR_NON_POSITIVE,
-      );
+      await tradeToInitialState(undercollateralizedPos);
+      await expectFailure([INTEGERS.ZERO, minusOne], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, INTEGERS.ZERO], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, minusOne], ERROR_NO_POSITIVE_VALUE);
     });
 
     it('[-> -/+, +/-] succeeds if final state is well-collateralized', async () => {
@@ -228,15 +229,10 @@ perpetualDescribe('P1Trade._verifyAccountsFinalBalances()', init, (ctx: ITestCon
 
     it('[-> 0/-, -/0, -/-] fails if final state is undercollateralized', async () => {
       const minusOne = INTEGERS.ONE.negated();
-      await expectFailures(
-        [undercollateralizedNeg],
-        [
-          [INTEGERS.ZERO, minusOne],
-          [minusOne, INTEGERS.ZERO],
-          [minusOne, minusOne],
-        ],
-        ERROR_NON_POSITIVE,
-      );
+      await tradeToInitialState(undercollateralizedNeg);
+      await expectFailure([INTEGERS.ZERO, minusOne], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, INTEGERS.ZERO], ERROR_NO_POSITIVE_VALUE);
+      await expectFailure([minusOne, minusOne], ERROR_NO_POSITIVE_VALUE);
     });
 
     it('[-> -/+, +/-] succeeds if final state is well-collateralized', async () => {
@@ -296,21 +292,6 @@ perpetualDescribe('P1Trade._verifyAccountsFinalBalances()', init, (ctx: ITestCon
         await tradeToInitialState([initialMargin, initialPosition]);
         await expectSuccess([finalMargin, finalPosition]);
       }
-    }
-  }
-
-  async function expectFailures(
-    initialCases: Balance[],
-    finalCases: Balance[],
-    message: string,
-  ): Promise<void> {
-    for (const [initialMargin, initialPosition] of initialCases) {
-      await tradeToInitialState([initialMargin, initialPosition]);
-
-      // Failures can be run in parallel.
-      await Promise.all(_.map(finalCases, ([finalMargin, finalPosition]) => {
-        return expectFailure([finalMargin, finalPosition], message);
-      }));
     }
   }
 
