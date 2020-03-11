@@ -179,8 +179,7 @@ contract P1Trade is
      *   b) The absolute value of the account position has not increased;
      *   a) The sign of the account position has not flipped positive to negative or vice-versa.
      *
-     * Note: We avoid making use of P1BalanceMath.getPositiveAndNegativeValue here to avoid
-     * errors stemming from rounding errors when determining position value.
+     * TODO: Use getPositiveAndNegativeValue() if it uses less gas and/or is more readable.
      */
     function _verifyAccountsFinalBalances(
         P1Types.Context memory context,

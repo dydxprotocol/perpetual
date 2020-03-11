@@ -7,7 +7,7 @@ import { mineAvgBlock } from './helpers/EVM';
 import { expect, expectBN, expectBaseValueEqual } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
-import { buy } from './helpers/trade';
+import { buy, sell } from './helpers/trade';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 
 const marginAmount = new BigNumber(1000);
@@ -241,6 +241,22 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       const localIndexAfter = await ctx.perpetual.getters.getAccountIndex(otherAccount);
       expectBN(localIndexAfter.baseValue.value).to.not.eq(localIndexBefore.baseValue.value);
       expectBN(localIndexAfter.timestamp).to.not.eq(localIndexBefore.timestamp);
+    });
+  });
+
+  describe('_isCollateralized()', () => {
+    const largeValue = new BigNumber(2).pow(120).minus(1);
+
+    it('can handle large values', async () => {
+      await mintAndDeposit(ctx, otherAccount, largeValue);
+      await buy(ctx, otherAccount, long, 1, 100);
+      await sell(ctx, otherAccount, long, 1, 100);
+      await ctx.perpetual.margin.withdraw(
+        otherAccount,
+        otherAccount,
+        largeValue,
+        { from: otherAccount },
+      );
     });
   });
 

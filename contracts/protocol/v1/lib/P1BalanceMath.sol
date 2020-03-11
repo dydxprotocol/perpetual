@@ -121,6 +121,8 @@ library P1BalanceMath {
 
     /**
      * Returns the positive and negative values of the margin and position together, given a price.
+     *
+     * No rounding occurs here--the returned values are "base values" with extra precision.
      */
     function getPositiveAndNegativeValue(
         P1Types.Balance memory balance,
@@ -135,13 +137,13 @@ library P1BalanceMath {
 
         // add value of margin
         if (balance.marginIsPositive) {
-            positiveValue = balance.margin;
+            positiveValue = uint256(balance.margin).mul(BaseMath.base());
         } else {
-            negativeValue = balance.margin;
+            negativeValue = uint256(balance.margin).mul(BaseMath.base());
         }
 
         // add value of position
-        uint256 positionValue = uint256(balance.position).baseMul(price);
+        uint256 positionValue = uint256(balance.position).mul(price);
         if (balance.positionIsPositive) {
             positiveValue = positiveValue.add(positionValue);
         } else {

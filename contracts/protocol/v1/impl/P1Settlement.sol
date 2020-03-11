@@ -195,6 +195,10 @@ contract P1Settlement is
         returns (bool)
     {
         (uint256 positive, uint256 negative) = balance.getPositiveAndNegativeValue(context.price);
+
+        // Overflow risk assessment:
+        // 2^256 / 10^36 is significantly greater than 2^120 and this calculation is therefore not
+        // expected to be a limiting factor on the size of accounts that this contract can handle.
         return positive.mul(BaseMath.base()) >= negative.mul(context.minCollateral);
     }
 }
