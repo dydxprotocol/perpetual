@@ -338,7 +338,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
         otherAccountA,
         otherAccountA,
         largeValue,
-        { from: otherAccountA },
+        { from: otherAccountA, gas: 4000000 },
       );
     });
   });
