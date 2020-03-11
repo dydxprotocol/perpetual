@@ -1,4 +1,3 @@
-.0x-artifacts/
 .coverage*
 .DS_Store
 .env.local

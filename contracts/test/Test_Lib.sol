@@ -112,13 +112,17 @@ contract Test_Lib {
 
     function that(
         bool must,
-        string calldata reason,
+        string calldata requireReason,
         address addr
     )
         external
         pure
     {
-        Require.that(must, reason, addr);
+        Require.that(
+            must,
+            requireReason,
+            addr
+        );
     }
 
     // ============ SafeCast.sol ============

@@ -12,19 +12,19 @@ def hideAsserts(dir, filepath):
     inAnAssert = False
     # parse entire file
     for line in open(filepath, 'r').readlines():
-        builder = line.rstrip();
+        builder = line.rstrip()
         assertToSkip = line.lstrip().startswith('assert(') and ('coverage-enable-line' not in line)
         explicitToSkip = 'coverage-disable-line' in line
         if assertToSkip or explicitToSkip:
             inAnAssert = True
             numAssertsChanged += 1
-            spacesToAdd = len(builder) - len(builder.lstrip()) - 2;
+            spacesToAdd = len(builder) - len(builder.lstrip()) - 2
             builder = ' ' * spacesToAdd + '/*' + builder.lstrip()
 
         indexOfEnd = builder.find(');')
         if (inAnAssert and indexOfEnd >= 0):
             inAnAssert = False
-            loc = indexOfEnd + 2;
+            loc = indexOfEnd + 2
             builder = builder[:loc] + '*/' + builder[loc:]
 
         builder += '\n'
@@ -46,9 +46,10 @@ def fixRequires(dir, filepath):
     lineNumber = 0
     # parse entire file
     for line in open(filepath, 'r').readlines():
-        builder = line.rstrip();
+        builder = line.rstrip()
 
-        indexOfRevertString = builder.find('"')
+        # Special case for Test_Lib.sol.
+        indexOfRevertString = builder.find('"') if builder.find('"') >= 0 else builder.find('requireReason,')
         if inARequire and indexOfRevertString >= 0:
             inMessage = True
 
@@ -64,10 +65,14 @@ def fixRequires(dir, filepath):
         indexOfEnd = builder.find(');')
         if (inARequire and indexOfEnd >= 0):
             numLeadingSpaces = len(builder) - 2
-            allLines[requireLine] = (' ' * numLeadingSpaces) \
-            + 'if (' + ifStatement[:-1] + ') { /* FOR COVERAGE TESTING */ }\n'
-            allLines[requireLine + 1] = (' ' * numLeadingSpaces) \
-            + 'Require.that(' + allLines[requireLine + 1].lstrip()
+            allLines[requireLine] = (
+                (' ' * numLeadingSpaces) +
+                'if (' + ifStatement[:-1] + ') { /* FOR COVERAGE TESTING */ }\n'
+            )
+            allLines[requireLine + 1] = (
+                (' ' * numLeadingSpaces) +
+                'Require.that(' + allLines[requireLine + 1].lstrip()
+            )
             inARequire = False
             inMessage = False
             ifStatement = ''
