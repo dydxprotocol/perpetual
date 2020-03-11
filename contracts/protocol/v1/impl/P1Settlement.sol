@@ -162,16 +162,21 @@ contract P1Settlement is
             signedIndexDiff = signedIndexDiff.add(oldIndex.value);
         }
 
-        // Settle the account balance by applying the index delta as a credit or debit.
         // By convention, positive funding (index increases) means longs pay shorts
         // and negative funding (index decreases) means shorts pay longs.
-        uint256 settlementAmount = signedIndexDiff.value.baseMul(balance.position);
         bool settlementIsPositive = signedIndexDiff.isPositive != balance.positionIsPositive;
 
-        // calculate the new balance of the account with updated margin
+        // Settle the account balance by applying the index delta as a credit or debit.
+        // The interest amount scales with the position size.
+        //
+        // We round interest debits up and credits down to ensure that the contract won't become
+        // insolvent due to rounding errors.
+        uint256 settlementAmount;
         if (settlementIsPositive) {
+            settlementAmount = signedIndexDiff.value.baseMul(balance.position);
             balance.addToMargin(settlementAmount);
         } else {
+            settlementAmount = signedIndexDiff.value.baseMulRoundUp(balance.position);
             balance.subFromMargin(settlementAmount);
         }
         _BALANCES_[account] = balance;

@@ -55,6 +55,21 @@ export class TestLib {
     return new BigNumber(result);
   }
 
+  public async baseMulRoundUp(
+    value: BigNumberable,
+    baseValue: BigNumberable,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: string = await this.contracts.call(
+      this.contracts.testLib.methods.baseMulRoundUp(
+        new BigNumber(value).toFixed(0),
+        new BigNumber(baseValue).toFixed(0),
+      ),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
   // ============ Math.sol ============
 
   public async getFraction(

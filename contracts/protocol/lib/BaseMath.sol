@@ -51,4 +51,18 @@ library BaseMath {
     {
         return value.mul(basedValue).div(BASE);
     }
+
+    function baseMulRoundUp(
+        uint256 value,
+        uint256 basedValue
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        if (value == 0 || basedValue == 0) {
+            return 0;
+        }
+        return value.mul(basedValue).sub(1).div(BASE).add(1);
+    }
 }

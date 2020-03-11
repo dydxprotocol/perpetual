@@ -41,6 +41,30 @@ perpetualDescribe('Solidity libraries', init, (ctx: ITestContext) => {
         new BaseValue('123.456').toSolidity(),
       )).to.equal(2895783);
     });
+
+    it('baseMulRoundUp()', async () => {
+      // Base value has implied decimals so it can encode extra precision.
+      expectBN(await ctx.perpetual.testing.lib.baseMulRoundUp(
+        23456,
+        new BaseValue('123.456').toSolidity(),
+      )).to.equal(2895784);
+      expectBN(await ctx.perpetual.testing.lib.baseMulRoundUp(
+        5,
+        new BaseValue('5').toSolidity(),
+      )).to.equal(25);
+
+      // If value is zero.
+      expectBN(await ctx.perpetual.testing.lib.baseMulRoundUp(
+        0,
+        new BaseValue('5').toSolidity(),
+      )).to.equal(0);
+
+      // If basedValue is zero.
+      expectBN(await ctx.perpetual.testing.lib.baseMulRoundUp(
+        5,
+        new BaseValue('0').toSolidity(),
+      )).to.equal(0);
+    });
   });
 
   describe('Math', () => {
@@ -59,12 +83,18 @@ perpetualDescribe('Solidity libraries', init, (ctx: ITestContext) => {
         15000,
         11,
       )).to.equal(9545455);
-    });
 
-    it('getFractionRoundUp() if target is zero', async () => {
+      // If target is zero.
       expectBN(await ctx.perpetual.testing.lib.getFractionRoundUp(
         0,
         15000,
+        11,
+      )).to.equal(0);
+
+      // If numerator is zero.
+      expectBN(await ctx.perpetual.testing.lib.getFractionRoundUp(
+        7000,
+        0,
         11,
       )).to.equal(0);
     });
