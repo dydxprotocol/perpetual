@@ -199,11 +199,12 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           mintAndDeposit(ctx, otherAccountB, 1),
         ]);
         await buy(ctx, otherAccountC, otherAccountA, 1, 0);
-        await buy(ctx, otherAccountC, otherAccountB, 1, 1);
+        const txResult = await buy(ctx, otherAccountC, otherAccountB, 1, 1);
 
         // Check balances.
         await expectBalances(
           ctx,
+          txResult,
           [otherAccountA, otherAccountB, otherAccountC],
           [2, 2, -1],
           [-1, -1, 2],
