@@ -232,6 +232,22 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       );
     });
 
+    it('Cannot deleverage a long position if isBuy is false', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+      await expectThrow(
+        deleverage(long, short, positionSize, { isBuy: false }),
+        'deleveraging must not increase maker\'s position size',
+      );
+    });
+
+    it('Cannot deleverage a short position if isBuy is true', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
+      await expectThrow(
+        deleverage(short, long, positionSize, { isBuy: true }),
+        'deleveraging must not increase maker\'s position size',
+      );
+    });
+
     it('With all-or-nothing, fails if amount is greater than the maker position', async () => {
       // Attempt to liquidate the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
