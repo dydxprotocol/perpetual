@@ -16,36 +16,32 @@
 
 */
 
-import BigNumber from 'bignumber.js';
-
-import { Contracts } from '../modules/Contracts';
-import { Token } from '../modules/Token';
+import { Contracts } from './Contracts';
 import {
-  BigNumberable,
   SendOptions,
   TxResult,
-  address,
 } from '../lib/types';
+import { Contract } from 'web3-eth-contract';
 
-export class TestToken extends Token {
+export class FinalSettlement {
+  private contracts: Contracts;
+  private perpetual: Contract;
 
   constructor(
     contracts: Contracts,
   ) {
-    super(contracts, contracts.testToken);
+    this.contracts = contracts;
+    this.perpetual = this.contracts.perpetualV1;
   }
 
-  public mint(
-    account: address,
-    amount: BigNumberable,
-    options: SendOptions = {},
+  // ============ Senders ============
+
+  public async withdrawFinalSettlement(
+    options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
-      this.token.methods.mint(
-        account,
-        new BigNumber(amount).toFixed(0),
-      ),
-      { ...options },
+      this.perpetual.methods.withdrawFinalSettlement(),
+      options,
     );
   }
 }

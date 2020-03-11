@@ -164,6 +164,15 @@ export class Getters {
     return BaseValue.fromSolidity(result);
   }
 
+  public async getFinalSettlementEnabled(
+    options?: CallOptions,
+  ): Promise<boolean> {
+    return await this.contracts.call(
+      this.perpetual.methods.getFinalSettlementEnabled(),
+      options,
+    );
+  }
+
   // ============ Helper Functions ============
 
   private solidityIndexToIndex(

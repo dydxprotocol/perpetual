@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 
 import { expect, expectBN, expectBaseValueEqual } from './helpers/Expect';
-import { BaseValue, address } from '../src/lib/types';
+import { BaseValue, address, Price } from '../src/lib/types';
 import { mintAndDeposit } from './helpers/balances';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
@@ -13,6 +13,7 @@ const TIMESTAMP_THRESHOLD_MS = 30000;
 const marginAmount = new BigNumber('1e17');
 const positionAmount = new BigNumber('1e15');
 
+let admin: address;
 let account: address;
 let otherAccount: address;
 
@@ -20,6 +21,7 @@ async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
 
   // Default account is accounts[1]. Use other accounts.
+  admin = ctx.accounts[0];
   account = ctx.accounts[5];
   otherAccount = ctx.accounts[6];
 
@@ -95,5 +97,13 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
     const ordersContract = ctx.perpetual.contracts.p1Orders.options.address;
     hasPermissions = await ctx.perpetual.getters.hasAccountPermissions(account, ordersContract);
     expect(hasPermissions).to.equal(true);
+  });
+
+  it('getFinalSettlementEnabled()', async () => {
+    let enabled = await ctx.perpetual.getters.getFinalSettlementEnabled();
+    expect(enabled).to.equal(false);
+    await ctx.perpetual.admin.enableFinalSettlement(new Price(0), new Price(0), { from: admin });
+    enabled = await ctx.perpetual.getters.getFinalSettlementEnabled();
+    expect(enabled).to.equal(true);
   });
 });

@@ -19,6 +19,7 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { P1FinalSettlement } from "./P1FinalSettlement.sol";
 import { P1Storage } from "./P1Storage.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { I_P1Funder } from "../intf/I_P1Funder.sol";
@@ -32,7 +33,8 @@ import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
  * Admin logic contract
  */
 contract P1Admin is
-    P1Storage
+    P1Storage,
+    P1FinalSettlement
 {
     // ============ Events ============
 
@@ -51,6 +53,10 @@ contract P1Admin is
 
     event LogSetMinCollateral(
         uint256 minCollateral
+    );
+
+    event LogFinalSettlementEnabled(
+        uint256 settlementPrice
     );
 
     // ============ Functions ============
@@ -109,5 +115,27 @@ contract P1Admin is
         );
         _MIN_COLLATERAL_ = minCollateral;
         emit LogSetMinCollateral(minCollateral);
+    }
+
+    function enableFinalSettlement(
+        uint256 priceLowerBound,
+        uint256 priceUpperBound
+    )
+        public
+        onlyAdmin
+        noFinalSettlement
+        nonReentrant
+    {
+        _FINAL_SETTLEMENT_PRICE_ = I_P1Oracle(_ORACLE_).getPrice();
+        _FINAL_SETTLEMENT_ENABLED_ = true;
+        require(
+            _FINAL_SETTLEMENT_PRICE_ >= priceLowerBound,
+            "Oracle price is less than the provided lower bound"
+        );
+        require(
+            _FINAL_SETTLEMENT_PRICE_ <= priceUpperBound,
+            "Oracle price is greater than the provided upper bound"
+        );
+        emit LogFinalSettlementEnabled(_FINAL_SETTLEMENT_PRICE_);
     }
 }

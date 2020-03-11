@@ -41,8 +41,8 @@ async function init(ctx: ITestContext): Promise<void> {
   await expectBalances(
     ctx,
     [long, short],
-    [INTEGERS.ZERO, marginAmount.times(2)],
-    [positionSize, positionSize.negated()],
+    [0, 2000],
+    [12, -12],
   );
 }
 

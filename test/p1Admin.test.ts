@@ -1,15 +1,18 @@
 import { ADDRESSES } from '../src/lib/Constants';
-import { BASE_DECIMALS, address, BaseValue, Price } from '../src/lib/types';
+import { BASE_DECIMALS, BaseValue, Price, address } from '../src/lib/types';
 import { expect, expectBN, expectAddressesEqual, expectThrow } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { BigNumber } from '../src';
+
+const oraclePrice = new Price(100);
 
 let admin: address;
 
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
   admin = ctx.accounts[0];
+  await ctx.perpetual.testing.oracle.setPrice(oraclePrice);
 }
 
 perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
@@ -149,6 +152,72 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
       await expectThrow(
         ctx.perpetual.admin.setMinCollateral(minCollateral, { from: admin }),
         'The collateral requirement cannot be under 100%',
+      );
+    });
+  });
+
+  describe('enableFinalSettlement()', () => {
+    it('enables final settlement at the oracle price', async () => {
+      const txResult = await ctx.perpetual.admin.enableFinalSettlement(
+        oraclePrice.minus(20),
+        oraclePrice.plus(50),
+        { from: admin },
+      );
+
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      expect(logs.length).to.equal(1);
+      expect(logs[0].name).to.equal('LogFinalSettlementEnabled');
+      expectBN(logs[0].args.settlementPrice).to.equal(oraclePrice.toSolidity());
+    });
+
+    it('succeeds if the bounds are equal to the price', async () => {
+      await ctx.perpetual.admin.enableFinalSettlement(
+        oraclePrice,
+        oraclePrice,
+        { from: admin },
+      );
+      expect(await ctx.perpetual.getters.getFinalSettlementEnabled()).to.be.true;
+    });
+
+    it('fails if final settlement is already enabled', async () => {
+      await ctx.perpetual.admin.enableFinalSettlement(
+        oraclePrice,
+        oraclePrice,
+        { from: admin },
+      );
+      await expectThrow(
+        ctx.perpetual.admin.enableFinalSettlement(oraclePrice, oraclePrice, { from: admin }),
+        'Not permitted during final settlement',
+      );
+    });
+
+    it('fails if the oracle price is below the provided lower bound', async () => {
+      await expectThrow(
+        ctx.perpetual.admin.enableFinalSettlement(
+          oraclePrice.plus('1e-18'),
+          oraclePrice.plus('50'),
+          { from: admin },
+        ),
+        'Oracle price is less than the provided lower bound',
+      );
+    });
+
+    it('fails if the oracle price is above the provided upper bound', async () => {
+      await expectThrow(
+        ctx.perpetual.admin.enableFinalSettlement(
+          oraclePrice.minus('20'),
+          oraclePrice.minus('1e-18'),
+          { from: admin },
+        ),
+        'Oracle price is greater than the provided upper bound',
+      );
+    });
+
+    it('fails if called by non-admin', async () => {
+      await expectThrow(
+        ctx.perpetual.admin.enableFinalSettlement(oraclePrice, oraclePrice),
+        'Adminable: caller is not admin',
       );
     });
   });

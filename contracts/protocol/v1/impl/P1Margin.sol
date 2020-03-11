@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { P1FinalSettlement } from "./P1FinalSettlement.sol";
 import { P1Getters } from "./P1Getters.sol";
 import { P1Settlement } from "./P1Settlement.sol";
 import { P1Storage } from "./P1Storage.sol";
@@ -36,6 +37,7 @@ import { P1Types } from "../lib/P1Types.sol";
  */
 contract P1Margin is
     P1Storage,
+    P1FinalSettlement,
     P1Getters,
     P1Settlement
 {
@@ -61,6 +63,7 @@ contract P1Margin is
         uint256 amount
     )
         external
+        noFinalSettlement
         nonReentrant
     {
         P1Types.Context memory context = _loadContext();
@@ -84,6 +87,7 @@ contract P1Margin is
         uint256 amount
     )
         external
+        noFinalSettlement
         nonReentrant
     {
         require(

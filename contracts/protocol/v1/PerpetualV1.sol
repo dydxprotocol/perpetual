@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { Storage } from "../lib/Storage.sol";
 import { P1Admin } from "./impl/P1Admin.sol";
+import { P1FinalSettlement } from "./impl/P1FinalSettlement.sol";
 import { P1Getters } from "./impl/P1Getters.sol";
 import { P1Margin } from "./impl/P1Margin.sol";
 import { P1Operator } from "./impl/P1Operator.sol";
@@ -35,6 +36,7 @@ import { P1Types } from "./lib/P1Types.sol";
  * Main contract that inherits from other contracts
  */
 contract PerpetualV1 is
+    P1FinalSettlement,
     P1Admin,
     P1Getters,
     P1Margin,
