@@ -74,6 +74,10 @@ contract P1FinalSettlement is
 
     // ============ Functions ============
 
+    /**
+     * Withdraw the number of margin tokens equal to the value of the account at the time that
+     * final settlement occurred.
+     */
     function withdrawFinalSettlement()
         external
         onlyFinalSettlement
