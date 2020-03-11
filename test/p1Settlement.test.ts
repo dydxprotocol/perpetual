@@ -113,6 +113,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       // Check balances.
       await expectBalances(
         ctx,
+        null,
         [otherAccountA, otherAccountB, otherAccountC],
         [10, 10, 10],
         [7, -3, -4],
@@ -131,7 +132,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       // +---------------+--------+----------+-------------+--------------+
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.7'));
       await triggerIndexUpdate(otherAccountA);
-      await expectMarginBalances(ctx, [otherAccountA], [5], false);
+      await expectMarginBalances(ctx, null, [otherAccountA], [5], false);
 
       // Time period 1, global index is 1.4
       //
@@ -151,6 +152,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       // Check balances.
       await expectBalances(
         ctx,
+        null,
         [otherAccountA, otherAccountB, otherAccountC],
         [0, 14, 15],
         [7, -3, -4],
