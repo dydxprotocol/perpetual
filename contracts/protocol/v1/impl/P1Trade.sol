@@ -230,26 +230,26 @@ contract P1Trade is
                 "account is undercollateralized and position changed signs",
                 account
             );
+            Require.that(
+                !initialBalance.marginIsPositive || !initialBalance.positionIsPositive,
+                "account is undercollateralized and was not previously",
+                account
+            );
 
             // Note that at this point:
-            //   Initial margin/position must be one of +/+, 0/+, -/+, or +/-.
+            //   Initial margin/position must be one of 0/+, -/+, or +/-.
             //   Final margin/position must now be either -/+ or +/-.
             //
             // Which implies one of the following [intial] -> [final] configurations:
-            //   [+/+, 0,+, -/+] -> [-/+]
-            //             [+/-] -> [+/-]
+            //   [0,+, -/+] -> [-/+]
+            //        [+/-] -> [+/-]
 
             uint256 finalBalanceInitialMargin = finalBalance.position.mul(initialBalance.margin);
             uint256 finalMarginInitialBalance = finalBalance.margin.mul(initialBalance.position);
 
             Require.that(
-                !(initialBalance.marginIsPositive && initialBalance.positionIsPositive),
-                "account is undercollateralized and was not previously",
-                account
-            );
-            Require.that(
-                finalBalanceInitialMargin == finalMarginInitialBalance ||
-                    finalBalanceInitialMargin > finalMarginInitialBalance == finalBalance.positionIsPositive,
+                (finalBalanceInitialMargin == finalMarginInitialBalance) ||
+                    (finalBalanceInitialMargin > finalMarginInitialBalance == finalBalance.positionIsPositive),
                 "account is undercollateralized and collateralization decreased",
                 account
             );
