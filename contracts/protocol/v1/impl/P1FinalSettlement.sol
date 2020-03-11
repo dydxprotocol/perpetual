@@ -22,9 +22,9 @@ pragma experimental ABIEncoderV2;
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import { P1Storage } from "./P1Storage.sol";
+import { P1Settlement } from "./P1Settlement.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
-import { SafeCast } from "../../lib/SafeCast.sol";
+import { Math } from "../../lib/Math.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
@@ -36,7 +36,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * Admin logic contract
  */
 contract P1FinalSettlement is
-    P1Storage
+    P1Settlement
 {
     using SafeMath for uint256;
 
@@ -44,7 +44,8 @@ contract P1FinalSettlement is
 
     event LogWithdrawFinalSettlement(
         address indexed account,
-        uint256 amount
+        uint256 amount,
+        bytes32 balance
     );
 
     // ============ Modifiers ============
@@ -78,59 +79,59 @@ contract P1FinalSettlement is
         onlyFinalSettlement
         nonReentrant
     {
-        P1Types.Balance memory balance = _BALANCES_[msg.sender];
-
-        // Zero-out balances as early in the function as possible.
-        _BALANCES_[msg.sender] = P1Types.Balance({
-            marginIsPositive: false,
-            positionIsPositive: false,
-            margin: 0,
-            position: 0
+        // Load the context using the final settlement price.
+        P1Types.Context memory context = P1Types.Context({
+            price: _FINAL_SETTLEMENT_PRICE_,
+            minCollateral: _MIN_COLLATERAL_,
+            index: _GLOBAL_INDEX_
         });
+
+        // Apply funding changes.
+        P1Types.Balance memory balance = _settleAccount(context, msg.sender);
 
         // Determine the account net value.
         // `positive` and `negative` are base values with extra precision.
         (uint256 positive, uint256 negative) = P1BalanceMath.getPositiveAndNegativeValue(
             balance,
-            _FINAL_SETTLEMENT_PRICE_
+            context.price
         );
 
-        // Determine the amount to be withdrawn.
-        uint256 amountToWithdraw = 0;
-
-        if (positive > negative) {
-
-            // Account value will be rounded down.
-            uint256 accountValue = positive.sub(negative).div(BaseMath.base());
-
-            uint256 contractBalance = IERC20(_TOKEN_).balanceOf(address(this));
-
-            if (accountValue <= contractBalance) {
-                amountToWithdraw = accountValue;
-            } else {
-                // Edge case: if contract balance is insufficient, (e.g. if there are underwater
-                // accounts) pay out as much as possible and store the amount still owed.
-                uint120 remainingAmount = SafeCast.toUint120(accountValue.sub(contractBalance));
-                _BALANCES_[msg.sender] = P1Types.Balance({
-                    marginIsPositive: true,
-                    positionIsPositive: false,
-                    margin: remainingAmount,
-                    position: 0
-                });
-                amountToWithdraw = contractBalance;
-                assert(amountToWithdraw.add(remainingAmount) == accountValue);
-            }
-
-            SafeERC20.safeTransfer(
-                IERC20(_TOKEN_),
-                msg.sender,
-                amountToWithdraw
-            );
+        // No amount is withdrawable.
+        if (positive < negative) {
+            return;
         }
 
-        emit LogWithdrawFinalSettlement(
+        // Get the account value, which is rounded down to the nearest token amount.
+        uint256 accountValue = positive.sub(negative).div(BaseMath.base());
+
+        // Get the number of tokens in the Perpetual Contract.
+        uint256 contractBalance = IERC20(_TOKEN_).balanceOf(address(this));
+
+        // Determine the maximum withdrawable amount.
+        uint256 amountToWithdraw = Math.min(contractBalance, accountValue);
+
+        // Update the user's balance.
+        uint120 remainingMargin = accountValue.sub(amountToWithdraw).toUint120();
+        balance = P1Types.Balance({
+            marginIsPositive: remainingMargin != 0,
+            positionIsPositive: false,
+            margin: remainingMargin,
+            position: 0
+        });
+        _BALANCES_[msg.sender] = balance;
+
+        // Send the tokens.
+        SafeERC20.safeTransfer(
+            IERC20(_TOKEN_),
             msg.sender,
             amountToWithdraw
+        );
+
+        // Emit the log.
+        emit LogWithdrawFinalSettlement(
+            msg.sender,
+            amountToWithdraw,
+            balance.toBytes32()
         );
     }
 }

@@ -108,11 +108,12 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
         mintAndDeposit(ctx, otherAccountC, 10),
       ]);
       await buy(ctx, otherAccountA, otherAccountB, 3, 0);
-      await buy(ctx, otherAccountA, otherAccountC, 4, 0);
+      let txResult = await buy(ctx, otherAccountA, otherAccountC, 4, 0);
 
       // Check balances.
       await expectBalances(
         ctx,
+        txResult,
         [otherAccountA, otherAccountB, otherAccountC],
         [10, 10, 10],
         [7, -3, -4],
@@ -130,8 +131,8 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       // | otherAccountC |     10 |       -4 |           0 |          2.8 |
       // +---------------+--------+----------+-------------+--------------+
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.7'));
-      await triggerIndexUpdate(otherAccountA);
-      await expectMarginBalances(ctx, [otherAccountA], [5], false);
+      txResult = await triggerIndexUpdate(otherAccountA);
+      await expectMarginBalances(ctx, txResult, [otherAccountA], [5], false);
 
       // Time period 1, global index is 1.4
       //
@@ -146,11 +147,12 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       await triggerIndexUpdate(otherAccountA);
       await ctx.perpetual.testing.funder.setFunding(new BaseValue(0));
       await triggerIndexUpdate(otherAccountB);
-      await triggerIndexUpdate(otherAccountC);
+      txResult = await triggerIndexUpdate(otherAccountC);
 
       // Check balances.
       await expectBalances(
         ctx,
+        txResult,
         [otherAccountA, otherAccountB, otherAccountC],
         [0, 14, 15],
         [7, -3, -4],
@@ -336,7 +338,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
         otherAccountA,
         otherAccountA,
         largeValue,
-        { from: otherAccountA },
+        { from: otherAccountA, gas: 4000000 },
       );
     });
   });

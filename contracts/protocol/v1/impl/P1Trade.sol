@@ -21,8 +21,6 @@ pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { P1FinalSettlement } from "./P1FinalSettlement.sol";
-import { P1Settlement } from "./P1Settlement.sol";
-import { P1Storage } from "./P1Storage.sol";
 import { Require } from "../../lib/Require.sol";
 import { I_P1Trader } from "../intf/I_P1Trader.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
@@ -36,9 +34,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * Trade logic contract
  */
 contract P1Trade is
-    P1Storage,
-    P1FinalSettlement,
-    P1Settlement
+    P1FinalSettlement
 {
     using SafeMath for uint120;
     using P1BalanceMath for P1Types.Balance;
