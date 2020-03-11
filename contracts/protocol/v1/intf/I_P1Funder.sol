@@ -24,9 +24,13 @@ pragma experimental ABIEncoderV2;
  * @title I_P1Funder
  * @author dYdX
  *
- * Funder interface
+ * Interface that PerpetualV1 Funders must implement.
  */
 interface I_P1Funder {
+
+    /**
+     * Returns the signed funding percentage according to the amount of time that has passed.
+     */
     function getFunding(
         uint256 timestamp
     )

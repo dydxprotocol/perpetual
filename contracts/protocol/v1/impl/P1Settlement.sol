@@ -35,7 +35,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Settlement
  * @author dYdX
  *
- * Settlement logic contract
+ * Contract containing logic for settling funding payments between accounts.
  */
 contract P1Settlement is
     P1Storage
@@ -61,6 +61,10 @@ contract P1Settlement is
 
     // ============ Functions ============
 
+    /**
+     * Calculates the funding change since the last update and stores it in the Global Index.
+     * Returns a Context that contains the current Price, Index, and Minimum Collateralization.
+     */
     function _loadContext()
         internal
         returns (P1Types.Context memory)
@@ -112,6 +116,9 @@ contract P1Settlement is
         });
     }
 
+    /**
+     * Settle the funding payments for a list of accounts and return their balances afterwards.
+     */
     function _settleAccounts(
         P1Types.Context memory context,
         address[] memory accounts

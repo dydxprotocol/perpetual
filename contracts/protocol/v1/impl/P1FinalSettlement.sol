@@ -33,7 +33,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1FinalSettlement
  * @author dYdX
  *
- * Admin logic contract
+ * Contract for withdrawing during final settlement.
  */
 contract P1FinalSettlement is
     P1Settlement

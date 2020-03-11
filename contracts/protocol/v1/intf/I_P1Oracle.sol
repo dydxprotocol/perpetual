@@ -24,9 +24,13 @@ pragma experimental ABIEncoderV2;
  * @title I_P1Oracle
  * @author dYdX
  *
- * Oracle interface
+ * Interface that PerpetualV1 Oracles must implement.
  */
 interface I_P1Oracle {
+
+    /**
+     * Returns the price of the underlying asset relative to the margin token.
+     */
     function getPrice()
         external
         view

@@ -24,17 +24,20 @@ pragma experimental ABIEncoderV2;
  * @title P1Types
  * @author dYdX
  *
- * Types library
+ * Library for common types used in PerpetualV1 contracts.
  */
 library P1Types {
     // ============ Structs ============
 
+    // Used for the Global Index and Cached Index per account.
+    // Used to settle funding paymennts on a per-account basis.
     struct Index {
         uint32 timestamp;
         bool isPositive;
         uint128 value;
     }
 
+    // Used to track the signed Margin Balance and Position Balance values for each account.
     struct Balance {
         bool marginIsPositive;
         bool positionIsPositive;
@@ -42,16 +45,18 @@ library P1Types {
         uint120 position;
     }
 
+    // Used to cache commonly-used variables that are relatively expensive to obtain once.
     struct Context {
         uint256 price;
         uint256 minCollateral;
         Index index;
     }
 
+    // Used by P1Trader contracts to return the result of a trade.
     struct TradeResult {
         uint256 marginAmount;
         uint256 positionAmount;
-        bool isBuy; // from taker's perspective
+        bool isBuy; // From taker's perspective.
         bytes32 traderFlags;
     }
 }

@@ -31,7 +31,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Admin
  * @author dYdX
  *
- * Admin logic contract
+ * Contract allowing the Admin address to set certain parameters.
  */
 contract P1Admin is
     P1Storage,

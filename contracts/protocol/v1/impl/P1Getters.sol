@@ -27,7 +27,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Getters
  * @author dYdX
  *
- * Getters contract
+ * Contract for read-only getters.
  */
 contract P1Getters is
     P1Storage
