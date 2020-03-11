@@ -227,15 +227,15 @@ contract P1Trade is
                 "account is undercollateralized and absolute position size increased",
                 account
             );
-
-            (uint256 initialPositive, uint256 initialNegative) =
-                initialBalance.getPositiveAndNegativeValue(context.price);
-
             Require.that(
                 finalPositive != 0,
                 "account is undercollateralized and has no positive value",
                 account
             );
+
+            (uint256 initialPositive, uint256 initialNegative) =
+                initialBalance.getPositiveAndNegativeValue(context.price);
+
             Require.that(
                 finalPositive.mul(initialNegative) >= initialPositive.mul(finalNegative),
                 "account is undercollateralized and collateralization decreased",
