@@ -262,8 +262,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
             [long, short, otherAccountA, otherAccountB],
             [-2500, 0, 200, 1100],
             [30, 0, 0, 0],
-
-            // During final settlement, margin balances may not match contract token balance.
+            false,
             false,
           );
         });
@@ -299,6 +298,8 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
             [long, short, otherAccountA, otherAccountB],
             [-2500, 0, 0, 0],
             [30, 0, 0, 0],
+            false,
+            false,
           );
         });
 
