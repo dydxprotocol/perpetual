@@ -32,7 +32,6 @@ library P1IndexMath {
 
     // ============ Constants ============
 
-    uint256 private constant FLAG_MARGIN_IS_POSITIVE = 1 << (8 * 31);
     uint256 private constant FLAG_IS_POSITIVE = 1 << (8 * 16);
 
     // ============ Functions ============
