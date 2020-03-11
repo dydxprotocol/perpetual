@@ -19,9 +19,9 @@ import {
 
 const initialPrice = new Price(100);
 const longBorderlinePrice = new Price(50);
-const longUnderwaterPrice = new Price(49.9);
+const longUnderwaterPrice = new Price('49.999999');
 const shortBorderlinePrice = new Price(150);
-const shortUnderwaterPrice = new Price(150.1);
+const shortUnderwaterPrice = new Price('150.000001');
 const positionSize = new BigNumber(10);
 
 let admin: address;

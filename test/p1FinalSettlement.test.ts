@@ -27,18 +27,18 @@ const shortUnderwaterPrice = new Price(150.1);
 let admin: address;
 let long: address;
 let short: address;
-let short2: address;
-let short3: address;
-let otherAccount: address;
+let otherAccountA: address;
+let otherAccountB: address;
+let otherAccountC: address;
 
 async function init(ctx: ITestContext): Promise<void> {
   await initializeWithTestContracts(ctx);
   admin = ctx.accounts[0];
   long = ctx.accounts[2];
   short = ctx.accounts[3];
-  short2 = ctx.accounts[4];
-  short3 = ctx.accounts[5];
-  otherAccount = ctx.accounts[6];
+  otherAccountA = ctx.accounts[4];
+  otherAccountB = ctx.accounts[5];
+  otherAccountC = ctx.accounts[6];
 
   // Set up initial balances:
   // +---------+--------+----------+-------------------+
@@ -112,13 +112,13 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
     describe('simple cases', () => {
       it('settles a 0/0 balance', async () => {
         await enableSettlement(initialPrice);
-        await expectWithdraw(otherAccount, INTEGERS.ZERO);
+        await expectWithdraw(otherAccountA, INTEGERS.ZERO);
       });
 
       it('settles a 0/+ balance', async () => {
-        await buy(ctx, otherAccount, long, INTEGERS.ONE, INTEGERS.ZERO);
+        await buy(ctx, otherAccountA, long, INTEGERS.ONE, INTEGERS.ZERO);
         await enableSettlement(initialPrice);
-        await expectWithdraw(otherAccount, initialPrice.value);
+        await expectWithdraw(otherAccountA, initialPrice.value);
       });
 
       it('settles a -/+ well-collateralized balance', async () => {
@@ -137,9 +137,9 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
       });
 
       it('settles a +/0 balance', async () => {
-        await mintAndDeposit(ctx, otherAccount, INTEGERS.ONE);
+        await mintAndDeposit(ctx, otherAccountA, INTEGERS.ONE);
         await enableSettlement(initialPrice);
-        await expectWithdraw(otherAccount, INTEGERS.ONE);
+        await expectWithdraw(otherAccountA, INTEGERS.ONE);
       });
 
       it('settles a +/- well-collateralized balance', async () => {
@@ -183,25 +183,59 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
         await expectWithdraw(short, INTEGERS.ZERO);
       });
 
+      it('avoids insolvency resulting from rounding errors', async () => {
+        // Set up balances:
+        // +---------------+--------+----------+
+        // | account       | margin | position |
+        // |---------------+--------+----------+
+        // | otherAccountA |      2 |       -1 |
+        // | otherAccountB |      2 |       -1 |
+        // | otherAccountC |     -1 |        2 |
+        // +---------------+--------+----------+
+        await Promise.all([
+          ctx.perpetual.testing.oracle.setPrice(new Price(1)),
+          mintAndDeposit(ctx, otherAccountA, 2),
+          mintAndDeposit(ctx, otherAccountB, 1),
+        ]);
+        await buy(ctx, otherAccountC, otherAccountA, 1, 0);
+        await buy(ctx, otherAccountC, otherAccountB, 1, 1);
+
+        // Check balances.
+        await expectBalances(
+          ctx,
+          [otherAccountA, otherAccountB, otherAccountC],
+          [2, 2, -1],
+          [-1, -1, 2],
+          false,
+        );
+
+        await enableSettlement(new Price(1.5));
+        await expectWithdraw(otherAccountA, 0);
+        await expectWithdraw(otherAccountB, 0);
+        await expectWithdraw(otherAccountC, 2);
+      });
+
       describe('when the contract is insolvent due to underwater accounts', async () => {
 
         beforeEach(async () => {
           // Set up initial balances (settlement price of 40):
-          // +---------+--------+----------+-------------------+---------------+
-          // | account | margin | position | collateralization | account value |
-          // |---------+--------+----------+-------------------|---------------|
-          // | long    |  -2500 |       30 |               48% |         -1300 |
-          // | short   |   1500 |      -10 |              375% |          1100 |
-          // | short2  |   1500 |      -10 |              375% |          1100 |
-          // | short3  |   1500 |      -10 |              375% |          1100 |
-          // +---------+--------+----------+-------------------+---------------+
+          // +---------------+--------+----------+-------------------+---------------+
+          // | account       | margin | position | collateralization | account value |
+          // |---------------+--------+----------+-------------------|---------------|
+          // | long          |  -2500 |       30 |               48% |         -1300 |
+          // | short         |   1500 |      -10 |              375% |          1100 |
+          // | otherAccountA |   1500 |      -10 |              375% |          1100 |
+          // | otherAccountB |   1500 |      -10 |              375% |          1100 |
+          // +---------------+--------+----------+-------------------+---------------+
+          //
+          // Both otherAccountA and otherAccountB are short positions.
           await Promise.all([
-            mintAndDeposit(ctx, short2, initialMargin),
-            mintAndDeposit(ctx, short3, initialMargin),
+            mintAndDeposit(ctx, otherAccountA, initialMargin),
+            mintAndDeposit(ctx, otherAccountB, initialMargin),
           ]);
           await Promise.all([
-            await buy(ctx, long, short2, positionSize, initialMargin.times(2)),
-            await buy(ctx, long, short3, positionSize, initialMargin.times(2)),
+            await buy(ctx, long, otherAccountA, positionSize, initialMargin.times(2)),
+            await buy(ctx, long, otherAccountB, positionSize, initialMargin.times(2)),
           ]);
           await ctx.perpetual.contracts.resetGasUsed();
         });
@@ -213,13 +247,13 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           // Some short positions can withdraw funds.
           await expectWithdraw(long, 0);
           await expectWithdraw(short, 1100);
-          await expectWithdraw(short2, 900);
-          await expectWithdraw(short3, 0);
+          await expectWithdraw(otherAccountA, 900);
+          await expectWithdraw(otherAccountB, 0);
 
           // Check that the balances reflect the amount owed.
           await expectBalances(
             ctx,
-            [long, short, short2, short3],
+            [long, short, otherAccountA, otherAccountB],
             [0, 0, 200, 1100],
             [0, 0, 0, 0],
 
@@ -234,8 +268,8 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           // Some short positions can withdraw funds.
           await expectWithdraw(long, 0);
           await expectWithdraw(short, 1100);
-          await expectWithdraw(short2, 900);
-          await expectWithdraw(short3, 0);
+          await expectWithdraw(otherAccountA, 900);
+          await expectWithdraw(otherAccountB, 0);
 
           // Admin bails out the contract.
           const underwaterAmount = new BigNumber(1300);
@@ -249,13 +283,13 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           // Short positions can withdraw the rest of their account value.
           await expectWithdraw(long, 0);
           await expectWithdraw(short, 0);
-          await expectWithdraw(short2, 200);
-          await expectWithdraw(short3, 1100);
+          await expectWithdraw(otherAccountA, 200);
+          await expectWithdraw(otherAccountB, 1100);
 
           // Check balances.
           await expectBalances(
             ctx,
-            [long, short, short2, short3],
+            [long, short, otherAccountA, otherAccountB],
             [0, 0, 0, 0],
             [0, 0, 0, 0],
           );
@@ -289,7 +323,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           // Check balances.
           await expectBalances(
             ctx,
-            [long, short, short2, short3],
+            [long, short, otherAccountA, otherAccountB],
             [0, 0, 1500, 1500],
             [0, 0, -10, -10],
             false,

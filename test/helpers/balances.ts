@@ -95,9 +95,10 @@ export async function expectTokenBalances(
 export async function mintAndDeposit(
   ctx: ITestContext,
   account: address,
-  amount: BigNumber,
+  amount: BigNumberable,
 ): Promise<void> {
-  await ctx.perpetual.testing.token.mint(account, amount);
+  const amountBN = new BigNumber(amount);
+  await ctx.perpetual.testing.token.mint(account, amountBN);
   await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(account);
-  await ctx.perpetual.margin.deposit(account, amount, { from: account });
+  await ctx.perpetual.margin.deposit(account, amountBN, { from: account });
 }
