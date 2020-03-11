@@ -51,7 +51,7 @@ library P1Types {
     struct TradeResult {
         uint256 marginAmount;
         uint256 positionAmount;
-        bool isBuy;
+        bool isBuy; // from taker's perspective
         bytes32 traderFlags;
     }
 }

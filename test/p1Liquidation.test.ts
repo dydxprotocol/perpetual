@@ -9,6 +9,7 @@ import { expect, expectBN, expectThrow } from './helpers/Expect';
 import { address } from '../src';
 import { FEES, INTEGERS, PRICES } from '../src/lib/Constants';
 import {
+  BigNumberable,
   Order,
   Price,
   SigningMethod,
@@ -61,6 +62,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
           long,
           shortUndercollateralizedPrice,
           positionSize,
+          false,
         ),
         'msg.sender must be PerpetualV1',
       );
@@ -156,12 +158,34 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
     it('Succeeds with all-or-nothing', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
-      await liquidate(long, short, positionSize, true);
+      await liquidate(long, short, positionSize, { allOrNothing: true });
       await expectBalances(
         ctx,
         [long, short],
         [new BigNumber(0), new BigNumber(1000)],
         [new BigNumber(0), new BigNumber(0)],
+      );
+    });
+
+    it('Succeeds when the amount is zero and the maker is long', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+      await liquidate(long, short, 0);
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(-500), new BigNumber(1500)],
+        [new BigNumber(10), new BigNumber(-10)],
+      );
+    });
+
+    it('Succeeds when the amount is zero and the maker is short', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
+      await liquidate(short, long, 0);
+      await expectBalances(
+        ctx,
+        [long, short],
+        [new BigNumber(-500), new BigNumber(1500)],
+        [new BigNumber(10), new BigNumber(-10)],
       );
     });
 
@@ -229,11 +253,27 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
       );
     });
 
+    it('Cannot liquidate a long position if isBuy is false', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+      await expectThrow(
+        liquidate(long, short, positionSize, { isBuy: false }),
+        'liquidation must not increase maker\'s position size',
+      );
+    });
+
+    it('Cannot liquidate a short position if isBuy is true', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
+      await expectThrow(
+        liquidate(short, long, positionSize, { isBuy: true }),
+        'liquidation must not increase maker\'s position size',
+      );
+    });
+
     it('With all-or-nothing, fails if amount is greater than the maker position', async () => {
       // Attempt to liquidate the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
       await expectThrow(
-        liquidate(short, long, positionSize.plus(1), true),
+        liquidate(short, long, positionSize.plus(1), { allOrNothing: true }),
         'allOrNothing is set and maker position is less than amount',
       );
     });
@@ -245,7 +285,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
       // Liquidate the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
-      await liquidate(short, long, positionSize, true);
+      await liquidate(short, long, positionSize, { allOrNothing: true });
     });
 
     it('Succeeds liquidating a long against a long', async () => {
@@ -310,7 +350,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
           defaultSignedOrder.limitPrice,
           defaultSignedOrder.limitFee,
         )
-        .liquidate(long, short, positionSize.plus(new BigNumber(1)))
+        .liquidate(long, short, positionSize.plus(new BigNumber(1)), true, false)
         .commit({ from: short });
     });
 
@@ -322,10 +362,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
       it('Succeeds liquidating if the sender is a global operator', async () => {
         await ctx.perpetual.admin.setGlobalOperator(thirdParty, true, { from: admin });
-        await ctx.perpetual.trade
-          .initiate()
-          .liquidate(long, short, positionSize)
-          .commit({ from: thirdParty });
+        await liquidate(long, short, positionSize, { sender: thirdParty });
         await expectBalances(
           ctx,
           [long, short],
@@ -336,10 +373,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
       it('Succeeds liquidating if the sender is a local operator', async () => {
         await ctx.perpetual.operator.setLocalOperator(thirdParty, true, { from: short });
-        await ctx.perpetual.trade
-          .initiate()
-          .liquidate(long, short, positionSize)
-          .commit({ from: thirdParty });
+        await liquidate(long, short, positionSize, { sender: thirdParty });
         await expectBalances(
           ctx,
           [long, short],
@@ -350,10 +384,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
 
       it('Cannot liquidate if the sender is not the taker or an authorized operator', async () => {
         await expectThrow(
-          ctx.perpetual.trade
-            .initiate()
-            .liquidate(long, short, positionSize)
-            .commit({ from: thirdParty }),
+          liquidate(long, short, positionSize, { sender: thirdParty }),
           'sender does not have permissions for the taker (i.e. liquidator)',
         );
       });
@@ -363,12 +394,21 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
   async function liquidate(
     maker: address,
     taker: address,
-    amount: BigNumber,
-    allOrNothing: boolean = false,
+    amount: BigNumberable,
+    args: {
+      allOrNothing?: boolean,
+      isBuy?: boolean,
+      sender?: address,
+    } = {},
   ) {
+    let { isBuy } = args;
+    if (typeof isBuy !== 'boolean') {
+      // By default, infer isBuy from the sign of the maker position.
+      isBuy = (await ctx.perpetual.getters.getAccountBalance(maker)).position.isPositive();
+    }
     return ctx.perpetual.trade
       .initiate()
-      .liquidate(maker, taker, amount, allOrNothing)
-      .commit({ from: taker });
+      .liquidate(maker, taker, amount, isBuy, !!args.allOrNothing)
+      .commit({ from: args.sender || taker });
   }
 });

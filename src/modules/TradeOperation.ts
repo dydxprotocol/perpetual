@@ -5,7 +5,7 @@ import { makeDeleverageTradeData } from './Deleveraging';
 import { makeLiquidateTradeData } from './Liquidation';
 import { Orders } from './Orders';
 import {
-  address,
+  BigNumberable,
   ConfirmationType,
   Fee,
   Price,
@@ -13,6 +13,7 @@ import {
   SignedOrder,
   TradeArg,
   TxResult,
+  address,
 } from '../lib/types';
 
 interface TempTradeArg {
@@ -67,13 +68,14 @@ export class TradeOperation {
   public liquidate(
     maker: address,
     taker: address,
-    amount: BigNumber,
-    allOrNothing: boolean = false,
+    amount: BigNumberable,
+    isBuy: boolean,
+    allOrNothing: boolean,
   ): this {
     return this.addTradeArg({
       maker,
       taker,
-      data: makeLiquidateTradeData(amount, allOrNothing),
+      data: makeLiquidateTradeData(amount, isBuy, allOrNothing),
       trader: this.contracts.p1Liquidation.options.address,
     });
   }
@@ -81,13 +83,14 @@ export class TradeOperation {
   public deleverage(
     maker: address,
     taker: address,
-    amount: BigNumber,
-    allOrNothing: boolean = false,
+    amount: BigNumberable,
+    isBuy: boolean,
+    allOrNothing: boolean,
   ): this {
     return this.addTradeArg({
       maker,
       taker,
-      data: makeDeleverageTradeData(amount, allOrNothing),
+      data: makeDeleverageTradeData(amount, isBuy, allOrNothing),
       trader: this.contracts.p1Deleveraging.options.address,
     });
   }

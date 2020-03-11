@@ -45,9 +45,8 @@ contract P1Liquidation is
 
     struct TradeData {
         uint256 amount;
-
-        // If true, the trade will revert if the maker position is less than the amount.
-        bool allOrNothing;
+        bool isBuy; // from taker's perspective
+        bool allOrNothing; // if true, will revert if maker's position is less than the amount
     }
 
     // ============ Events ============
@@ -56,7 +55,7 @@ contract P1Liquidation is
         address indexed maker,
         address indexed taker,
         uint256 amount,
-        bool isBuy
+        bool isBuy // from taker's perspective
     );
 
     // ============ Immutable Storage ============
@@ -107,13 +106,13 @@ contract P1Liquidation is
             price
         );
 
+        // Bound the execution amount by the size of the maker position.
         uint256 amount = Math.min(tradeData.amount, makerBalance.position);
-        bool isBuy = makerBalance.positionIsPositive;
 
         // When partially liquidating the maker, maintain the same position/margin ratio.
         // Ensure the collateralization of the maker does not decrease.
         uint256 marginAmount;
-        if (isBuy) {
+        if (tradeData.isBuy) {
             marginAmount = uint256(makerBalance.margin).getFractionRoundUp(amount, makerBalance.position);
         } else {
             marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
@@ -123,13 +122,13 @@ contract P1Liquidation is
             maker,
             taker,
             amount,
-            isBuy
+            tradeData.isBuy
         );
 
         return P1Types.TradeResult({
             marginAmount: marginAmount,
             positionAmount: amount,
-            isBuy: isBuy,
+            isBuy: tradeData.isBuy,
             traderFlags: TRADER_FLAG_LIQUIDATION
         });
     }
@@ -150,6 +149,10 @@ contract P1Liquidation is
         require(
             !tradeData.allOrNothing || makerBalance.position >= tradeData.amount,
             "allOrNothing is set and maker position is less than amount"
+        );
+        require(
+            tradeData.isBuy == makerBalance.positionIsPositive,
+            "liquidation must not increase maker's position size"
         );
     }
 

@@ -60,7 +60,7 @@ contract P1Trade is
         address trader,
         uint256 marginAmount,
         uint256 positionAmount,
-        bool isBuy
+        bool isBuy // from taker's perspective
     );
 
     // ============ Functions ============
@@ -111,7 +111,7 @@ contract P1Trade is
                 continue;
             }
 
-            // Modify currentBalances in-place.
+            // Modify currentBalances in-place. Note that `isBuy` is from the taker's perspective.
             P1Types.Balance memory makerBalance = currentBalances[tradeArg.makerIndex];
             P1Types.Balance memory takerBalance = currentBalances[tradeArg.takerIndex];
             if (tradeResult.isBuy) {
