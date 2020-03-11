@@ -60,7 +60,9 @@ contract P1Trade is
         address trader,
         uint256 marginAmount,
         uint256 positionAmount,
-        bool isBuy // from taker's perspective
+        bool isBuy, // from taker's perspective
+        bytes32 makerBalance,
+        bytes32 takerBalance
     );
 
     // ============ Functions ============
@@ -79,7 +81,7 @@ contract P1Trade is
         P1Types.Balance[] memory currentBalances = new P1Types.Balance[](initialBalances.length);
 
         uint256 i;
-        for (i = 0; i < currentBalances.length; i++) {
+        for (i = 0; i < initialBalances.length; i++) {
             currentBalances[i] = initialBalances[i].copy();
         }
 
@@ -136,7 +138,9 @@ contract P1Trade is
                 tradeArg.trader,
                 tradeResult.marginAmount,
                 tradeResult.positionAmount,
-                tradeResult.isBuy
+                tradeResult.isBuy,
+                makerBalance.toBytes32(),
+                takerBalance.toBytes32()
             );
         }
 
@@ -148,6 +152,10 @@ contract P1Trade is
         );
     }
 
+    /**
+     * Verify that the accounts array has at least one address and that the accounts are unique.
+     * It verifies uniqueness by requiring that the accounts are sorted.
+     */
     function _verifyAccounts(
         address[] memory accounts
     )
@@ -158,6 +166,8 @@ contract P1Trade is
             accounts.length > 0,
             "Accounts must have non-zero length"
         );
+
+        // Check that accounts are unique
         address prevAccount = accounts[0];
         for (uint256 i = 1; i < accounts.length; i++) {
             address account = accounts[i];
@@ -191,13 +201,14 @@ contract P1Trade is
         pure
     {
         for (uint256 i = 0; i < accounts.length; i++) {
-            if (_isCollateralized(context, currentBalances[i])) {
+            P1Types.Balance memory finalBalance = currentBalances[i];
+
+            if (_isCollateralized(context, finalBalance)) {
                 continue;
             }
 
             address account = accounts[i];
             P1Types.Balance memory initialBalance = initialBalances[i];
-            P1Types.Balance memory finalBalance = currentBalances[i];
 
             // Let margin be zero for now but require position to be non-zero.
             Require.that(

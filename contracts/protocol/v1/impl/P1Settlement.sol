@@ -27,6 +27,7 @@ import { SignedMath } from "../../lib/SignedMath.sol";
 import { I_P1Funder } from "../intf/I_P1Funder.sol";
 import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
+import { P1IndexMath } from "../lib/P1IndexMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
 
@@ -43,12 +44,13 @@ contract P1Settlement is
     using SafeCast for uint256;
     using SafeMath for uint256;
     using P1BalanceMath for P1Types.Balance;
+    using P1IndexMath for P1Types.Index;
     using SignedMath for SignedMath.Int;
 
     // ============ Events ============
 
     event LogIndexUpdated(
-        P1Types.Index index
+        bytes32 index
     );
 
     event LogAccountSettled(
@@ -100,7 +102,7 @@ contract P1Settlement is
             });
             _GLOBAL_INDEX_ = index;
 
-            emit LogIndexUpdated(index);
+            emit LogIndexUpdated(index.toBytes32());
         }
 
         return P1Types.Context({

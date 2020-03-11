@@ -39,6 +39,11 @@ library P1BalanceMath {
     using SignedMath for SignedMath.Int;
     using P1BalanceMath for P1Types.Balance;
 
+    // ============ Constants ============
+
+    uint256 private constant FLAG_MARGIN_IS_POSITIVE = 1 << (8 * 31);
+    uint256 private constant FLAG_POSITION_IS_POSITIVE = 1 << (8 * 15);
+
     // ============ Functions ============
 
     /**
@@ -151,6 +156,24 @@ library P1BalanceMath {
         }
 
         return (positiveValue, negativeValue);
+    }
+
+    /**
+     * Returns a compressed bytes32 representation of the balance for logging.
+     */
+    function toBytes32(
+        P1Types.Balance memory balance
+    )
+        internal
+        pure
+        returns (bytes32)
+    {
+        uint256 result =
+            uint256(balance.position)
+            | (uint256(balance.margin) << 128)
+            | (balance.marginIsPositive ? FLAG_MARGIN_IS_POSITIVE : 0)
+            | (balance.positionIsPositive ? FLAG_POSITION_IS_POSITIVE : 0);
+        return bytes32(result);
     }
 
     // ============ Helper Functions ============

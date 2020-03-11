@@ -124,13 +124,13 @@ contract P1Orders is
     // ============ Events ============
 
     event LogOrderCanceled(
-        bytes32 indexed orderHash,
-        address indexed canceler
+        address indexed maker,
+        bytes32 orderHash
     );
 
     event LogOrderApproved(
-        bytes32 indexed orderHash,
-        address indexed approver
+        address indexed maker,
+        bytes32 orderHash
     );
 
     event LogOrderFilled(
@@ -264,7 +264,7 @@ contract P1Orders is
             "Canceled order cannot be approved"
         );
         _STATUS_[orderHash] = OrderStatus.Approved;
-        emit LogOrderApproved(orderHash, msg.sender);
+        emit LogOrderApproved(msg.sender, orderHash);
     }
 
     function cancelOrder(
@@ -278,7 +278,7 @@ contract P1Orders is
         );
         bytes32 orderHash = _getOrderHash(order);
         _STATUS_[orderHash] = OrderStatus.Canceled;
-        emit LogOrderCanceled(orderHash, msg.sender);
+        emit LogOrderCanceled(msg.sender, orderHash);
     }
 
     function getOrdersStatus(

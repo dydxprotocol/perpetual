@@ -3,18 +3,21 @@ import BigNumber from 'bignumber.js';
 import { ITestContext } from './perpetualDescribe';
 import { expectBN } from './Expect';
 import { INTEGERS } from '../../src/lib/Constants';
-import { BigNumberable, address } from '../../src/lib/types';
+import { address, Balance, BigNumberable, TxResult } from '../../src/lib/types';
 
 export async function expectBalances(
   ctx: ITestContext,
+  txResult: TxResult,
   accounts: address[],
   expectedMargins: BigNumberable[],
   expectedPositions: BigNumberable[],
   fullySettled: boolean = true,
   positionsSumToZero: boolean = true,
 ): Promise<void> {
-  await expectMarginBalances(ctx, accounts, expectedMargins, fullySettled);
-  await expectPositions(ctx, accounts, expectedPositions, positionsSumToZero);
+  await Promise.all([
+    expectMarginBalances(ctx, txResult, accounts, expectedMargins, fullySettled),
+    expectPositions(ctx, txResult, accounts, expectedPositions, positionsSumToZero),
+  ]);
 }
 
 /**
@@ -25,6 +28,7 @@ export async function expectBalances(
  */
 export async function expectMarginBalances(
   ctx: ITestContext,
+  txResult: TxResult,
   accounts: address[],
   expectedMargins: BigNumberable[],
   fullySettled: boolean = true,
@@ -32,10 +36,14 @@ export async function expectMarginBalances(
   const actualMargins = await Promise.all(accounts.map((account: address) => {
     return ctx.perpetual.getters.getAccountBalance(account).then(balance => balance.margin);
   }));
+  const eventBalances = getBalanceEvents(ctx, txResult, accounts);
 
   for (const i in expectedMargins) {
     const expectedMargin = new BigNumber(expectedMargins[i]);
-    expectBN(actualMargins[i], `accounts[${i}] margin balance`).eq(expectedMargin);
+    expectBN(actualMargins[i], `accounts[${i}] actual margin`).eq(expectedMargin);
+    if (eventBalances[i]) {
+      expectBN(eventBalances[i].margin, `accounts[${i}] event margin`).eq(expectedMargin);
+    }
   }
 
   // Contract solvency check
@@ -57,6 +65,7 @@ export async function expectMarginBalances(
  */
 export async function expectPositions(
   ctx: ITestContext,
+  txResult: TxResult,
   accounts: address[],
   expectedPositions: BigNumberable[],
   sumToZero: boolean = true,
@@ -64,10 +73,14 @@ export async function expectPositions(
   const actualPositions = await Promise.all(accounts.map((account: address) => {
     return ctx.perpetual.getters.getAccountBalance(account).then(balance => balance.position);
   }));
+  const eventBalances = getBalanceEvents(ctx, txResult, accounts);
 
   for (const i in expectedPositions) {
     const expectedPosition = new BigNumber(expectedPositions[i]);
-    expectBN(actualPositions[i], `accounts[${i}] position balance`).eq(expectedPosition);
+    expectBN(actualPositions[i], `accounts[${i}] actual position`).eq(expectedPosition);
+    if (eventBalances[i]) {
+      expectBN(eventBalances[i].position, `accounts[${i}] event position`).eq(expectedPosition);
+    }
   }
 
   if (sumToZero) {
@@ -120,4 +133,42 @@ export async function mintAndDeposit(
   await ctx.perpetual.testing.token.mint(account, amountBN);
   await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(account);
   await ctx.perpetual.margin.deposit(account, amountBN, { from: account });
+}
+
+function getBalanceEvents(
+  ctx: ITestContext,
+  txResult: TxResult,
+  accounts: address[],
+): Balance[] {
+  // If no transaction, return no events
+  if (!txResult) {
+    return [];
+  }
+
+  const logs = ctx.perpetual.logs.parseLogs(txResult)
+    .filter((log: any) => ['LogTrade', 'LogWithdaw', 'LogDeposit'].includes(log.name));
+
+  const result = [];
+  for (const i in accounts) {
+    const account = accounts[i].toLowerCase();
+    let balance = null;
+
+    for (let j = logs.length - 1; j >= 0; j -= 1) {
+      const log = logs[j];
+      if (log.args.account && log.args.account.toLowerCase() === account) {
+        balance = log.args.balance;
+        break;
+      }
+      if (log.args.maker && log.args.maker.toLowerCase() === account) {
+        balance = log.args.makerBalance;
+        break;
+      }
+      if (log.args.taker && log.args.taker.toLowerCase() === account) {
+        balance = log.args.takerBalance;
+        break;
+      }
+    }
+    result[i] = balance;
+  }
+  return result;
 }

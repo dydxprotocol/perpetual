@@ -47,13 +47,15 @@ contract P1Margin is
 
     event LogDeposit(
         address indexed account,
-        uint256 amount
+        uint256 amount,
+        bytes32 balance
     );
 
     event LogWithdraw(
         address indexed account,
         address destination,
-        uint256 amount
+        uint256 amount,
+        bytes32 balance
     );
 
     // ============ Functions ============
@@ -78,7 +80,12 @@ contract P1Margin is
 
         balance.addToMargin(amount);
         _BALANCES_[account] = balance;
-        emit LogDeposit(account, amount);
+
+        emit LogDeposit(
+            account,
+            amount,
+            balance.toBytes32()
+        );
     }
 
     function withdraw(
@@ -112,6 +119,11 @@ contract P1Margin is
             "account not collateralized"
         );
 
-        emit LogWithdraw(account, destination, amount);
+        emit LogWithdraw(
+            account,
+            destination,
+            amount,
+            balance.toBytes32()
+        );
     }
 }

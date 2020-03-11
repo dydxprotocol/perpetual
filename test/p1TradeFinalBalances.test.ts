@@ -69,8 +69,8 @@ perpetualDescribe('P1Trade._verifyAccountsFinalBalances()', init, (ctx: ITestCon
       ['0', '0'],
     ];
     for (const [margin, position] of cases) {
-      await tradeToState([margin, position]);
-      await expectBalances(ctx, [riskyAccount], [margin], [position], false, false);
+      const txResult = await tradeToState([margin, position]);
+      await expectBalances(ctx, txResult, [riskyAccount], [margin], [position], false, false);
     }
   });
 

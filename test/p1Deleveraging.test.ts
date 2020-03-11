@@ -77,6 +77,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       const txResult = await deleverage(long, short, deleverageAmount);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(-250), new BigNumber(1250)],
         [new BigNumber(5), new BigNumber(-5)],
@@ -98,6 +99,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       const txResult = await deleverage(short, long, deleverageAmount);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(250), new BigNumber(750)],
         [new BigNumber(5), new BigNumber(-5)],
@@ -115,9 +117,10 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Succeeds fully deleveraging a long position', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
-      await deleverage(long, short, positionSize);
+      const txResult = await deleverage(long, short, positionSize);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(0), new BigNumber(1000)],
         [new BigNumber(0), new BigNumber(0)],
@@ -126,9 +129,10 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Succeeds fully deleveraging a short position', async () => {
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
-      await deleverage(short, long, positionSize);
+      const txResult = await deleverage(short, long, positionSize);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(1000), new BigNumber(0)],
         [new BigNumber(0), new BigNumber(0)],
@@ -137,9 +141,10 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Succeeds with all-or-nothing', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
-      await deleverage(long, short, positionSize, { allOrNothing: true });
+      const txResult = await deleverage(long, short, positionSize, { allOrNothing: true });
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(0), new BigNumber(1000)],
         [new BigNumber(0), new BigNumber(0)],
@@ -148,9 +153,10 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Succeeds when the amount is zero and the maker is long', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
-      await deleverage(long, short, 0);
+      const txResult = await deleverage(long, short, 0);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(-500), new BigNumber(1500)],
         [new BigNumber(10), new BigNumber(-10)],
@@ -159,9 +165,10 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Succeeds when the amount is zero and the maker is short', async () => {
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
-      await deleverage(short, long, 0);
+      const txResult = await deleverage(short, long, 0);
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(-500), new BigNumber(1500)],
         [new BigNumber(10), new BigNumber(-10)],
@@ -181,11 +188,12 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
       // Deleverage the short position.
       await ctx.perpetual.testing.oracle.setPrice(new Price(150.2));
-      await deleverage(short, long, positionSize);
+      const txResult = await deleverage(short, long, positionSize);
 
       // The actual amount executed should be bounded by the maker position.
       await expectBalances(
         ctx,
+        txResult,
         [long, short, thirdParty],
         [new BigNumber(850), new BigNumber(0), new BigNumber(10150)],
         [new BigNumber(1), new BigNumber(0), new BigNumber(-1)],
@@ -205,11 +213,12 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
       // Deleverage the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
-      await deleverage(short, long, positionSize);
+      const txResult = await deleverage(short, long, positionSize);
 
       // The actual amount executed should be bounded by the taker position.
       await expectBalances(
         ctx,
+        txResult,
         [long, short, thirdParty],
         [new BigNumber(1000), new BigNumber(150), new BigNumber(9850)],
         [new BigNumber(0), new BigNumber(-1), new BigNumber(1)],
@@ -338,10 +347,11 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     it('Can mark an account and deleverage it after waiting the timelock period', async () => {
       await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
       await fastForward(deleveragingTimelockSeconds);
-      await deleverage(long, short, positionSize, { sender: thirdParty });
+      const txResult = await deleverage(long, short, positionSize, { sender: thirdParty });
 
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [new BigNumber(0), new BigNumber(1000)],
         [new BigNumber(0), new BigNumber(0)],

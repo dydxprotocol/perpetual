@@ -38,7 +38,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
 
       // Check balances.
       await Promise.all([
-        expectMarginBalances(ctx, [accountOwner], [amount]),
+        expectMarginBalances(ctx, txResult, [accountOwner], [amount]),
         expectTokenBalances(ctx, [accountOwner], [0]),
       ]);
 
@@ -59,11 +59,15 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(otherUser);
 
       // Execute deposit.
-      await ctx.perpetual.margin.deposit(accountOwner, amount, { from: otherUser });
+      const txResult = await ctx.perpetual.margin.deposit(
+        accountOwner,
+        amount,
+        { from: otherUser },
+      );
 
       // Check balances.
       await Promise.all([
-        expectMarginBalances(ctx, [accountOwner], [amount]),
+        expectMarginBalances(ctx, txResult, [accountOwner], [amount]),
         expectTokenBalances(ctx, [otherUser], [0]),
       ]);
     });
@@ -79,11 +83,12 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
       await ctx.perpetual.margin.deposit(accountOwner, new BigNumber(50), { from: accountOwner });
       await ctx.perpetual.margin.deposit(accountOwner, new BigNumber(150), { from: accountOwner });
       await ctx.perpetual.margin.deposit(accountOwner, new BigNumber(0), { from: accountOwner });
-      await ctx.perpetual.margin.deposit(accountOwner, new BigNumber(300), { from: otherUser });
+      const txResult =
+        await ctx.perpetual.margin.deposit(accountOwner, new BigNumber(300), { from: otherUser });
 
       // Check balances.
       await Promise.all([
-        expectMarginBalances(ctx, [accountOwner], [500]),
+        expectMarginBalances(ctx, txResult, [accountOwner], [500]),
         expectTokenBalances(ctx, [accountOwner, otherUser], [800, 700]),
       ]);
     });
@@ -121,7 +126,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
 
       // Check balances.
       await Promise.all([
-        expectMarginBalances(ctx, [accountOwner], [50]),
+        expectMarginBalances(ctx, txResult, [accountOwner], [50]),
         expectTokenBalances(ctx, [accountOwner], [100]),
       ]);
 
@@ -137,7 +142,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
     });
 
     it('Account owner can withdraw full amount', async () => {
-      await ctx.perpetual.margin.withdraw(
+      const txResult = await ctx.perpetual.margin.withdraw(
         accountOwner,
         accountOwner,
         new BigNumber(150),
@@ -146,7 +151,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
 
       // Check balances
       await Promise.all([
-        expectMarginBalances(ctx, [accountOwner], [0]),
+        expectMarginBalances(ctx, txResult, [accountOwner], [0]),
         expectTokenBalances(ctx, [accountOwner], [150]),
       ]);
     });
@@ -162,7 +167,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
 
       // Check balances.
       await Promise.all([
-        expectMarginBalances(ctx, [accountOwner], [50]),
+        expectMarginBalances(ctx, txResult, [accountOwner], [50]),
         expectTokenBalances(ctx, [accountOwner, otherUser], [0, 100]),
       ]);
 
@@ -185,7 +190,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
         new BigNumber(50),
         { from: otherUser },
       );
-      await ctx.perpetual.margin.withdraw(
+      const txResult = await ctx.perpetual.margin.withdraw(
         accountOwner,
         otherUser,
         new BigNumber(100),
@@ -194,7 +199,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
 
       // Check balances.
       await Promise.all([
-        expectMarginBalances(ctx, [accountOwner], [0]),
+        expectMarginBalances(ctx, txResult, [accountOwner], [0]),
         expectTokenBalances(ctx, [accountOwner, otherUser], [50, 100]),
       ]);
     });
@@ -207,7 +212,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
         new BigNumber(100),
         { from: otherUser },
       );
-      await ctx.perpetual.margin.withdraw(
+      const txResult = await ctx.perpetual.margin.withdraw(
         accountOwner,
         otherUser,
         new BigNumber(50),
@@ -216,7 +221,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
 
       // Check balances.
       await Promise.all([
-        expectMarginBalances(ctx, [accountOwner], [0]),
+        expectMarginBalances(ctx, txResult, [accountOwner], [0]),
         expectTokenBalances(ctx, [accountOwner, otherUser], [100, 50]),
       ]);
     });
@@ -229,7 +234,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
         new BigNumber(30),
         { from: accountOwner },
       );
-      await ctx.perpetual.margin.withdraw(
+      const txResult1 = await ctx.perpetual.margin.withdraw(
         accountOwner,
         accountOwner,
         new BigNumber(50),
@@ -238,7 +243,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
 
       // Check balances.
       await Promise.all([
-        expectMarginBalances(ctx, [accountOwner], [70]),
+        expectMarginBalances(ctx, txResult1, [accountOwner], [70]),
         expectTokenBalances(ctx, [accountOwner], [80]),
       ]);
 
@@ -249,7 +254,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
         new BigNumber(70),
         { from: accountOwner },
       );
-      await ctx.perpetual.margin.withdraw(
+      const txResult2 = await ctx.perpetual.margin.withdraw(
         accountOwner,
         accountOwner,
         new BigNumber(0),
@@ -258,7 +263,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
 
       // Check balances.
       await Promise.all([
-        expectMarginBalances(ctx, [accountOwner], [0]),
+        expectMarginBalances(ctx, txResult2, [accountOwner], [0]),
         expectTokenBalances(ctx, [accountOwner], [150]),
       ]);
     });

@@ -37,6 +37,7 @@ perpetualDescribe('P1Trade', init, (ctx: ITestContext) => {
 
       await expectBalances(
         ctx,
+        txResult,
         [maker, taker],
         [depositAmount.plus(marginAmount), depositAmount.minus(marginAmount)],
         [positionAmount.negated(), positionAmount],
@@ -62,6 +63,7 @@ perpetualDescribe('P1Trade', init, (ctx: ITestContext) => {
 
       await expectBalances(
         ctx,
+        txResult,
         [maker, taker],
         [depositAmount.minus(marginAmount), depositAmount.plus(marginAmount)],
         [positionAmount, positionAmount.negated()],
@@ -86,6 +88,7 @@ perpetualDescribe('P1Trade', init, (ctx: ITestContext) => {
 
       await expectBalances(
         ctx,
+        txResult,
         [maker, taker],
         [depositAmount, depositAmount],
         [INTEGERS.ZERO, INTEGERS.ZERO],
@@ -94,7 +97,8 @@ perpetualDescribe('P1Trade', init, (ctx: ITestContext) => {
       // Check logs.
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       expect(logs.length).to.equal(1);
-      expect(logs[0].name).to.equal('LogIndexUpdated');
+      const [indexUpdatedLog] = logs;
+      expect(indexUpdatedLog.name).to.equal('LogIndexUpdated');
     });
 
     it('fails if the specified trader contract is not a global operator', async () => {

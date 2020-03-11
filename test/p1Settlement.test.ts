@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import _ from 'lodash';
 
 import { INTEGERS } from '../src/lib/Constants';
-import { BaseValue, Price, TxResult, address } from '../src/lib/types';
+import { BaseValue, Index, Price, TxResult, address } from '../src/lib/types';
 import { mineAvgBlock } from './helpers/EVM';
 import { expect, expectBN, expectBaseValueEqual } from './helpers/Expect';
 import initializeWithTestContracts from './helpers/initializeWithTestContracts';
@@ -39,11 +39,12 @@ async function init(ctx: ITestContext): Promise<void> {
     mintAndDeposit(ctx, long, marginAmount),
     mintAndDeposit(ctx, short, marginAmount),
   ]);
-  await buy(ctx, long, short, positionSize, marginAmount);
+  const txResult = await buy(ctx, long, short, positionSize, marginAmount);
 
   // Sanity check balances.
   await expectBalances(
     ctx,
+    txResult,
     [long, short],
     [0, 2000],
     [12, -12],
@@ -61,7 +62,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       await expectIndexUpdated(txResult, new BaseValue('1.0'));
     });
 
-    it('Updates the global index for a positive funding rate', async () => {
+    it('Updates the global index for a negative funding rate', async () => {
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('-0.005'));
       let txResult = await triggerIndexUpdate(otherAccountA);
       await expectIndexUpdated(txResult, new BaseValue('-0.5'));
@@ -215,6 +216,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       // Check balances after settlement of the long. Note that the short is not yet settled.
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [expectedInterest.negated(), marginAmount.times(2)],
         [positionSize, positionSize.negated()],
@@ -229,6 +231,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       // Check balances after settlement of the short account.
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [expectedInterest.negated(), marginAmount.times(2).plus(expectedInterest)],
         [positionSize, positionSize.negated()],
@@ -238,8 +241,9 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
     it('Can settle accounts with a different frequency for each account', async () => {
       // Accumulate interest and settle the long account.
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.05'));
+      let txResult: TxResult;
       for (let i = 0; i < 9; i += 1) {
-        await triggerIndexUpdate(long);
+        txResult = await triggerIndexUpdate(long);
       }
       await ctx.perpetual.testing.funder.setFunding(new BaseValue('0'));
 
@@ -248,6 +252,7 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       // Check balances after settlement of the long. Note that the short is not yet settled.
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [expectedInterest.negated(), marginAmount.times(2)],
         [positionSize, positionSize.negated()],
@@ -256,12 +261,13 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
       );
 
       // Settle the short account and check account settlement log.
-      const txResult = await triggerIndexUpdate(short);
+      txResult = await triggerIndexUpdate(short);
       expectAccountSettledLog(txResult, short, expectedInterest);
 
       // Check balances after settlement of the short account.
       await expectBalances(
         ctx,
+        txResult,
         [long, short],
         [expectedInterest.negated(), marginAmount.times(2).plus(expectedInterest)],
         [positionSize, positionSize.negated()],
@@ -350,21 +356,27 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
    */
   async function expectIndexUpdated(
     txResult: TxResult,
-    expectedIndex: BaseValue,
+    expectedBaseValue: BaseValue,
   ): Promise<void> {
+    // Construct expected Index.
+    const { timestamp } = await ctx.perpetual.web3.eth.getBlock(txResult.blockNumber);
+    const expectedIndex: Index = {
+      timestamp: new BigNumber(timestamp),
+      baseValue: expectedBaseValue,
+    };
+
     // Check the getter function.
     const globalIndex = await ctx.perpetual.getters.getGlobalIndex();
-    expectBaseValueEqual(globalIndex.baseValue, expectedIndex, 'global index from getter');
+    expectBaseValueEqual(globalIndex.baseValue, expectedIndex.baseValue, 'index value from getter');
+    expectBN(globalIndex.timestamp, 'index timestamp from logs').to.eq(expectedIndex.timestamp);
 
     // Check the logs.
     const logs = ctx.perpetual.logs.parseLogs(txResult);
     const filteredLogs = _.filter(logs, { name: 'LogIndexUpdated' });
     expect(filteredLogs.length, 'filter for LogIndexUpdated').to.equal(1);
-    const indexUpdatedLog = filteredLogs[0];
-
-    const loggedIndexRaw = indexUpdatedLog.args.index;
-    const loggedIndex = BaseValue.fromSolidity(loggedIndexRaw.value, loggedIndexRaw.isPositive);
-    expectBaseValueEqual(loggedIndex, expectedIndex, 'global index from logs');
+    const loggedIndex: Index = filteredLogs[0].args.index;
+    expectBaseValueEqual(loggedIndex.baseValue, expectedIndex.baseValue, 'index value from logs');
+    expectBN(loggedIndex.timestamp, 'index timestamp from logs').to.eq(expectedIndex.timestamp);
   }
 
   function expectAccountSettledLog(
