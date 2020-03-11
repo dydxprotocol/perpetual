@@ -3,6 +3,7 @@ import BigNumber from 'bignumber.js';
 import {
   Balance,
   BalanceStruct,
+  BaseValue,
   CallOptions,
   BigNumberable,
   Price,
@@ -335,7 +336,7 @@ export class TestLib {
     balance: Balance,
     price: Price,
     options?: CallOptions,
-  ): Promise<{ positive: BigNumber, negative: BigNumber }> {
+  ): Promise<{ positive: BaseValue, negative: BaseValue }> {
     const [positive, negative]: [string, string] = await this.contracts.call(
       this.contracts.testLib.methods.getPositiveAndNegativeValue(
         balance.toSolidity(),
@@ -344,8 +345,8 @@ export class TestLib {
       options,
     );
     return {
-      positive: new BigNumber(positive),
-      negative: new BigNumber(negative),
+      positive: BaseValue.fromSolidity(positive),
+      negative: BaseValue.fromSolidity(negative),
     };
   }
 

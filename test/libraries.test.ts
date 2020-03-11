@@ -254,20 +254,20 @@ perpetualDescribe('Solidity libraries', init, (ctx: ITestContext) => {
       const price = new Price('.033');
 
       let value = await ctx.perpetual.testing.lib.getPositiveAndNegativeValue(posPos, price);
-      expectBN(value.positive).to.eq(209);
-      expectBN(value.negative).to.eq(0);
+      expectBN(value.positive.value).to.eq('209.9');
+      expectBN(value.negative.value).to.eq(0);
 
       value = await ctx.perpetual.testing.lib.getPositiveAndNegativeValue(posNeg, price);
-      expectBN(value.positive).to.eq(200);
-      expectBN(value.negative).to.eq(9);
+      expectBN(value.positive.value).to.eq(200);
+      expectBN(value.negative.value).to.eq('9.9');
 
       value = await ctx.perpetual.testing.lib.getPositiveAndNegativeValue(negPos, price);
-      expectBN(value.positive).to.eq(9);
-      expectBN(value.negative).to.eq(200);
+      expectBN(value.positive.value).to.eq('9.9');
+      expectBN(value.negative.value).to.eq(200);
 
       value = await ctx.perpetual.testing.lib.getPositiveAndNegativeValue(negNeg, price);
-      expectBN(value.positive).to.eq(0);
-      expectBN(value.negative).to.eq(209);
+      expectBN(value.positive.value).to.eq(0);
+      expectBN(value.negative.value).to.eq('209.9');
     });
 
     it('getMargin()', async () => {

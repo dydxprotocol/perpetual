@@ -165,8 +165,10 @@ contract P1Liquidation is
         view
         returns (bool)
     {
-        (uint256 positive, uint256 negative) = balance.getPositiveAndNegativeValue(price);
         uint256 minCollateral = P1Getters(perpetual).getMinCollateral();
+        (uint256 positive, uint256 negative) = balance.getPositiveAndNegativeValue(price);
+
+        // See P1Settlement.sol for discussion of overflow risk.
         return positive.mul(BaseMath.base()) < negative.mul(minCollateral);
     }
 }

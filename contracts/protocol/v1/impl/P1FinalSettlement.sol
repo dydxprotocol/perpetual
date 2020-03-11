@@ -23,6 +23,7 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { P1Storage } from "./P1Storage.sol";
+import { BaseMath } from "../../lib/BaseMath.sol";
 import { SafeCast } from "../../lib/SafeCast.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
@@ -88,6 +89,7 @@ contract P1FinalSettlement is
         });
 
         // Determine the account net value.
+        // `positive` and `negative` are base values with extra precision.
         (uint256 positive, uint256 negative) = P1BalanceMath.getPositiveAndNegativeValue(
             balance,
             _FINAL_SETTLEMENT_PRICE_
@@ -98,14 +100,16 @@ contract P1FinalSettlement is
 
         if (positive > negative) {
 
-            uint256 accountValue = positive.sub(negative);
+            // Account value will be rounded down.
+            uint256 accountValue = positive.sub(negative).div(BaseMath.base());
+
             uint256 contractBalance = IERC20(_TOKEN_).balanceOf(address(this));
 
             if (accountValue <= contractBalance) {
                 amountToWithdraw = accountValue;
             } else {
-                // Edge case: if contract balance is insufficient, pay out as much as possible and
-                // store the amount still owed.
+                // Edge case: if contract balance is insufficient, (e.g. if there are underwater
+                // accounts) pay out as much as possible and store the amount still owed.
                 uint120 remainingAmount = SafeCast.toUint120(accountValue.sub(contractBalance));
                 _BALANCES_[msg.sender] = P1Types.Balance({
                     marginIsPositive: true,
