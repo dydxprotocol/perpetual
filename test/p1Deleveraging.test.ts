@@ -453,6 +453,18 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     });
   });
 
+  describe('isMarked()', () => {
+    it('Indicates whether the account is marked', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+      expect(await ctx.perpetual.deleveraging.isMarked(long)).to.be.false;
+      await ctx.perpetual.deleveraging.mark(long);
+      expect(await ctx.perpetual.deleveraging.isMarked(long)).to.be.true;
+      await ctx.perpetual.testing.oracle.setPrice(longBorderlinePrice);
+      await ctx.perpetual.deleveraging.unmark(long);
+      expect(await ctx.perpetual.deleveraging.isMarked(long)).to.be.false;
+    });
+  });
+
   async function deleverage(
     maker: address,
     taker: address,

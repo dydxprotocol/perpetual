@@ -43,6 +43,11 @@ contract P1Deleveraging is
     using Math for uint256;
     using P1BalanceMath for P1Types.Balance;
 
+    // ============ Constants ============
+
+    // Waiting period for non-admin to deleverage an account after marking it.
+    uint256 constant public DELEVERAGING_TIMELOCK_S = 1800; // 30 minutes
+
     // ============ Structs ============
 
     struct TradeData {
@@ -72,9 +77,6 @@ contract P1Deleveraging is
 
     // address of the perpetual contract
     address public _PERPETUAL_V1_;
-
-    // Waiting period for non-admin to deleverage an account after marking it.
-    uint256 constant public DELEVERAGING_TIMELOCK_S = 1800; // 30 minutes
 
     // ============ Mutable Storage ============
 
@@ -146,7 +148,7 @@ contract P1Deleveraging is
             marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
         }
 
-        if (amount == makerBalance.position && _isMarked(maker)) {
+        if (amount == makerBalance.position && isMarked(maker)) {
             _unmark(maker);
         }
 
@@ -196,6 +198,16 @@ contract P1Deleveraging is
         _unmark(account);
     }
 
+    function isMarked(
+        address account
+    )
+        public
+        view
+        returns (bool)
+    {
+        return _MARKED_TIMESTAMP_[account] != 0;
+    }
+
     function _unmark(
         address account
     )
@@ -203,16 +215,6 @@ contract P1Deleveraging is
     {
         _MARKED_TIMESTAMP_[account] = 0;
         emit LogUnmarkedForDeleveraging(account);
-    }
-
-    function _isMarked(
-        address account
-    )
-        private
-        view
-        returns (bool)
-    {
-        return _MARKED_TIMESTAMP_[account] != 0;
     }
 
     function _verifyPermissions(

@@ -23,6 +23,7 @@ import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import { P1FinalSettlement } from "./P1FinalSettlement.sol";
 import { P1Getters } from "./P1Getters.sol";
+import { TypedSignature } from "../../lib/TypedSignature.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
@@ -39,6 +40,19 @@ contract P1Margin is
 {
     using P1BalanceMath for P1Types.Balance;
 
+    // ============ Constants ============
+
+    // Waiting period for non-admin to withdraw from an account after marking it.
+    uint256 constant public WITHDRAWAL_TIMELOCK_S = 1800; // 30 minutes
+
+    // ============ Structs ============
+
+    struct Withdrawal {
+        address account;
+        address destination;
+        uint256 amount;
+    }
+
     // ============ Events ============
 
     event LogDeposit(
@@ -52,6 +66,14 @@ contract P1Margin is
         address destination,
         uint256 amount,
         bytes32 balance
+    );
+
+    event LogMarkedForWithdrawal(
+        address indexed account
+    );
+
+    event LogUnmarkedForWithdrawal(
+        address indexed account
     );
 
     // ============ Functions ============
@@ -91,18 +113,19 @@ contract P1Margin is
      * Withdraw some amount of margin tokens from an account to a destination address.
      */
     function withdraw(
-        address account,
-        address destination,
-        uint256 amount
+        Withdrawal calldata withdrawal,
+        TypedSignature.Signature calldata signature
     )
         external
         noFinalSettlement
         nonReentrant
     {
-        require(
-            hasAccountPermissions(account, msg.sender),
-            "sender does not have permission to withdraw"
-        );
+        // validations
+        _verifyPermissions(withdrawal, signature);
+
+        address account = withdrawal.account;
+        address destination = withdrawal.destination;
+        uint256 amount = withdrawal.amount;
 
         P1Types.Context memory context = _loadContext();
         P1Types.Balance memory balance = _settleAccount(context, account);
@@ -126,6 +149,54 @@ contract P1Margin is
             destination,
             amount,
             balance.toBytes32()
+        );
+    }
+
+    /**
+     * Mark an account for withdrawal.
+     *
+     * An account must be marked for a period of time before withdrawing, unless the sender is
+     * explicitly approved by the admin to make instant withdrawals. This restriction is in place
+     * to prevent users from frontrunning trades matched by a centralized order book.
+     */
+    function markForWithdrawal(
+        address account
+    )
+        external
+    {
+        _MARKED_FOR_WITHDRAWAL_TIMESTAMP_[account] = block.timestamp;
+        emit LogMarkedForWithdrawal(account);
+    }
+
+    function unmarkForWithdrawal(
+        address account
+    )
+        external
+    {
+        _MARKED_FOR_WITHDRAWAL_TIMESTAMP_[account] = 0;
+        emit LogUnmarkedForWithdrawal(account);
+    }
+
+    function isMarkedForWithdrawal(
+        address account
+    )
+        public
+        view
+        returns (bool)
+    {
+        return _MARKED_FOR_WITHDRAWAL_TIMESTAMP_[account] != 0;
+    }
+
+    function _verifyPermissions(
+        Withdrawal memory withdrawal,
+        TypedSignature.Signature memory signature
+    )
+        private
+        view
+    {
+        require(
+            hasAccountPermissions(withdrawal.account, msg.sender),
+            "sender does not have permission to withdraw"
         );
     }
 }

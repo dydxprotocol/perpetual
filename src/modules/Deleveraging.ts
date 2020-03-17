@@ -105,6 +105,18 @@ export class Deleveraging {
     );
   }
 
+  public async isMarked(
+    account: address,
+    options?: CallOptions,
+  ): Promise<boolean> {
+    return this.contracts.call(
+      this.deleveraging.methods.isMarked(
+        account,
+      ),
+      options,
+    );
+  }
+
   public async getDeleveragingTimelockSeconds(
     options?: CallOptions,
   ): Promise<number> {

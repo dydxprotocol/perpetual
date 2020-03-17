@@ -22,8 +22,15 @@ import {
   address,
   SendOptions,
   TxResult,
+  TypedSignatureStruct,
 } from '../lib/types';
 import { Contract } from 'web3-eth-contract';
+
+const NULL_SIGNATURE: TypedSignatureStruct = {
+  r: `0x${'00'.repeat(32)}`,
+  s: `0x${'00'.repeat(32)}`,
+  vType: '0x0000',
+};
 
 export class Margin {
   private contracts: Contracts;
@@ -60,9 +67,12 @@ export class Margin {
   ): Promise<TxResult> {
     return this.contracts.send(
       this.perpetual.methods.withdraw(
-        account,
-        destination,
-        amount.toFixed(0),
+        {
+          account,
+          destination,
+          amount: amount.toFixed(0),
+        },
+        NULL_SIGNATURE, // signature
       ),
       options,
     );

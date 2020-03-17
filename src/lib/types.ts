@@ -163,7 +163,13 @@ export interface Order {
 }
 
 export interface SignedOrder extends Order {
-  typedSignature: string;
+  typedSignature: TypedSignature;
+}
+
+export interface TypedSignatureStruct {
+  r: string;
+  s: string;
+  vType: string;
 }
 
 // ============ Helper Functions ============

@@ -36,6 +36,7 @@ contract P1Storage is
 {
     mapping(address => P1Types.Balance) internal _BALANCES_;
     mapping(address => P1Types.Index) internal _LOCAL_INDEXES_;
+    mapping(address => uint256) public _MARKED_FOR_WITHDRAWAL_TIMESTAMP_;
 
     mapping(address => bool) internal _GLOBAL_OPERATORS_;
     mapping(address => mapping(address => bool)) internal _LOCAL_OPERATORS_;
