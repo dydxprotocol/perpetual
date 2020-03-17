@@ -12,6 +12,7 @@ perpetualDescribe('Proxy', initializeWithTestContracts, (ctx: ITestContext) => {
     it('fails to do a second time', async () => {
       await expectThrow(
         ctx.perpetual.proxy.initialize(
+          '1001', // chainId
           ADDRESSES.ZERO,
           ADDRESSES.ZERO,
           ADDRESSES.ZERO,

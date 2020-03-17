@@ -43,6 +43,23 @@ contract PerpetualV1 is
     P1Operator,
     P1Trade
 {
+    // EIP712 Domain Name value
+    string constant private EIP712_DOMAIN_NAME = "dYdX.PerpetualV1";
+
+    // EIP712 Domain Version value
+    string constant private EIP712_DOMAIN_VERSION = "1.0";
+
+    // Hash of the EIP712 Domain Separator Schema.
+    /* solium-disable-next-line indentation */
+    bytes32 constant private EIP712_DOMAIN_SEPARATOR_SCHEMA_HASH = keccak256(abi.encodePacked(
+        "EIP712Domain(",
+        "string name,",
+        "string version,",
+        "uint256 chainId,",
+        "address verifyingContract",
+        ")"
+    ));
+
     // Non-colliding storage slot.
     bytes32 internal constant PERPETUAL_V1_INITIALIZE_SLOT =
     bytes32(uint256(keccak256("dYdX.PerpetualV1.initialize")) - 1);
@@ -52,6 +69,7 @@ contract PerpetualV1 is
      * Uses a non-colliding storage slot to store if this version has been initialized yet.
      */
     function initializeV1(
+        uint256 chainId,
         address token,
         address oracle,
         address funder,
@@ -77,5 +95,14 @@ contract PerpetualV1 is
             isPositive: false,
             value: 0
         });
+
+        /* solium-disable-next-line indentation */
+        _EIP712_DOMAIN_HASH_ = keccak256(abi.encode(
+            EIP712_DOMAIN_SEPARATOR_SCHEMA_HASH,
+            keccak256(bytes(EIP712_DOMAIN_NAME)),
+            keccak256(bytes(EIP712_DOMAIN_VERSION)),
+            chainId,
+            address(this)
+        ));
     }
 }

@@ -42,8 +42,21 @@ contract P1Margin is
 
     // ============ Constants ============
 
+    // EIP191 header for EIP712 prefix
+    bytes2 constant private EIP191_HEADER = 0x1901;
+
     // Waiting period for non-admin to withdraw from an account after marking it.
     uint256 constant public WITHDRAWAL_TIMELOCK_S = 1800; // 30 minutes
+
+    // EIP712 hash of the Withdrawal struct.
+    /* solium-disable-next-line indentation */
+    bytes32 constant private EIP712_WITHDRAWAL_STRUCT_SCHEMA_HASH = keccak256(abi.encodePacked(
+        "Withdrawal(",
+        "address account,",
+        "address destination,",
+        "uint256 amount",
+        ")"
+    ));
 
     // ============ Structs ============
 
@@ -194,9 +207,38 @@ contract P1Margin is
         private
         view
     {
-        require(
-            hasAccountPermissions(withdrawal.account, msg.sender),
-            "sender does not have permission to withdraw"
-        );
+        if (!hasAccountPermissions(withdrawal.account, msg.sender)) {
+            bytes32 withdrawalHash = _getWithdrawalHash(withdrawal);
+            require(
+                withdrawal.account == TypedSignature.recover(withdrawalHash, signature),
+                "sender does not have permission to withdraw and signature is invalid"
+            );
+        }
+    }
+
+    /**
+     * Returns the EIP712 hash of a withdrawal.
+     */
+    function _getWithdrawalHash(
+        Withdrawal memory withdrawal
+    )
+        private
+        view
+        returns (bytes32)
+    {
+        // compute the overall signed struct hash
+        /* solium-disable-next-line indentation */
+        bytes32 structHash = keccak256(abi.encode(
+            EIP712_WITHDRAWAL_STRUCT_SCHEMA_HASH,
+            withdrawal
+        ));
+
+        // compute eip712 compliant hash
+        /* solium-disable-next-line indentation */
+        return keccak256(abi.encodePacked(
+            EIP191_HEADER,
+            _EIP712_DOMAIN_HASH_,
+            structHash
+        ));
     }
 }

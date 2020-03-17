@@ -41,6 +41,9 @@ contract P1Storage is
     mapping(address => bool) internal _GLOBAL_OPERATORS_;
     mapping(address => mapping(address => bool)) internal _LOCAL_OPERATORS_;
 
+    // Hash of the EIP712 Domain Separator data.
+    bytes32 public _EIP712_DOMAIN_HASH_;
+
     address internal _TOKEN_;
     address internal _ORACLE_;
     address internal _FUNDER_;

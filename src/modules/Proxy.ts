@@ -20,6 +20,7 @@ import BigNumber from 'bignumber.js';
 import { Contracts } from './Contracts';
 import {
   address,
+  BigNumberable,
   CallOptions,
   SendOptions,
 } from '../lib/types';
@@ -63,6 +64,7 @@ export class Proxy {
   // ============ Setters ============
 
   public async initialize(
+    chainId: BigNumberable,
     token: address,
     oracle: address,
     funder: address,
@@ -71,6 +73,7 @@ export class Proxy {
   ): Promise<any> {
     return this.contracts.send(
       this.perpetualV1.methods.initializeV1(
+        new BigNumber(chainId).toFixed(0),
         token,
         oracle,
         funder,
