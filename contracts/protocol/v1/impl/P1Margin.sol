@@ -193,7 +193,7 @@ contract P1Margin is
     function isMarkedForWithdrawal(
         address account
     )
-        public
+        external
         view
         returns (bool)
     {
@@ -215,10 +215,16 @@ contract P1Margin is
             );
         }
 
-        if (!isMarked(withdrawal.account)) {
+        if (!_APPROVED_FOR_INSTANT_WITHDRAWALS_[msg.sender]) {
+            uint256 markedTimestamp = _MARKED_FOR_WITHDRAWAL_TIMESTAMP_[account];
             require(
-                _APPROVED_FOR_INSTANT_WITHDRAWALS_[msg.sender],
-                "account is not marked and sender is not approved for instant withdrawals"
+                markedTimestamp != 0,
+                "not approved for instant withdrawals and account is not marked"
+            );
+            uint256 timeDelta = block.timestamp.sub(markedTimestamp);
+            require(
+                timeDelta >= WITHDRAWAL_TIMELOCK_S,
+                "not approved for instant withdrawals and account not marked long enough ago"
             );
         }
     }
