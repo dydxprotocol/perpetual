@@ -214,6 +214,13 @@ contract P1Margin is
                 "sender does not have permission to withdraw and signature is invalid"
             );
         }
+
+        if (!isMarked(withdrawal.account)) {
+            require(
+                _APPROVED_FOR_INSTANT_WITHDRAWALS_[msg.sender],
+                "account is not marked and sender is not approved for instant withdrawals"
+            );
+        }
     }
 
     /**

@@ -34,12 +34,15 @@ contract P1Storage is
     Adminable,
     ReentrancyGuard
 {
+    // Account mappings.
     mapping(address => P1Types.Balance) internal _BALANCES_;
     mapping(address => P1Types.Index) internal _LOCAL_INDEXES_;
     mapping(address => uint256) public _MARKED_FOR_WITHDRAWAL_TIMESTAMP_;
 
+    // Operator mappings.
     mapping(address => bool) internal _GLOBAL_OPERATORS_;
     mapping(address => mapping(address => bool)) internal _LOCAL_OPERATORS_;
+    mapping(address => bool) public _APPROVED_FOR_INSTANT_WITHDRAWALS_;
 
     // Hash of the EIP712 Domain Separator data.
     bytes32 public _EIP712_DOMAIN_HASH_;
