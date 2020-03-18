@@ -19,14 +19,26 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
+import { BaseMath } from "../../lib/BaseMath.sol";
+import { I_P1Funder } from "../intf/I_P1Funder.sol";
+
 
 /**
- * @title I_P1Funder
+ * @title FundingOracle
  * @author dYdX
  *
- * Interface for an oracle providing the funding rate for a perpetual market.
+ * Oracle providing the funding rate for a perpetual market.
  */
-interface I_P1Funder {
+contract FundingOracle is
+    Ownable,
+    I_P1Funder
+{
+    using BaseMath for uint256;
+
+    // The funding rate, denoted in units per second, with 36 decimals of precision.
+    bool private _FUNDING_IS_POSITIVE_ = true;
+    uint256 private _FUNDING_RATE_ = 0;
 
     /**
      * Returns the signed funding percentage according to the amount of time that has passed.
@@ -38,5 +50,22 @@ interface I_P1Funder {
     )
         external
         view
-        returns (bool, uint256);
+        returns (bool, uint256)
+    {
+        // TODO: Estimate error.
+        uint256 funding = _FUNDING_RATE_.baseMul(timestamp);
+        return (_FUNDING_IS_POSITIVE_, funding);
+    }
+
+    function setFundingRate(
+        bool isPositive,
+        uint256 fundingRate
+    )
+        external
+        onlyOwner
+    {
+        // TODO: Apply bounds.
+        _FUNDING_IS_POSITIVE_ = isPositive;
+        _FUNDING_RATE_ = fundingRate;
+    }
 }
