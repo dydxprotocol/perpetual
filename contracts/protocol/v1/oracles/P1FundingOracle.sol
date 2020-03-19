@@ -71,7 +71,8 @@ contract P1FundingOracle is
         view
         returns (bool, uint256)
     {
-        // TODO: Estimate error.
+        // Note: Funding interest does not compound, as the interest affects margin balances but
+        // is calculated based on position balances.
         uint256 funding = _FUNDING_RATE_.baseMul(timeDelta);
         return (_FUNDING_IS_POSITIVE_, funding);
     }
