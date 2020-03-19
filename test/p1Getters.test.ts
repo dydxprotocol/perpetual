@@ -3,7 +3,7 @@ import BigNumber from 'bignumber.js';
 import { expect, expectBN, expectBaseValueEqual } from './helpers/Expect';
 import { BaseValue, address, Price } from '../src/lib/types';
 import { mintAndDeposit } from './helpers/balances';
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy } from './helpers/trade';
 
@@ -18,7 +18,7 @@ let account: address;
 let otherAccount: address;
 
 async function init(ctx: ITestContext): Promise<void> {
-  await initializeWithTestContracts(ctx);
+  await initializePerpetual(ctx);
 
   // Default account is accounts[1]. Use other accounts.
   admin = ctx.accounts[0];

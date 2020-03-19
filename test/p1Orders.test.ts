@@ -21,7 +21,7 @@ import {
 } from '../src/lib/BytesHelper';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 
@@ -51,7 +51,7 @@ let admin: address;
 let otherUser: address;
 
 async function init(ctx: ITestContext) {
-  await initializeWithTestContracts(ctx);
+  await initializePerpetual(ctx);
 
   defaultOrder.maker = fullFlagOrder.maker = ctx.accounts[5];
   defaultOrder.taker = fullFlagOrder.taker = ctx.accounts[1];

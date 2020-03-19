@@ -11,7 +11,7 @@ import {
 import { expectThrow, expect, expectAddressesEqual, expectBN } from './helpers/Expect';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 import { mineAvgBlock } from './helpers/EVM';
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy } from './helpers/trade';
 
@@ -33,7 +33,7 @@ let otherAccountB: address;
 let otherAccountC: address;
 
 async function init(ctx: ITestContext): Promise<void> {
-  await initializeWithTestContracts(ctx);
+  await initializePerpetual(ctx);
   admin = ctx.accounts[0];
   long = ctx.accounts[2];
   short = ctx.accounts[3];

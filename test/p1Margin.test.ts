@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { mineAvgBlock } from './helpers/EVM';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import initializePerpetual from './helpers/initializePerpetual';
 import { expectMarginBalances, expectTokenBalances, mintAndDeposit } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { sell } from './helpers/trade';
@@ -15,7 +15,7 @@ let accountOwner: address;
 let otherUser: address;
 
 async function init(ctx: ITestContext): Promise<void> {
-  await initializeWithTestContracts(ctx);
+  await initializePerpetual(ctx);
   accountOwner = ctx.accounts[2];
   otherUser = ctx.accounts[3];
 }
