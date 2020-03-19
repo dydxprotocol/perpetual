@@ -23,8 +23,8 @@ export async function expectBalances(
 /**
  * Verify that the account margin balances match the expected values.
  *
- * A final solvency check is performed to verify that the total margin balance is equal to the token
- * balance actually owned by the contract.
+ * A final solvency check may be performed to verify that the total margin balance is equal to the
+ * token balance actually owned by the contract.
  */
 export async function expectMarginBalances(
   ctx: ITestContext,
@@ -107,6 +107,8 @@ export async function expectTokenBalances(
 
 /**
  * Check that the contract has a surplus (or deficit) relative to the current margin balances.
+ *
+ * The surplus/deficit could be due to unsettled interest or due to rounding errors in settlement.
  */
 export async function expectContractSurplus(
   ctx: ITestContext,
@@ -124,6 +126,9 @@ export async function expectContractSurplus(
   expectBN(actualSurplus, 'contract margin token surplus').eq(expectedSurplus);
 }
 
+/**
+ * Mint test token to an account and deposit it in the perpetual.
+ */
 export async function mintAndDeposit(
   ctx: ITestContext,
   account: address,
