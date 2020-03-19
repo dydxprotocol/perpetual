@@ -6,13 +6,13 @@ import { expectBalances, mintAndDeposit, expectPositions } from './helpers/balan
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
-import { address } from '../src';
 import { FEES, INTEGERS, PRICES } from '../src/lib/Constants';
 import {
   BigNumberable,
   Order,
   Price,
   SigningMethod,
+  address,
 } from '../src/lib/types';
 
 const initialPrice = new Price(100);
