@@ -27,6 +27,7 @@ import {
 import {
   TransactionReceipt,
 } from 'web3-eth';
+import { INTEGERS } from './Constants';
 
 // ============ Types ============
 
@@ -306,5 +307,15 @@ export class FundingRate extends BaseValueGeneric {
       value = value.negated();
     }
     return new FundingRate(value);
+  }
+
+  /**
+   * Returns funding rate per second given funding rate per day.
+   *
+   * Note: Funding interest does not compound, as the interest affects margin balances but
+   * is calculated based on position balances.
+   */
+  static fromDailyRate(rate: BigNumberable): FundingRate {
+    return new FundingRate(new BigNumber(rate).div(INTEGERS.ONE_DAY_IN_SECONDS));
   }
 }

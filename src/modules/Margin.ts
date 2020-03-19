@@ -22,6 +22,7 @@ import {
   address,
   SendOptions,
   TxResult,
+  BigNumberable,
 } from '../lib/types';
 import { Contract } from 'web3-eth-contract';
 
@@ -40,13 +41,13 @@ export class Margin {
 
   public async deposit(
     account: address,
-    amount: BigNumber,
+    amount: BigNumberable,
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
       this.perpetual.methods.deposit(
         account,
-        amount.toFixed(0),
+        new BigNumber(amount).toFixed(0),
       ),
       options,
     );
@@ -55,14 +56,14 @@ export class Margin {
   public async withdraw(
     account: address,
     destination: address,
-    amount: BigNumber,
+    amount: BigNumberable,
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
       this.perpetual.methods.withdraw(
         account,
         destination,
-        amount.toFixed(0),
+        new BigNumber(amount).toFixed(0),
       ),
       options,
     );
