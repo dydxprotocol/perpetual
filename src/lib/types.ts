@@ -213,6 +213,11 @@ export class Balance {
   }
 }
 
+/**
+ * Base class for a fixed-point representation of a number.
+ *
+ * Precision must be specified by the subclass.
+ */
 abstract class BaseValueGeneric {
   protected readonly base: number;
   readonly value: BigNumber;
@@ -238,7 +243,7 @@ abstract class BaseValueGeneric {
 export const BASE_DECIMALS = 18;
 
 /**
- * A value that is represented on the smart contract by an integer with 18 decimals of precision.
+ * A value represented on the smart contract as a fixed-point number with 18 decimals of precision.
  */
 export class BaseValue extends BaseValueGeneric {
   protected readonly base: number = BASE_DECIMALS;
@@ -285,7 +290,7 @@ export class Fee extends BaseValue {
 export const FUNDING_RATE_DECIMALS = 36;
 
 /**
- * Funding rate is represented by an integer with 36 decimals of precision.
+ * Funding rate is represented on the smart contract as a fixed-point number with 36 decimals.
  */
 export class FundingRate extends BaseValueGeneric {
   protected readonly base: number = FUNDING_RATE_DECIMALS;
