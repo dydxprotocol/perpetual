@@ -29,14 +29,11 @@ export class TestP1Funder {
   }
 
   public async getFunding(
-    timestamp: BigNumber,
-  ): Promise<BigNumber> {
-    const [isPositive, funding] = await this.contracts.call(
-      this.contracts.testP1Funder.methods.getFunding(timestamp),
+    timeDelta: BigNumber,
+  ): Promise<BaseValue> {
+    const [isPositive, funding]: [boolean, string] = await this.contracts.call(
+      this.contracts.testP1Funder.methods.getFunding(timeDelta),
     );
-    if (isPositive) {
-      return new BigNumber(funding.value);
-    }
-    return new BigNumber(funding.value).negated();
+    return BaseValue.fromSolidity(funding, isPositive);
   }
 }

@@ -33,6 +33,7 @@ import {
 const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
 const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
+const p1FundingOracleJson = require(`${jsonFolder}P1FundingOracle.json`);
 const p1OrdersJson = require(`${jsonFolder}P1Orders.json`);
 const p1DeleveragingJson = require(`${jsonFolder}P1Deleveraging.json`);
 const p1LiquidationJson = require(`${jsonFolder}P1Liquidation.json`);
@@ -71,6 +72,7 @@ export class Contracts {
   public mainContracts: Contract[];
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
+  public p1FundingOracle: Contract;
   public p1Orders: Contract;
   public p1Deleveraging: Contract;
   public p1Liquidation: Contract;
@@ -103,6 +105,7 @@ export class Contracts {
     this.mainContracts = [];
     this.perpetualProxy = this.addMainContract(perpetualProxyJson);
     this.perpetualV1 = this.addMainContract(perpetualV1Json);
+    this.p1FundingOracle = this.addMainContract(p1FundingOracleJson);
     this.p1Orders = this.addMainContract(p1OrdersJson);
     this.p1Deleveraging = this.addMainContract(p1DeleveragingJson);
     this.p1Liquidation = this.addMainContract(p1LiquidationJson);

@@ -25,20 +25,39 @@ import { I_P1Funder } from "../intf/I_P1Funder.sol";
 
 
 /**
- * @title FundingOracle
+ * @title P1FundingOracle
  * @author dYdX
  *
  * Oracle providing the funding rate for a perpetual market.
  */
-contract FundingOracle is
+contract P1FundingOracle is
     Ownable,
     I_P1Funder
 {
     using BaseMath for uint256;
 
+    // ============ Events ============
+
+    event LogFundingRateUpdated(
+        bool isPositive,
+        uint256 fundingRate
+    );
+
+    // ============ Storage ============
+
     // The funding rate, denoted in units per second, with 36 decimals of precision.
-    bool private _FUNDING_IS_POSITIVE_ = true;
-    uint256 private _FUNDING_RATE_ = 0;
+    bool private _FUNDING_IS_POSITIVE_;
+    uint256 private _FUNDING_RATE_;
+
+    // ============ Functions ============
+
+    constructor()
+        public
+    {
+        _FUNDING_IS_POSITIVE_ = true;
+        _FUNDING_RATE_ = 0;
+        emit LogFundingRateUpdated(true, 0);
+    }
 
     /**
      * Returns the signed funding percentage according to the amount of time that has passed.
@@ -46,17 +65,22 @@ contract FundingOracle is
      * The funding percentage is a unitless rate with 18 decimals of precision.
      */
     function getFunding(
-        uint256 timestamp
+        uint256 timeDelta
     )
         external
         view
         returns (bool, uint256)
     {
         // TODO: Estimate error.
-        uint256 funding = _FUNDING_RATE_.baseMul(timestamp);
+        uint256 funding = _FUNDING_RATE_.baseMul(timeDelta);
         return (_FUNDING_IS_POSITIVE_, funding);
     }
 
+    /**
+     * Set the funding rate.
+     *
+     * The funding rate is denoted in units per second, with 36 decimals of precision.
+     */
     function setFundingRate(
         bool isPositive,
         uint256 fundingRate
@@ -67,5 +91,6 @@ contract FundingOracle is
         // TODO: Apply bounds.
         _FUNDING_IS_POSITIVE_ = isPositive;
         _FUNDING_RATE_ = fundingRate;
+        emit LogFundingRateUpdated(isPositive, fundingRate);
     }
 }

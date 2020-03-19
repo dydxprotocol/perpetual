@@ -34,7 +34,7 @@ interface I_P1Funder {
      * The funding percentage is a unitless rate with 18 decimals of precision.
      */
     function getFunding(
-        uint256 timestamp
+        uint256 timeDelta
     )
         external
         view

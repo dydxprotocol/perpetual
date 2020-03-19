@@ -36,7 +36,7 @@ contract Test_P1Funder is
     uint256 public _FUNDING_ = 0;
 
     function getFunding(
-        uint256 // timestamp
+        uint256 // timeDelta
     )
         external
         view

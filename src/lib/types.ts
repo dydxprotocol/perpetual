@@ -213,13 +213,8 @@ export class Balance {
   }
 }
 
-// From BaseMath.sol.
-export const BASE_DECIMALS = 18;
-
-/**
- * A value that is represented on the smart contract by an integer shifted by `BASE` decimal places.
- */
-export class BaseValue {
+abstract class BaseValueGeneric {
+  protected readonly base: number;
   readonly value: BigNumber;
 
   constructor(value: BigNumberable) {
@@ -227,8 +222,26 @@ export class BaseValue {
   }
 
   public toSolidity(): string {
-    return this.value.abs().shiftedBy(BASE_DECIMALS).toFixed(0);
+    return this.value.abs().shiftedBy(this.base).toFixed(0);
   }
+
+  public isPositive(): boolean {
+    return this.value.isPositive();
+  }
+
+  public isNegative(): boolean {
+    return this.value.isNegative();
+  }
+}
+
+// From BaseMath.sol.
+export const BASE_DECIMALS = 18;
+
+/**
+ * A value that is represented on the smart contract by an integer with 18 decimals of precision.
+ */
+export class BaseValue extends BaseValueGeneric {
+  protected readonly base: number = BASE_DECIMALS;
 
   static fromSolidity(solidityValue: BigNumberable, isPositive: boolean = true): BaseValue {
     // Help to detect errors in the parsing and typing of Solidity data.
@@ -258,10 +271,6 @@ export class BaseValue {
   public minus(value: BigNumberable): BaseValue {
     return new BaseValue(this.value.minus(value));
   }
-
-  public isNegative(): boolean {
-    return this.value.isNegative();
-  }
 }
 
 export class Price extends BaseValue {
@@ -270,5 +279,27 @@ export class Price extends BaseValue {
 export class Fee extends BaseValue {
   static fromBips(value: BigNumberable): Fee {
     return new Fee(new BigNumber('1e-4').times(value));
+  }
+}
+
+export const FUNDING_RATE_DECIMALS = 36;
+
+/**
+ * Funding rate is represented by an integer with 36 decimals of precision.
+ */
+export class FundingRate extends BaseValueGeneric {
+  protected readonly base: number = FUNDING_RATE_DECIMALS;
+
+  static fromSolidity(solidityValue: BigNumberable, isPositive: boolean = true): FundingRate {
+    // Help to detect errors in the parsing and typing of Solidity data.
+    if (typeof isPositive !== 'boolean') {
+      throw new Error('Error in FundingRate.fromSolidity: isPositive was not a boolean');
+    }
+
+    let value = new BigNumber(solidityValue).shiftedBy(-FUNDING_RATE_DECIMALS);
+    if (!isPositive) {
+      value = value.negated();
+    }
+    return new FundingRate(value);
   }
 }
