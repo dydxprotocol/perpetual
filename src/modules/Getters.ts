@@ -60,7 +60,6 @@ export class Getters {
     const roundedInterest: string = interest.toFixed(0, BigNumber.ROUND_FLOOR);
 
     // Return the current balance with interest applied.
-    console.log('balance.margin', balance.margin.shiftedBy(-18).toString(), 'roundedInterest', new BigNumber(roundedInterest).shiftedBy(-18).toString());
     const netMargin = balance.margin.plus(roundedInterest);
     return new Balance(netMargin, balance.position);
   }
