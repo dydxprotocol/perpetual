@@ -14,6 +14,7 @@ type IContractsByAddress = { [address: string]: Contract };
 const TUPLE_MAP = {
   'struct P1Orders.Fill': ['amount', 'price', 'fee', 'isNegativeFee'],
   'struct P1Types.Index': ['timestamp', 'isPositive', 'value'],
+  'struct SignedMath.Int': ['value', 'isPositive'],
 };
 
 export class Logs {
@@ -165,7 +166,7 @@ export class Logs {
     const { internalType } = input;
 
     if (!(internalType in TUPLE_MAP)) {
-      throw new Error('Unknown tuple type in event');
+      throw new Error(`Unknown tuple type '${internalType}' in event`);
     }
 
     const expectedTupleArgs = TUPLE_MAP[internalType];

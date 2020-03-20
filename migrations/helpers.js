@@ -16,6 +16,8 @@
 
 */
 
+const BigNumber = require('bignumber.js');
+
 function getChainId(network) {
   if (isMainnet(network)) {
     return 1;
@@ -64,7 +66,21 @@ function verifyNetwork(network) {
   }
 }
 
+/**
+ * Returns the Solidity representation of a daily funding rate.
+ *
+ * The funding rate and its bounds are represented as fixed-point numbers with 36 decimals.
+ *
+ * See the FundingRate class in src/lib/types.ts.
+ */
+function dailyFundingRateToSolidity(dailyRate) {
+  // Apply the shift before division to avoid losing precision.
+  const ratePerSecondFixed36 = new BigNumber(dailyRate).shiftedBy(36).div(24 * 60 * 60);
+  return ratePerSecondFixed36.toFixed(0);
+}
+
 module.exports = {
+  dailyFundingRateToSolidity,
   getChainId,
   isDevNetwork,
 };

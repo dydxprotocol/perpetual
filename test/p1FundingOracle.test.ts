@@ -1,3 +1,4 @@
+import { INTEGERS } from '../src/lib/Constants';
 import {
   BaseValue,
   BigNumberable,
@@ -5,6 +6,7 @@ import {
   Price,
   address,
 } from '../src/lib/types';
+import { fastForward } from './helpers/EVM';
 import {
   expect,
   expectBN,
@@ -48,16 +50,25 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
     it('sets a positive funding rate', async () => {
       await setFundingRate(new FundingRate('1e-10'));
       await setFundingRate(new FundingRate('1e-15'));
+
+      // Set to max value, while obeying the per-update speed limit.
+      await setFundingRate(FundingRate.fromDailyRate('0.01'));
+      await setFundingRate(FundingRate.fromDailyRate('0.02'));
     });
 
     it('sets a negative funding rate', async () => {
       await setFundingRate(new FundingRate('-1e-10'));
       await setFundingRate(new FundingRate('-1e-15'));
+
+      // Set to min value, while obeying the per-update speed limit.
+      await setFundingRate(FundingRate.fromDailyRate('-0.01'));
+      await setFundingRate(FundingRate.fromDailyRate('-0.02'));
     });
 
-    it('sets a very small funding rate', async () => {
+    it('sets a very small or zero funding rate', async () => {
       await setFundingRate(new FundingRate('-1e-32'));
       await setFundingRate(new FundingRate('-1e-36'));
+      await setFundingRate(new FundingRate(0));
     });
 
     it('fails if not called by the contract owner', async () => {
@@ -82,13 +93,16 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
   async function setFundingRate(
     fundingRate: FundingRate,
   ): Promise<void> {
+    // Fast forward so that the speed limit on changes to funding rate does not take effect.
+    await fastForward(INTEGERS.ONE_HOUR_IN_SECONDS.toNumber());
+
     const txResult = await ctx.perpetual.fundingOracle.setFundingRate(fundingRate, { from: admin });
 
     // Check logs.
     const logs = ctx.perpetual.logs.parseLogs(txResult);
     expect(logs.length, 'logs length').to.equal(1);
     expect(logs[0].name).to.equal('LogFundingRateUpdated');
-    expect(logs[0].args.isPositive).to.equal(fundingRate.isPositive());
-    expectBN(logs[0].args.fundingRate).to.equal(fundingRate.toSolidity());
+    expectBN(logs[0].args.fundingRate.value).to.equal(fundingRate.toSolidity());
+    expect(logs[0].args.fundingRate.isPositive).to.equal(fundingRate.isPositive());
   }
 });

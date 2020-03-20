@@ -27,7 +27,6 @@ import {
 import {
   TransactionReceipt,
 } from 'web3-eth';
-import { INTEGERS } from './Constants';
 
 // ============ Types ============
 
@@ -231,6 +230,13 @@ abstract class BaseValueGeneric {
     return this.value.abs().shiftedBy(this.base).toFixed(0);
   }
 
+  public toSoliditySignedInt(): SignedIntStruct {
+    return {
+      value: this.value.abs().shiftedBy(this.base).toFixed(0),
+      isPositive: this.isPositive(),
+    };
+  }
+
   public isPositive(): boolean {
     return this.value.isPositive();
   }
@@ -316,6 +322,6 @@ export class FundingRate extends BaseValueGeneric {
    * is calculated based on position balances.
    */
   static fromDailyRate(rate: BigNumberable): FundingRate {
-    return new FundingRate(new BigNumber(rate).div(INTEGERS.ONE_DAY_IN_SECONDS));
+    return new FundingRate(new BigNumber(rate).div(24 * 60 * 60));
   }
 }

@@ -60,8 +60,7 @@ export class FundingOracle {
   ): Promise<TxResult> {
     return this.contracts.send(
       this.contracts.p1FundingOracle.methods.setFundingRate(
-        fundingRate.isPositive(),
-        fundingRate.toSolidity(),
+        fundingRate.toSoliditySignedInt(),
       ),
       options,
     );
