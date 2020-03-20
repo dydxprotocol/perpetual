@@ -19,8 +19,8 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
+import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { Math } from "../../lib/Math.sol";
 import { SignedMath } from "../../lib/SignedMath.sol";
