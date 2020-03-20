@@ -20,7 +20,10 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
+import { Math } from "../../lib/Math.sol";
+import { SignedMath } from "../../lib/SignedMath.sol";
 import { I_P1Funder } from "../intf/I_P1Funder.sol";
 
 
@@ -35,28 +38,47 @@ contract P1FundingOracle is
     I_P1Funder
 {
     using BaseMath for uint256;
+    using SafeMath for uint256;
+    using SignedMath for SignedMath.Int;
+
+    // ============ Structs ============
+
+    struct Bounds {
+        uint256 maxAbsValue_fixed36;
+        uint256 maxAbsDiffPerUpdate_fixed36;
+        uint256 maxAbsDiffPerSecond_fixed36;
+    }
 
     // ============ Events ============
 
     event LogFundingRateUpdated(
-        bool isPositive,
-        uint256 fundingRate
+        SignedMath.Int fundingRate
     );
 
-    // ============ Storage ============
+    // ============ Immutable Storage ============
+
+    Bounds public _BOUNDS_;
+
+    // ============ Mutable Storage ============
 
     // The funding rate, denoted in units per second, with 36 decimals of precision.
-    bool private _FUNDING_IS_POSITIVE_;
-    uint256 private _FUNDING_RATE_;
+    SignedMath.Int private _FUNDING_RATE_;
+    uint256 private _UPDATED_TIMESTAMP_;
 
     // ============ Functions ============
 
-    constructor()
+    constructor(
+        Bounds memory bounds
+    )
         public
     {
-        _FUNDING_IS_POSITIVE_ = true;
-        _FUNDING_RATE_ = 0;
-        emit LogFundingRateUpdated(true, 0);
+        _BOUNDS_ = bounds;
+        _FUNDING_RATE_ = SignedMath.Int({
+            value: 0,
+            isPositive: true
+        });
+        _UPDATED_TIMESTAMP_ = block.timestamp;
+        emit LogFundingRateUpdated(_FUNDING_RATE_);
     }
 
     /**
@@ -73,8 +95,8 @@ contract P1FundingOracle is
     {
         // Note: Funding interest does not compound, as the interest affects margin balances but
         // is calculated based on position balances.
-        uint256 funding = _FUNDING_RATE_.baseMul(timeDelta);
-        return (_FUNDING_IS_POSITIVE_, funding);
+        uint256 fundingAmount = _FUNDING_RATE_.value.baseMul(timeDelta);
+        return (_FUNDING_RATE_.isPositive, fundingAmount);
     }
 
     /**
@@ -83,15 +105,59 @@ contract P1FundingOracle is
      * The funding rate is denoted in units per second, with 36 decimals of precision.
      */
     function setFundingRate(
-        bool isPositive,
-        uint256 fundingRate
+        SignedMath.Int calldata newRate
     )
         external
         onlyOwner
     {
-        // TODO: Apply bounds.
-        _FUNDING_IS_POSITIVE_ = isPositive;
-        _FUNDING_RATE_ = fundingRate;
-        emit LogFundingRateUpdated(isPositive, fundingRate);
+        SignedMath.Int memory boundedNewRate = _boundRate(newRate);
+        _FUNDING_RATE_ = boundedNewRate;
+        _UPDATED_TIMESTAMP_ = block.timestamp;
+        emit LogFundingRateUpdated(boundedNewRate);
+    }
+
+    /**
+     * Apply the contract-defined bounds and return the bounded rate.
+     */
+    function _boundRate(
+        SignedMath.Int memory newRate
+    )
+        private
+        view
+        returns (SignedMath.Int memory)
+    {
+        // Get bounding params from storage.
+        uint256 maxAbsValue_fixed36 = _BOUNDS_.maxAbsValue_fixed36;
+        uint256 maxAbsDiffPerUpdate_fixed36 = _BOUNDS_.maxAbsDiffPerUpdate_fixed36;
+        uint256 maxAbsDiffPerSecond_fixed36 = _BOUNDS_.maxAbsDiffPerSecond_fixed36;
+
+        // Get the old rate and the maximum allowed change in the rate.
+        SignedMath.Int memory oldRate = _FUNDING_RATE_;
+        uint256 timeDelta = block.timestamp.sub(_UPDATED_TIMESTAMP_);
+        uint256 maxDiff_fixed36 = Math.min(
+            maxAbsDiffPerUpdate_fixed36,
+            maxAbsDiffPerSecond_fixed36.mul(timeDelta)
+        );
+
+        // Calculate and return the bounded rate.
+        if (newRate.gt(oldRate)) {
+            SignedMath.Int memory upperBound = SignedMath.min(
+                oldRate.add(maxDiff_fixed36),
+                SignedMath.Int({ value: maxAbsValue_fixed36, isPositive: true })
+            );
+            return SignedMath.min(
+                newRate,
+                upperBound
+            );
+        } else {
+            SignedMath.Int memory lowerBound = SignedMath.max(
+                oldRate.sub(maxDiff_fixed36),
+                SignedMath.Int({ value: maxAbsValue_fixed36, isPositive: false })
+            );
+            return SignedMath.max(
+                newRate,
+                lowerBound
+            );
+        }
     }
 }
