@@ -109,11 +109,13 @@ contract P1FundingOracle is
     )
         external
         onlyOwner
+        returns (SignedMath.Int memory)
     {
         SignedMath.Int memory boundedNewRate = _boundRate(newRate);
         _FUNDING_RATE_ = boundedNewRate;
         _UPDATED_TIMESTAMP_ = block.timestamp;
         emit LogFundingRateUpdated(boundedNewRate);
+        return boundedNewRate;
     }
 
     /**

@@ -113,7 +113,8 @@ library SignedMath {
             if (b.isPositive) {
                 return a.value > b.value;
             } else {
-                return true;
+                // True, unless both values are zero.
+                return a.value != 0 || b.value != 0;
             }
         } else {
             if (b.isPositive) {
