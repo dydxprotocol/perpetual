@@ -26,6 +26,7 @@ import {
   FundingRate,
   SendOptions,
   TxResult,
+  FundingRateStruct,
 } from '../lib/types';
 
 export class FundingOracle {
@@ -52,6 +53,22 @@ export class FundingOracle {
       options,
     );
     return BaseValue.fromSolidity(funding, isPositive);
+  }
+
+  /**
+   * Simulates the result of calling setFundingRate() using `eth_call`.
+   */
+  public async getBoundedFundingRate(
+    fundingRate: FundingRate,
+    options?: CallOptions,
+  ): Promise<FundingRate> {
+    const result: FundingRateStruct = await this.contracts.call(
+      this.contracts.p1FundingOracle.methods.setFundingRate(
+        fundingRate.toSoliditySignedInt(),
+      ),
+      options,
+    );
+    return FundingRate.fromSolidity(result.value, result.isPositive);
   }
 
   public async setFundingRate(

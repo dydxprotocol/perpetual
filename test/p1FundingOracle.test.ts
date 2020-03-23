@@ -9,7 +9,6 @@ import {
 import { fastForward } from './helpers/EVM';
 import {
   expect,
-  expectBN,
   expectBaseValueEqual,
   expectThrow,
 } from './helpers/Expect';
@@ -35,13 +34,15 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
     });
 
     it('gets funding as a function of time elapsed', async () => {
+      // Funding is represented as an annual rate.
       await ctx.perpetual.fundingOracle.setFundingRate(
         new FundingRate('1e-10'),
         { from: admin },
       );
-      await expectFunding(1000, '1e-7');
-      await expectFunding(10000, '1e-6');
-      await expectFunding(100000, '1e-5');
+
+      await expectFunding(INTEGERS.ONE_YEAR_IN_SECONDS.times(1000), '1e-7');
+      await expectFunding(INTEGERS.ONE_YEAR_IN_SECONDS.times(10000), '1e-6');
+      await expectFunding(INTEGERS.ONE_YEAR_IN_SECONDS.times(100000), '1e-5');
     });
   });
 
@@ -66,8 +67,8 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
     });
 
     it('sets a very small or zero funding rate', async () => {
-      await setFundingRate(new FundingRate('-1e-32'));
-      await setFundingRate(new FundingRate('-1e-36'));
+      await setFundingRate(new FundingRate('-1e-16'));
+      await setFundingRate(new FundingRate('-1e-18'));
       await setFundingRate(new FundingRate(0));
     });
 
@@ -96,13 +97,24 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
     // Fast forward so that the speed limit on changes to funding rate does not take effect.
     await fastForward(INTEGERS.ONE_HOUR_IN_SECONDS.toNumber());
 
+    // Verify the return value is as expected.
+    const simulatedResult = await ctx.perpetual.fundingOracle.getBoundedFundingRate(
+      fundingRate,
+      { from: admin },
+    );
+    expectBaseValueEqual(simulatedResult, fundingRate, 'simulated result');
+
+    // Set the funding rate.
     const txResult = await ctx.perpetual.fundingOracle.setFundingRate(fundingRate, { from: admin });
 
     // Check logs.
     const logs = ctx.perpetual.logs.parseLogs(txResult);
     expect(logs.length, 'logs length').to.equal(1);
     expect(logs[0].name).to.equal('LogFundingRateUpdated');
-    expectBN(logs[0].args.fundingRate.value).to.equal(fundingRate.toSolidity());
-    expect(logs[0].args.fundingRate.isPositive).to.equal(fundingRate.isPositive());
+    expectBaseValueEqual(
+      logs[0].args.fundingRate.baseValue,
+      fundingRate,
+      'funding rate',
+    );
   }
 });

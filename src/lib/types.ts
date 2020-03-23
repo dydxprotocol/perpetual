@@ -130,6 +130,12 @@ export interface BalanceStruct {
   position: string;
 }
 
+export interface FundingRateStruct {
+  timestamp: BigNumber;
+  isPositive: boolean;
+  value: BigNumber;
+}
+
 export interface TradeArg {
   makerIndex: number;
   takerIndex: number;
@@ -142,6 +148,11 @@ export interface TradeResult {
   positionAmount: BigNumber;
   isBuy: boolean;
   traderFlags: BigNumber;
+}
+
+export interface LoggedFundingRate {
+  timestamp: BigNumber;
+  baseValue: BaseValue;
 }
 
 export interface Index {
@@ -213,13 +224,13 @@ export class Balance {
   }
 }
 
+// From BaseMath.sol.
+export const BASE_DECIMALS = 18;
+
 /**
- * Base class for a fixed-point representation of a number.
- *
- * Precision must be specified by the subclass.
+ * A value that is represented on the smart contract by an integer shifted by `BASE` decimal places.
  */
-abstract class BaseValueGeneric {
-  protected readonly base: number;
+export class BaseValue {
   readonly value: BigNumber;
 
   constructor(value: BigNumberable) {
@@ -227,33 +238,15 @@ abstract class BaseValueGeneric {
   }
 
   public toSolidity(): string {
-    return this.value.abs().shiftedBy(this.base).toFixed(0);
+    return this.value.abs().shiftedBy(BASE_DECIMALS).toFixed(0);
   }
 
   public toSoliditySignedInt(): SignedIntStruct {
     return {
-      value: this.value.abs().shiftedBy(this.base).toFixed(0),
+      value: this.toSolidity(),
       isPositive: this.isPositive(),
     };
   }
-
-  public isPositive(): boolean {
-    return this.value.isPositive();
-  }
-
-  public isNegative(): boolean {
-    return this.value.isNegative();
-  }
-}
-
-// From BaseMath.sol.
-export const BASE_DECIMALS = 18;
-
-/**
- * A value represented on the smart contract as a fixed-point number with 18 decimals of precision.
- */
-export class BaseValue extends BaseValueGeneric {
-  protected readonly base: number = BASE_DECIMALS;
 
   static fromSolidity(solidityValue: BigNumberable, isPositive: boolean = true): BaseValue {
     // Help to detect errors in the parsing and typing of Solidity data.
@@ -283,6 +276,14 @@ export class BaseValue extends BaseValueGeneric {
   public minus(value: BigNumberable): BaseValue {
     return new BaseValue(this.value.minus(value));
   }
+
+  public isPositive(): boolean {
+    return this.value.isPositive();
+  }
+
+  public isNegative(): boolean {
+    return this.value.isNegative();
+  }
 }
 
 export class Price extends BaseValue {
@@ -294,34 +295,14 @@ export class Fee extends BaseValue {
   }
 }
 
-export const FUNDING_RATE_DECIMALS = 36;
-
-/**
- * Funding rate is represented on the smart contract as a fixed-point number with 36 decimals.
- */
-export class FundingRate extends BaseValueGeneric {
-  protected readonly base: number = FUNDING_RATE_DECIMALS;
-
-  static fromSolidity(solidityValue: BigNumberable, isPositive: boolean = true): FundingRate {
-    // Help to detect errors in the parsing and typing of Solidity data.
-    if (typeof isPositive !== 'boolean') {
-      throw new Error('Error in FundingRate.fromSolidity: isPositive was not a boolean');
-    }
-
-    let value = new BigNumber(solidityValue).shiftedBy(-FUNDING_RATE_DECIMALS);
-    if (!isPositive) {
-      value = value.negated();
-    }
-    return new FundingRate(value);
-  }
-
+export class FundingRate extends BaseValue {
   /**
-   * Returns funding rate per second given funding rate per day.
+   * Returns funding rate represented as an annual rate (assumes 365 days/year) given a daily rate.
    *
    * Note: Funding interest does not compound, as the interest affects margin balances but
    * is calculated based on position balances.
    */
   static fromDailyRate(rate: BigNumberable): FundingRate {
-    return new FundingRate(new BigNumber(rate).div(24 * 60 * 60));
+    return new FundingRate(new BigNumber(rate).times(365));
   }
 }

@@ -6,15 +6,19 @@ import { Contract } from 'web3-eth-contract';
 import { AbiInput, AbiItem } from 'web3-utils';
 
 import { Contracts } from '../modules/Contracts';
-import { Balance, BaseValue, Index, TxResult } from '../lib/types';
+import {
+  Balance,
+  BaseValue,
+  Index,
+  LoggedFundingRate,
+  TxResult,
+} from '../lib/types';
 import { ORDER_FLAGS } from '../lib/Constants';
 
 type IContractsByAddress = { [address: string]: Contract };
 
 const TUPLE_MAP = {
   'struct P1Orders.Fill': ['amount', 'price', 'fee', 'isNegativeFee'],
-  'struct P1Types.Index': ['timestamp', 'isPositive', 'value'],
-  'struct SignedMath.Int': ['value', 'isPositive'],
 };
 
 export class Logs {
@@ -133,6 +137,8 @@ export class Logs {
   private parseValue(input: AbiInput, argValue: any): any {
     if (input.type === 'bytes32') {
       switch (input.name) {
+        case 'fundingRate':
+          return this.parseFundingRate(argValue);
         case 'index':
           return this.parseIndex(argValue);
         case 'balance':
@@ -192,10 +198,21 @@ export class Logs {
     return result;
   }
 
+  private parseFundingRate(fundingRate: string): LoggedFundingRate {
+    const timestamp = new BigNumber(fundingRate.substr(2, 42), 16);
+    const isPositive = !new BigNumber(fundingRate.substr(44, 2), 16).isZero();
+    const value = new BigNumber(fundingRate.substr(46, 20), 16);
+    return {
+      timestamp,
+      rawValue: fundingRate,
+      baseValue: BaseValue.fromSolidity(value, isPositive),
+    } as LoggedFundingRate;
+  }
+
   private parseIndex(index: string): Index {
     const timestamp = new BigNumber(index.substr(2, 30), 16);
-    const value = new BigNumber(index.substr(34, 32), 16);
     const isPositive = !new BigNumber(index.substr(32, 2), 16).isZero();
+    const value = new BigNumber(index.substr(34, 32), 16);
     return {
       timestamp,
       rawValue: index,

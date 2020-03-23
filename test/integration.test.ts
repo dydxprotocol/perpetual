@@ -12,7 +12,7 @@ import {
 } from '../src/lib/types';
 import { fastForward } from './helpers/EVM';
 import { INTEGERS } from '../src/lib/Constants';
-import { expectBN, expect } from './helpers/Expect';
+import { expectBN, expectBaseValueEqual } from './helpers/Expect';
 
 // Percentage error tolerance when comparing effective daily rate to nominal daily rate.
 // The only source of error should be small variations in transaction timing.
@@ -150,9 +150,23 @@ perpetualDescribe('Integration testing', init, (ctx: ITestContext) => {
    */
   async function setFundingRateAndCheckLogs(dailyRate: BigNumberable): Promise<void> {
     const fundingRate = FundingRate.fromDailyRate(dailyRate);
+
+    // Verify the return value is as expected.
+    const simulatedResult = await ctx.perpetual.fundingOracle.getBoundedFundingRate(
+      fundingRate,
+      { from: admin },
+    );
+    expectBaseValueEqual(simulatedResult, fundingRate, 'simulated result');
+
+    // Set the funding rate.
     const txResult = await ctx.perpetual.fundingOracle.setFundingRate(fundingRate, { from: admin });
+
+    // Check logs.
     const fundingRateUpdatedLog = ctx.perpetual.logs.parseLogs(txResult)[0];
-    expectBN(fundingRateUpdatedLog.args.fundingRate.value).to.equal(fundingRate.toSolidity());
-    expect(fundingRateUpdatedLog.args.fundingRate.isPositive).to.equal(fundingRate.isPositive());
+    expectBaseValueEqual(
+      fundingRateUpdatedLog.args.fundingRate.baseValue,
+      fundingRate,
+      'funding rate',
+    );
   }
 });

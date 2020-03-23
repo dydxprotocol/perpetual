@@ -69,14 +69,11 @@ function verifyNetwork(network) {
 /**
  * Returns the Solidity representation of a daily funding rate.
  *
- * The funding rate and its bounds are represented as fixed-point numbers with 36 decimals.
- *
- * See the FundingRate class in src/lib/types.ts.
+ * The funding rate and its bounds are represented as APRs, fixed-point with 18 decimals.
+ * Note that the funding rate does not compound. See the FundingRate class in src/lib/types.ts.
  */
 function dailyFundingRateToSolidity(dailyRate) {
-  // Apply the shift before division to avoid losing precision.
-  const ratePerSecondFixed36 = new BigNumber(dailyRate).shiftedBy(36).div(24 * 60 * 60);
-  return ratePerSecondFixed36.toFixed(0);
+  return new BigNumber(dailyRate).times(365).shiftedBy(18).toFixed(0);
 }
 
 module.exports = {

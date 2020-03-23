@@ -23,6 +23,7 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { Math } from "../../lib/Math.sol";
+import { SafeCast } from "../../lib/SafeCast.sol";
 import { SignedMath } from "../../lib/SignedMath.sol";
 import { I_P1Funder } from "../intf/I_P1Funder.sol";
 
@@ -38,21 +39,40 @@ contract P1FundingOracle is
     I_P1Funder
 {
     using BaseMath for uint256;
+    using SafeCast for uint256;
     using SafeMath for uint256;
     using SignedMath for SignedMath.Int;
 
+    // ============ Constants ============
+
+    uint256 private constant FLAG_IS_POSITIVE = 1 << 80;
+
+    uint256 private constant SECONDS_PER_YEAR = 365 days;
+
     // ============ Structs ============
 
+    /**
+     * The funding rate is stored as an APR (assumes 365 days/year), fixed-point with 18 decimals.
+     *
+     * A uint80 is used so that the full Bounds struct fits in a storage slot. This is able to
+     * support daily rates up to around 331213%.
+     */
+    struct FundingRate {
+        uint32 timestamp;
+        bool isPositive;
+        uint80 value;
+    }
+
     struct Bounds {
-        uint256 maxAbsValue_fixed36;
-        uint256 maxAbsDiffPerUpdate_fixed36;
-        uint256 maxAbsDiffPerSecond_fixed36;
+        uint80 maxAbsValue;
+        uint80 maxAbsDiffPerUpdate;
+        uint80 maxAbsDiffPerSecond;
     }
 
     // ============ Events ============
 
     event LogFundingRateUpdated(
-        SignedMath.Int fundingRate
+        bytes32 fundingRate
     );
 
     // ============ Immutable Storage ============
@@ -62,8 +82,7 @@ contract P1FundingOracle is
     // ============ Mutable Storage ============
 
     // The funding rate, denoted in units per second, with 36 decimals of precision.
-    SignedMath.Int private _FUNDING_RATE_;
-    uint256 private _UPDATED_TIMESTAMP_;
+    FundingRate private _FUNDING_RATE_;
 
     // ============ Functions ============
 
@@ -73,18 +92,18 @@ contract P1FundingOracle is
         public
     {
         _BOUNDS_ = bounds;
-        _FUNDING_RATE_ = SignedMath.Int({
-            value: 0,
-            isPositive: true
+        _FUNDING_RATE_ = FundingRate({
+            timestamp: block.timestamp.toUint32(),
+            isPositive: true,
+            value: 0
         });
-        _UPDATED_TIMESTAMP_ = block.timestamp;
-        emit LogFundingRateUpdated(_FUNDING_RATE_);
+        emit LogFundingRateUpdated(_fundingRateToBytes32(_FUNDING_RATE_));
     }
 
     /**
-     * Returns the signed funding percentage according to the amount of time that has passed.
+     * Returns the signed funding amount according to the amount of time that has passed.
      *
-     * The funding percentage is a unitless rate with 18 decimals of precision.
+     * The returned funding amount is a unitless rate, as a fixed-point number with 18 decimals.
      */
     function getFunding(
         uint256 timeDelta
@@ -95,7 +114,10 @@ contract P1FundingOracle is
     {
         // Note: Funding interest does not compound, as the interest affects margin balances but
         // is calculated based on position balances.
-        uint256 fundingAmount = _FUNDING_RATE_.value.baseMul(timeDelta);
+        //
+        // Note: Funding rate will be rounded toward zero.
+        uint256 value = uint256(_FUNDING_RATE_.value);
+        uint256 fundingAmount = Math.getFraction(value, timeDelta, SECONDS_PER_YEAR);
         return (_FUNDING_RATE_.isPositive, fundingAmount);
     }
 
@@ -109,13 +131,17 @@ contract P1FundingOracle is
     )
         external
         onlyOwner
-        returns (SignedMath.Int memory)
+        returns (FundingRate memory)
     {
         SignedMath.Int memory boundedNewRate = _boundRate(newRate);
-        _FUNDING_RATE_ = boundedNewRate;
-        _UPDATED_TIMESTAMP_ = block.timestamp;
-        emit LogFundingRateUpdated(boundedNewRate);
-        return boundedNewRate;
+        FundingRate memory boundedNewRateWithTimestamp = FundingRate({
+            timestamp: block.timestamp.toUint32(),
+            isPositive: boundedNewRate.isPositive,
+            value: boundedNewRate.value.toUint80()
+        });
+        _FUNDING_RATE_ = boundedNewRateWithTimestamp;
+        emit LogFundingRateUpdated(_fundingRateToBytes32(boundedNewRateWithTimestamp));
+        return boundedNewRateWithTimestamp;
     }
 
     /**
@@ -129,23 +155,30 @@ contract P1FundingOracle is
         returns (SignedMath.Int memory)
     {
         // Get bounding params from storage.
-        uint256 maxAbsValue_fixed36 = _BOUNDS_.maxAbsValue_fixed36;
-        uint256 maxAbsDiffPerUpdate_fixed36 = _BOUNDS_.maxAbsDiffPerUpdate_fixed36;
-        uint256 maxAbsDiffPerSecond_fixed36 = _BOUNDS_.maxAbsDiffPerSecond_fixed36;
+        Bounds memory bounds = _BOUNDS_;
+        uint256 maxAbsValue = uint256(bounds.maxAbsValue);
+        uint256 maxAbsDiffPerUpdate = uint256(bounds.maxAbsDiffPerUpdate);
+        uint256 maxAbsDiffPerSecond = uint256(bounds.maxAbsDiffPerSecond);
 
-        // Get the old rate and the maximum allowed change in the rate.
-        SignedMath.Int memory oldRate = _FUNDING_RATE_;
-        uint256 timeDelta = block.timestamp.sub(_UPDATED_TIMESTAMP_);
-        uint256 maxDiff_fixed36 = Math.min(
-            maxAbsDiffPerUpdate_fixed36,
-            maxAbsDiffPerSecond_fixed36.mul(timeDelta)
+        // Get the old rate from storage.
+        FundingRate memory oldRateWithTimestamp = _FUNDING_RATE_;
+        SignedMath.Int memory oldRate = SignedMath.Int({
+            value: oldRateWithTimestamp.value, // upcast as uint256
+            isPositive: oldRateWithTimestamp.isPositive
+        });
+
+        // Get the maximum allowed change in the rate.
+        uint256 timeDelta = block.timestamp.sub(oldRateWithTimestamp.timestamp);
+        uint256 maxDiff = Math.min(
+            maxAbsDiffPerUpdate,
+            maxAbsDiffPerSecond.mul(timeDelta)
         );
 
         // Calculate and return the bounded rate.
         if (newRate.gt(oldRate)) {
             SignedMath.Int memory upperBound = SignedMath.min(
-                oldRate.add(maxDiff_fixed36),
-                SignedMath.Int({ value: maxAbsValue_fixed36, isPositive: true })
+                oldRate.add(maxDiff),
+                SignedMath.Int({ value: maxAbsValue, isPositive: true })
             );
             return SignedMath.min(
                 newRate,
@@ -153,13 +186,30 @@ contract P1FundingOracle is
             );
         } else {
             SignedMath.Int memory lowerBound = SignedMath.max(
-                oldRate.sub(maxDiff_fixed36),
-                SignedMath.Int({ value: maxAbsValue_fixed36, isPositive: false })
+                oldRate.sub(maxDiff),
+                SignedMath.Int({ value: maxAbsValue, isPositive: false })
             );
             return SignedMath.max(
                 newRate,
                 lowerBound
             );
         }
+    }
+
+    /**
+     * Returns a compressed bytes32 representation of the funding rate for logging.
+     */
+    function _fundingRateToBytes32(
+        FundingRate memory fundingRate
+    )
+        private
+        pure
+        returns (bytes32)
+    {
+        uint256 result =
+            fundingRate.value
+            | (fundingRate.isPositive ? FLAG_IS_POSITIVE : 0)
+            | (uint256(fundingRate.timestamp) << 88);
+        return bytes32(result);
     }
 }

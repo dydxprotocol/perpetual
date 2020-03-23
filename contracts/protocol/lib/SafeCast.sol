@@ -71,6 +71,27 @@ library SafeCast {
     }
 
     /**
+     * @dev Returns the downcasted uint80 from uint256, reverting on
+     * overflow (when the input is greater than largest uint80).
+     *
+     * Counterpart to Solidity's `uint80` operator.
+     *
+     * Requirements:
+     *
+     * - input must fit into 80 bits
+     */
+    function toUint80(
+        uint256 value
+    )
+        internal
+        pure
+        returns (uint80)
+    {
+        require(value < 2**80, "SafeCast: value doesn\'t fit in 80 bits");
+        return uint80(value);
+    }
+
+    /**
      * @dev Returns the downcasted uint32 from uint256, reverting on
      * overflow (when the input is greater than largest uint32).
      *
