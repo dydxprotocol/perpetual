@@ -158,6 +158,16 @@ contract Test_Lib {
         return SafeCast.toUint120(value);
     }
 
+    function toUint80(
+        uint256 value
+    )
+        external
+        pure
+        returns (uint80)
+    {
+        return SafeCast.toUint80(value);
+    }
+
     function toUint32(
         uint256 value
     )
