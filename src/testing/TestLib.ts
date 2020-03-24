@@ -169,19 +169,6 @@ export class TestLib {
     return new BigNumber(result);
   }
 
-  public async toUint80(
-    value: BigNumberable,
-    options?: CallOptions,
-  ): Promise<BigNumber> {
-    const result: string = await this.contracts.call(
-      this.contracts.testLib.methods.toUint80(
-        new BigNumber(value).toFixed(0),
-      ),
-      options,
-    );
-    return new BigNumber(result);
-  }
-
   public async toUint120(
     value: BigNumberable,
     options?: CallOptions,

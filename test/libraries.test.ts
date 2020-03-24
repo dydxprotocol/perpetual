@@ -168,20 +168,6 @@ perpetualDescribe('Solidity libraries', init, (ctx: ITestContext) => {
       );
     });
 
-    it('toUint80()', async () => {
-      const value = new BigNumber(2).pow(80).minus(1);
-      expectBN(await ctx.perpetual.testing.lib.toUint80(value)).to.equal(value);
-    });
-
-    it('toUint80() reverts', async () => {
-      await expectThrow(
-        ctx.perpetual.testing.lib.toUint80(
-          new BigNumber(2).pow(80),
-        ),
-        'SafeCast: value doesn\'t fit in 80 bits',
-      );
-    });
-
     it('toUint32()', async () => {
       const value = new BigNumber(2).pow(32).minus(1);
       expectBN(await ctx.perpetual.testing.lib.toUint32(value)).to.equal(value);
