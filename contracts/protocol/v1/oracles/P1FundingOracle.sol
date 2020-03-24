@@ -163,7 +163,7 @@ contract P1FundingOracle is
         // Get the old rate from storage.
         FundingRate memory oldRateWithTimestamp = _FUNDING_RATE_;
         SignedMath.Int memory oldRate = SignedMath.Int({
-            value: oldRateWithTimestamp.value, // upcast as uint256
+            value: oldRateWithTimestamp.value,
             isPositive: oldRateWithTimestamp.isPositive
         });
 

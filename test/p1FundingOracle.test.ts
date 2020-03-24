@@ -10,10 +10,18 @@ import { fastForward } from './helpers/EVM';
 import {
   expect,
   expectBaseValueEqual,
+  expectBaseValueNotEqual,
   expectThrow,
 } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+
+// Funding rate limits. Some of these are set by the deploy script.
+const minUnit = INTEGERS.ONE.shiftedBy(-18);
+const maxRate = FundingRate.fromDailyRate('0.02');
+const minRate = maxRate.negated();
+const maxDiffPerUpdate = FundingRate.fromDailyRate('0.01');
+const maxDiffPerSecond = maxRate.div(INTEGERS.ONE_HOUR_IN_SECONDS);
 
 const oraclePrice = new Price(100);
 
@@ -51,19 +59,11 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
     it('sets a positive funding rate', async () => {
       await setFundingRate(new FundingRate('1e-10'));
       await setFundingRate(new FundingRate('1e-15'));
-
-      // Set to max value, while obeying the per-update speed limit.
-      await setFundingRate(FundingRate.fromDailyRate('0.01'));
-      await setFundingRate(FundingRate.fromDailyRate('0.02'));
     });
 
     it('sets a negative funding rate', async () => {
       await setFundingRate(new FundingRate('-1e-10'));
       await setFundingRate(new FundingRate('-1e-15'));
-
-      // Set to min value, while obeying the per-update speed limit.
-      await setFundingRate(FundingRate.fromDailyRate('-0.01'));
-      await setFundingRate(FundingRate.fromDailyRate('-0.02'));
     });
 
     it('sets a very small or zero funding rate', async () => {
@@ -77,6 +77,92 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
         ctx.perpetual.fundingOracle.setFundingRate(new FundingRate('1e-10')),
         'Ownable: caller is not the owner',
       );
+    });
+
+    describe('funding rate bounds', () => {
+
+      it('cannot exceed the max value', async () => {
+        // Set to max value, while obeying the per-update speed limit.
+        await setFundingRate(FundingRate.fromDailyRate('0.01'));
+        await setFundingRate(maxRate);
+
+        // Try to set above max value.
+        await setFundingRate(maxRate.plus(minUnit), maxRate);
+      });
+
+      it('cannot exceed the min value', async () => {
+        // Set to min value, while obeying the per-update speed limit.
+        await setFundingRate(FundingRate.fromDailyRate('-0.01'));
+        await setFundingRate(minRate);
+
+        // Try to set below min value.
+        await setFundingRate(minRate.minus(minUnit), minRate);
+      });
+
+      it('cannot increase faster than the per update limit', async () => {
+        await setFundingRate(maxDiffPerUpdate.plus(minUnit), maxDiffPerUpdate);
+        await setFundingRate(maxDiffPerUpdate.times(2).plus(minUnit), maxDiffPerUpdate.times(2));
+      });
+
+      it('cannot decrease faster than the per update limit', async () => {
+        const negativeMaxDiff = maxDiffPerUpdate.negated();
+        await setFundingRate(negativeMaxDiff.minus(minUnit), negativeMaxDiff);
+        await setFundingRate(negativeMaxDiff.times(2).minus(minUnit), negativeMaxDiff.times(2));
+      });
+
+      it('cannot increase faster than the per second limit', async () => {
+        const quarterHour = 60 * 15;
+        const quarterHourMaxDiff = maxDiffPerSecond.times(quarterHour);
+        const initialRate = new FundingRate('0.123');
+        const targetRate = initialRate.plus(quarterHourMaxDiff.value);
+
+        // Update the funding rate timestamp so we can more accurately estimate the
+        // time elapsed between updates.
+        await setFundingRate(initialRate);
+
+        // Elapse less than a quarter hour. Assume this test case takes less than 15 seconds.
+        await fastForward(quarterHour - 15);
+
+        // Expect the bounded rate to be slightly lower than the requested rate.
+        const boundedRate = await ctx.perpetual.fundingOracle.getBoundedFundingRate(
+          targetRate,
+          { from: admin },
+        );
+        expectBaseValueNotEqual(boundedRate, targetRate);
+
+        // Error should be at most (15 seconds) / (15 minutes) = 1 / 60.
+        const actualDiff = boundedRate.minus(initialRate.value);
+        const ratio = actualDiff.value.div(quarterHourMaxDiff.value).toNumber();
+        expect(ratio).to.be.lessThan(1); // sanity check
+        expect(ratio).to.be.gte(59 / 60);
+      });
+
+      it('cannot decrease faster than the per second limit', async () => {
+        const quarterHour = 60 * 15;
+        const quarterHourMaxDiff = maxDiffPerSecond.times(quarterHour);
+        const initialRate = new FundingRate('0.123');
+        const targetRate = initialRate.minus(quarterHourMaxDiff.value);
+
+        // Update the funding rate timestamp so we can more accurately estimate the
+        // time elapsed between updates.
+        await setFundingRate(initialRate);
+
+        // Elapse less than a quarter hour. Assume this test case takes less than 15 seconds.
+        await fastForward(quarterHour - 15);
+
+        // Expect the bounded rate to be slightly greater than the requested rate.
+        const boundedRate = await ctx.perpetual.fundingOracle.getBoundedFundingRate(
+          targetRate,
+          { from: admin },
+        );
+        expectBaseValueNotEqual(boundedRate, targetRate);
+
+        // Error should be at most (15 seconds) / (15 minutes) = 1 / 60.
+        const actualDiff = boundedRate.minus(initialRate.value);
+        const ratio = actualDiff.value.div(quarterHourMaxDiff.value).negated().toNumber();
+        expect(ratio).to.be.lessThan(1); // sanity check
+        expect(ratio).to.be.gte(59 / 60);
+      });
     });
   });
 
@@ -93,8 +179,9 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
    */
   async function setFundingRate(
     fundingRate: FundingRate,
+    expectedRate: FundingRate = fundingRate,
   ): Promise<void> {
-    // Fast forward so that the speed limit on changes to funding rate does not take effect.
+    // Elapse enough time so that the speed limit does not take effect.
     await fastForward(INTEGERS.ONE_HOUR_IN_SECONDS.toNumber());
 
     // Verify the return value is as expected.
@@ -102,7 +189,7 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
       fundingRate,
       { from: admin },
     );
-    expectBaseValueEqual(simulatedResult, fundingRate, 'simulated result');
+    expectBaseValueEqual(simulatedResult, expectedRate, 'simulated result');
 
     // Set the funding rate.
     const txResult = await ctx.perpetual.fundingOracle.setFundingRate(fundingRate, { from: admin });
@@ -113,7 +200,7 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
     expect(logs[0].name).to.equal('LogFundingRateUpdated');
     expectBaseValueEqual(
       logs[0].args.fundingRate.baseValue,
-      fundingRate,
+      expectedRate,
       'funding rate',
     );
   }

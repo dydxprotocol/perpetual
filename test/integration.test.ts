@@ -98,10 +98,14 @@ perpetualDescribe('Integration testing', init, (ctx: ITestContext) => {
     // Since the funding rate does not compound, we do not expect the outcome to depend on
     // the frequency of updates to the index.
 
-    // Fast forward so that the speed limit on changes to funding rate does not take effect.
+    // Fast forward and update the rate in multiple steps so that the diff-per-update and
+    // diff-per-second limits do not take effect.
     await ctx.perpetual.fundingOracle.setFundingRate(new FundingRate(0), { from: admin });
     await fastForward(INTEGERS.ONE_HOUR_IN_SECONDS.toNumber());
-    await ctx.perpetual.fundingOracle.setFundingRate(new FundingRate('-0.01'), { from: admin });
+    await ctx.perpetual.fundingOracle.setFundingRate(
+      FundingRate.fromDailyRate('-0.01'),
+      { from: admin },
+    );
     await fastForward(INTEGERS.ONE_HOUR_IN_SECONDS.toNumber());
 
     // Settle the accounts and get checkpoint balances.

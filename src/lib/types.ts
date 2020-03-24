@@ -277,6 +277,10 @@ export class BaseValue {
     return new BaseValue(this.value.minus(value));
   }
 
+  public negated(): BaseValue {
+    return new BaseValue(this.value.negated());
+  }
+
   public isPositive(): boolean {
     return this.value.isPositive();
   }

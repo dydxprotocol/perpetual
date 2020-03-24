@@ -56,6 +56,15 @@ export function expectBN(expectedBN: BigNumberable, message?: string): Chai.Asse
   return (chai.expect(new BigNumber(expectedBN), message) as any).to.be.bignumber;
 }
 
+/**
+ * Compare two BaseValue's according to the precision level used in Solidity (18 decimals).
+ */
 export function expectBaseValueEqual(arg1: BaseValue, arg2: BaseValue, message?: string) {
-  expectBN(arg1.value, message).to.eq(arg2.value);
+  expect(arg1.value.toFixed(18), message).to.deep.equal(arg2.value.toFixed(18));
+}
+/**
+ * Compare two BaseValue's according to the precision level used in Solidity (18 decimals).
+ */
+export function expectBaseValueNotEqual(arg1: BaseValue, arg2: BaseValue, message?: string) {
+  expect(arg1.value.toFixed(18), message).not.to.deep.equal(arg2.value.toFixed(18));
 }
