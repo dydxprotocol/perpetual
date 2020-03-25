@@ -17,7 +17,6 @@
 */
 
 const {
-  dailyFundingRateToSolidity,
   getChainId,
   isDevNetwork,
 } = require('./helpers');
@@ -86,14 +85,6 @@ async function deployProtocol(deployer, network, accounts) {
 async function deployOracles(deployer) {
   await deployer.deploy(
     P1FundingOracle,
-    {
-      maxAbsValue: dailyFundingRateToSolidity('0.02'),
-      maxAbsDiffPerUpdate: dailyFundingRateToSolidity('0.01'),
-
-      // A max diff per second of maxRate / 3600 indicates that the fastest the funding rate
-      // can go from zero to its min or max allowed value (or vice versa) is in one hour.
-      maxAbsDiffPerSecond: dailyFundingRateToSolidity(0.02 / 3600),
-    },
   );
 }
 

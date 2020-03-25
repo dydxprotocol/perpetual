@@ -40,33 +40,36 @@ contract P1FundingOracle is
 {
     using BaseMath for uint256;
     using SafeCast for uint256;
+    using SafeMath for uint128;
     using SafeMath for uint256;
     using SignedMath for SignedMath.Int;
 
     // ============ Constants ============
 
-    uint256 private constant FLAG_IS_POSITIVE = 1 << 80;
-
+    uint256 private constant FLAG_IS_POSITIVE = 1 << 128;
     uint256 private constant SECONDS_PER_YEAR = 365 days;
+
+    /**
+     * Bounding params constraining updates to the funding rate.
+     *
+     * Like the funding rate, these are annual rates, fixed-point with 18 decimals.
+     *
+     * Setting MAX_ABS_DIFF_PER_SECOND = MAX_ABS_VALUE / 3600 indicates that the fastest the funding
+     * rate can go from zero to its min or max allowed value (or vice versa) is in one hour.
+     */
+    uint128 public constant MAX_ABS_VALUE = 2 * 10 ** 16 * 365; // 2% daily
+    uint128 public constant MAX_ABS_DIFF_PER_UPDATE = MAX_ABS_VALUE / 2; // 1% daily
+    uint128 public constant MAX_ABS_DIFF_PER_SECOND = MAX_ABS_VALUE / 3600; // 0.055…% daily / sec
 
     // ============ Structs ============
 
     /**
-     * The funding rate is stored as an APR (assumes 365 days/year), fixed-point with 18 decimals.
-     *
-     * A uint80 is used so that the full Bounds struct fits in a storage slot. This is able to
-     * support daily rates up to around 331213%.
+     * The funding rate is stored as an annual rate (365 days/year), fixed-point with 18 decimals.
      */
     struct FundingRate {
         uint32 timestamp;
         bool isPositive;
-        uint80 value;
-    }
-
-    struct Bounds {
-        uint80 maxAbsValue;
-        uint80 maxAbsDiffPerUpdate;
-        uint80 maxAbsDiffPerSecond;
+        uint128 value;
     }
 
     // ============ Events ============
@@ -75,10 +78,6 @@ contract P1FundingOracle is
         bytes32 fundingRate
     );
 
-    // ============ Immutable Storage ============
-
-    Bounds public _BOUNDS_;
-
     // ============ Mutable Storage ============
 
     // The funding rate, denoted in units per second, with 36 decimals of precision.
@@ -86,12 +85,9 @@ contract P1FundingOracle is
 
     // ============ Functions ============
 
-    constructor(
-        Bounds memory bounds
-    )
+    constructor()
         public
     {
-        _BOUNDS_ = bounds;
         _FUNDING_RATE_ = FundingRate({
             timestamp: block.timestamp.toUint32(),
             isPositive: true,
@@ -137,7 +133,7 @@ contract P1FundingOracle is
         FundingRate memory boundedNewRateWithTimestamp = FundingRate({
             timestamp: block.timestamp.toUint32(),
             isPositive: boundedNewRate.isPositive,
-            value: boundedNewRate.value.toUint80()
+            value: boundedNewRate.value.toUint128()
         });
         _FUNDING_RATE_ = boundedNewRateWithTimestamp;
         emit LogFundingRateUpdated(_fundingRateToBytes32(boundedNewRateWithTimestamp));
@@ -154,12 +150,6 @@ contract P1FundingOracle is
         view
         returns (SignedMath.Int memory)
     {
-        // Get bounding params from storage.
-        Bounds memory bounds = _BOUNDS_;
-        uint256 maxAbsValue = uint256(bounds.maxAbsValue);
-        uint256 maxAbsDiffPerUpdate = uint256(bounds.maxAbsDiffPerUpdate);
-        uint256 maxAbsDiffPerSecond = uint256(bounds.maxAbsDiffPerSecond);
-
         // Get the old rate from storage.
         FundingRate memory oldRateWithTimestamp = _FUNDING_RATE_;
         SignedMath.Int memory oldRate = SignedMath.Int({
@@ -170,15 +160,15 @@ contract P1FundingOracle is
         // Get the maximum allowed change in the rate.
         uint256 timeDelta = block.timestamp.sub(oldRateWithTimestamp.timestamp);
         uint256 maxDiff = Math.min(
-            maxAbsDiffPerUpdate,
-            maxAbsDiffPerSecond.mul(timeDelta)
+            MAX_ABS_DIFF_PER_UPDATE,
+            MAX_ABS_DIFF_PER_SECOND.mul(timeDelta)
         );
 
         // Calculate and return the bounded rate.
         if (newRate.gt(oldRate)) {
             SignedMath.Int memory upperBound = SignedMath.min(
                 oldRate.add(maxDiff),
-                SignedMath.Int({ value: maxAbsValue, isPositive: true })
+                SignedMath.Int({ value: MAX_ABS_VALUE, isPositive: true })
             );
             return SignedMath.min(
                 newRate,
@@ -187,7 +177,7 @@ contract P1FundingOracle is
         } else {
             SignedMath.Int memory lowerBound = SignedMath.max(
                 oldRate.sub(maxDiff),
-                SignedMath.Int({ value: maxAbsValue, isPositive: false })
+                SignedMath.Int({ value: MAX_ABS_VALUE, isPositive: false })
             );
             return SignedMath.max(
                 newRate,
@@ -209,7 +199,7 @@ contract P1FundingOracle is
         uint256 result =
             fundingRate.value
             | (fundingRate.isPositive ? FLAG_IS_POSITIVE : 0)
-            | (uint256(fundingRate.timestamp) << 88);
+            | (uint256(fundingRate.timestamp) << 136);
         return bytes32(result);
     }
 }

@@ -35,6 +35,16 @@ async function init(ctx: ITestContext): Promise<void> {
 
 perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
 
+  describe('constants', () => {
+
+    it('the bounds are set as expected', async () => {
+      const bounds = await ctx.perpetual.fundingOracle.getBounds();
+      expectBaseValueEqual(bounds.maxAbsValue, maxRate);
+      expectBaseValueEqual(bounds.maxAbsDiffPerUpdate, maxDiffPerUpdate);
+      expectBaseValueEqual(bounds.maxAbsDiffPerSecond, maxDiffPerSecond);
+    });
+  });
+
   describe('getFunding()', () => {
 
     it('initially returns zero', async () => {
@@ -134,7 +144,7 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
         const actualDiff = boundedRate.minus(initialRate.value);
         const ratio = actualDiff.value.div(quarterHourMaxDiff.value).toNumber();
         expect(ratio).to.be.lessThan(1); // sanity check
-        expect(ratio).to.be.gte(59 / 60);
+        expect(ratio).to.be.gte(59 / 60 - 0.0000000001); // Allow tolerance for rounding error.
       });
 
       it('cannot decrease faster than the per second limit', async () => {
@@ -161,7 +171,7 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
         const actualDiff = boundedRate.minus(initialRate.value);
         const ratio = actualDiff.value.div(quarterHourMaxDiff.value).negated().toNumber();
         expect(ratio).to.be.lessThan(1); // sanity check
-        expect(ratio).to.be.gte(59 / 60);
+        expect(ratio).to.be.gte(59 / 60 - 0.0000000001); // Allow tolerance for rounding error.
       });
     });
   });

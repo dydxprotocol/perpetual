@@ -150,6 +150,12 @@ export interface TradeResult {
   traderFlags: BigNumber;
 }
 
+export interface FundingRateBounds {
+  maxAbsValue: FundingRate;
+  maxAbsDiffPerUpdate: FundingRate;
+  maxAbsDiffPerSecond: FundingRate;
+}
+
 export interface LoggedFundingRate {
   timestamp: BigNumber;
   baseValue: BaseValue;

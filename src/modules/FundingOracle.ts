@@ -24,9 +24,10 @@ import {
   BigNumberable,
   CallOptions,
   FundingRate,
+  FundingRateBounds,
+  FundingRateStruct,
   SendOptions,
   TxResult,
-  FundingRateStruct,
 } from '../lib/types';
 
 export class FundingOracle {
@@ -40,6 +41,26 @@ export class FundingOracle {
 
   public get address(): string {
     return this.contracts.p1FundingOracle.options.address;
+  }
+
+  public async getBounds(
+    options?: CallOptions,
+  ): Promise<FundingRateBounds> {
+    const results: [string, string, string] = await Promise.all([
+      this.contracts.call(this.contracts.p1FundingOracle.methods.MAX_ABS_VALUE(), options),
+      this.contracts.call(
+        this.contracts.p1FundingOracle.methods.MAX_ABS_DIFF_PER_UPDATE(),
+        options,
+      ),
+      this.contracts.call(
+        this.contracts.p1FundingOracle.methods.MAX_ABS_DIFF_PER_SECOND(),
+        options,
+      ),
+    ]);
+    const [maxAbsValue, maxAbsDiffPerUpdate, maxAbsDiffPerSecond] = results.map((s: string) => {
+      return FundingRate.fromSolidity(s);
+    });
+    return { maxAbsValue, maxAbsDiffPerUpdate, maxAbsDiffPerSecond };
   }
 
   public async getFunding(

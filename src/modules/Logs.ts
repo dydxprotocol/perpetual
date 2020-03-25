@@ -199,14 +199,7 @@ export class Logs {
   }
 
   private parseFundingRate(fundingRate: string): LoggedFundingRate {
-    const timestamp = new BigNumber(fundingRate.substr(2, 42), 16);
-    const isPositive = !new BigNumber(fundingRate.substr(44, 2), 16).isZero();
-    const value = new BigNumber(fundingRate.substr(46, 20), 16);
-    return {
-      timestamp,
-      rawValue: fundingRate,
-      baseValue: BaseValue.fromSolidity(value, isPositive),
-    } as LoggedFundingRate;
+    return this.parseIndex(fundingRate) as LoggedFundingRate;
   }
 
   private parseIndex(index: string): Index {

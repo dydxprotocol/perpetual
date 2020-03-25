@@ -43,7 +43,6 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
       const newOracle = ctx.perpetual.contracts.testP1Monolith.options.address;
       const originalOracle = await ctx.perpetual.getters.getOracleContract();
       await ctx.perpetual.testing.monolith.setPrice(new Price(1));
-      console.log(await ctx.perpetual.testing.monolith.getPrice());
       const txResult = await ctx.perpetual.admin.setOracle(newOracle, { from: admin });
 
       // Check result

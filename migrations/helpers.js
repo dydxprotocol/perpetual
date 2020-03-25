@@ -16,8 +16,6 @@
 
 */
 
-const BigNumber = require('bignumber.js');
-
 function getChainId(network) {
   if (isMainnet(network)) {
     return 1;
@@ -66,18 +64,7 @@ function verifyNetwork(network) {
   }
 }
 
-/**
- * Returns the Solidity representation of a daily funding rate.
- *
- * The funding rate and its bounds are represented as APRs, fixed-point with 18 decimals.
- * Note that the funding rate does not compound. See the FundingRate class in src/lib/types.ts.
- */
-function dailyFundingRateToSolidity(dailyRate) {
-  return new BigNumber(dailyRate).times(365).shiftedBy(18).toFixed(0);
-}
-
 module.exports = {
-  dailyFundingRateToSolidity,
   getChainId,
   isDevNetwork,
 };
