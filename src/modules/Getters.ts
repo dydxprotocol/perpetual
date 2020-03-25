@@ -57,7 +57,7 @@ export class Getters {
     const interest: BigNumber = indexDiff.times(balance.position.negated()).value;
 
     // Follow P1Settlement rounding rules: round debits up and credits down.
-    const roundedInterest: string = interest.toFixed(0, BigNumber.ROUND_FLOOR);
+    const roundedInterest: BigNumber = interest.integerValue(BigNumber.ROUND_FLOOR);
 
     // Return the current balance with interest applied.
     const netMargin = balance.margin.plus(roundedInterest);

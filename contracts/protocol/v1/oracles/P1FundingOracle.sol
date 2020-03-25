@@ -26,6 +26,8 @@ import { Math } from "../../lib/Math.sol";
 import { SafeCast } from "../../lib/SafeCast.sol";
 import { SignedMath } from "../../lib/SignedMath.sol";
 import { I_P1Funder } from "../intf/I_P1Funder.sol";
+import { P1IndexMath } from "../lib/P1IndexMath.sol";
+import { P1Types } from "../lib/P1Types.sol";
 
 
 /**
@@ -42,6 +44,7 @@ contract P1FundingOracle is
     using SafeCast for uint256;
     using SafeMath for uint128;
     using SafeMath for uint256;
+    using P1IndexMath for P1Types.Index;
     using SignedMath for SignedMath.Int;
 
     // ============ Constants ============
@@ -59,18 +62,7 @@ contract P1FundingOracle is
      */
     uint128 public constant MAX_ABS_VALUE = 2 * 10 ** 16 * 365; // 2% daily
     uint128 public constant MAX_ABS_DIFF_PER_UPDATE = MAX_ABS_VALUE / 2; // 1% daily
-    uint128 public constant MAX_ABS_DIFF_PER_SECOND = MAX_ABS_VALUE / 3600; // 0.055…% daily / sec
-
-    // ============ Structs ============
-
-    /**
-     * The funding rate is stored as an annual rate (365 days/year), fixed-point with 18 decimals.
-     */
-    struct FundingRate {
-        uint32 timestamp;
-        bool isPositive;
-        uint128 value;
-    }
+    uint128 public constant MAX_ABS_DIFF_PER_SECOND = MAX_ABS_VALUE / 3600; // 0.00055…% daily / sec
 
     // ============ Events ============
 
@@ -81,19 +73,19 @@ contract P1FundingOracle is
     // ============ Mutable Storage ============
 
     // The funding rate, denoted in units per second, with 36 decimals of precision.
-    FundingRate private _FUNDING_RATE_;
+    P1Types.Index private _FUNDING_RATE_;
 
     // ============ Functions ============
 
     constructor()
         public
     {
-        _FUNDING_RATE_ = FundingRate({
+        _FUNDING_RATE_ = P1Types.Index({
             timestamp: block.timestamp.toUint32(),
             isPositive: true,
             value: 0
         });
-        emit LogFundingRateUpdated(_fundingRateToBytes32(_FUNDING_RATE_));
+        emit LogFundingRateUpdated(_FUNDING_RATE_.toBytes32());
     }
 
     /**
@@ -111,10 +103,11 @@ contract P1FundingOracle is
         // Note: Funding interest does not compound, as the interest affects margin balances but
         // is calculated based on position balances.
         //
-        // Note: Funding rate will be rounded toward zero.
-        uint256 value = uint256(_FUNDING_RATE_.value);
+        // Note: The funding interest amount will be rounded toward zero.
+        P1Types.Index memory fundingRate = _FUNDING_RATE_;
+        uint256 value = uint256(fundingRate.value);
         uint256 fundingAmount = Math.getFraction(value, timeDelta, SECONDS_PER_YEAR);
-        return (_FUNDING_RATE_.isPositive, fundingAmount);
+        return (fundingRate.isPositive, fundingAmount);
     }
 
     /**
@@ -127,16 +120,16 @@ contract P1FundingOracle is
     )
         external
         onlyOwner
-        returns (FundingRate memory)
+        returns (P1Types.Index memory)
     {
         SignedMath.Int memory boundedNewRate = _boundRate(newRate);
-        FundingRate memory boundedNewRateWithTimestamp = FundingRate({
+        P1Types.Index memory boundedNewRateWithTimestamp = P1Types.Index({
             timestamp: block.timestamp.toUint32(),
             isPositive: boundedNewRate.isPositive,
             value: boundedNewRate.value.toUint128()
         });
         _FUNDING_RATE_ = boundedNewRateWithTimestamp;
-        emit LogFundingRateUpdated(_fundingRateToBytes32(boundedNewRateWithTimestamp));
+        emit LogFundingRateUpdated(boundedNewRateWithTimestamp.toBytes32());
         return boundedNewRateWithTimestamp;
     }
 
@@ -151,7 +144,7 @@ contract P1FundingOracle is
         returns (SignedMath.Int memory)
     {
         // Get the old rate from storage.
-        FundingRate memory oldRateWithTimestamp = _FUNDING_RATE_;
+        P1Types.Index memory oldRateWithTimestamp = _FUNDING_RATE_;
         SignedMath.Int memory oldRate = SignedMath.Int({
             value: oldRateWithTimestamp.value,
             isPositive: oldRateWithTimestamp.isPositive
@@ -184,22 +177,5 @@ contract P1FundingOracle is
                 lowerBound
             );
         }
-    }
-
-    /**
-     * Returns a compressed bytes32 representation of the funding rate for logging.
-     */
-    function _fundingRateToBytes32(
-        FundingRate memory fundingRate
-    )
-        private
-        pure
-        returns (bytes32)
-    {
-        uint256 result =
-            fundingRate.value
-            | (fundingRate.isPositive ? FLAG_IS_POSITIVE : 0)
-            | (uint256(fundingRate.timestamp) << 136);
-        return bytes32(result);
     }
 }
