@@ -5,7 +5,7 @@ import { INTEGERS } from '../src/lib/Constants';
 import { BaseValue, Index, Price, TxResult, address } from '../src/lib/types';
 import { mineAvgBlock } from './helpers/EVM';
 import { expect, expectBN, expectBaseValueEqual } from './helpers/Expect';
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 import { expectBalances, mintAndDeposit, expectMarginBalances, expectContractSurplus } from './helpers/balances';
@@ -20,7 +20,7 @@ let otherAccountB: address;
 let otherAccountC: address;
 
 async function init(ctx: ITestContext): Promise<void> {
-  await initializeWithTestContracts(ctx);
+  await initializePerpetual(ctx);
   long = ctx.accounts[2];
   short = ctx.accounts[3];
   otherAccountA = ctx.accounts[4];

@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 import _ from 'lodash';
 
 import { expectThrow } from './helpers/Expect';
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import initializePerpetual from './helpers/initializePerpetual';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { INTEGERS } from '../src/lib/Constants';
@@ -35,7 +35,7 @@ let riskyAccount: address;
 let errorAddress: string;
 
 async function init(ctx: ITestContext): Promise<void> {
-  await initializeWithTestContracts(ctx);
+  await initializePerpetual(ctx);
   maker = ctx.accounts[2];
   riskyAccount = ctx.accounts[3];
 

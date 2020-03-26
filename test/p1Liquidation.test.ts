@@ -1,18 +1,18 @@
 import BigNumber from 'bignumber.js';
 import _ from 'lodash';
 
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import initializePerpetual from './helpers/initializePerpetual';
 import { expectBalances, mintAndDeposit, expectPositions } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
-import { address } from '../src';
 import { FEES, INTEGERS, PRICES } from '../src/lib/Constants';
 import {
   BigNumberable,
   Order,
   Price,
   SigningMethod,
+  address,
 } from '../src/lib/types';
 
 const initialPrice = new Price(100);
@@ -30,7 +30,7 @@ let short: address;
 let thirdParty: address;
 
 async function init(ctx: ITestContext): Promise<void> {
-  await initializeWithTestContracts(ctx);
+  await initializePerpetual(ctx);
   admin = ctx.accounts[0];
   long = ctx.accounts[1];
   short = ctx.accounts[2];

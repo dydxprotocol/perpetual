@@ -26,6 +26,11 @@ const {
 // Base Protocol
 const PerpetualProxy = artifacts.require('PerpetualProxy');
 const PerpetualV1 = artifacts.require('PerpetualV1');
+
+// Oracles
+const P1FundingOracle = artifacts.require('P1FundingOracle');
+
+// Traders
 const P1Orders = artifacts.require('P1Orders');
 const P1Deleveraging = artifacts.require('P1Deleveraging');
 const P1Liquidation = artifacts.require('P1Liquidation');
@@ -46,6 +51,7 @@ const migration = async (deployer, network, accounts) => {
     deployProtocol(deployer, network, accounts),
   ]);
 
+  await deployOracles(deployer, network, accounts);
   await deployTraders(deployer, network, accounts);
 };
 
@@ -73,6 +79,12 @@ async function deployProtocol(deployer, network, accounts) {
     PerpetualV1.address, // logic
     accounts[0], // admin
     '0x', // data
+  );
+}
+
+async function deployOracles(deployer) {
+  await deployer.deploy(
+    P1FundingOracle,
   );
 }
 

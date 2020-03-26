@@ -6,14 +6,19 @@ import { Contract } from 'web3-eth-contract';
 import { AbiInput, AbiItem } from 'web3-utils';
 
 import { Contracts } from '../modules/Contracts';
-import { Balance, BaseValue, Index, TxResult } from '../lib/types';
+import {
+  Balance,
+  BaseValue,
+  Index,
+  LoggedFundingRate,
+  TxResult,
+} from '../lib/types';
 import { ORDER_FLAGS } from '../lib/Constants';
 
 type IContractsByAddress = { [address: string]: Contract };
 
 const TUPLE_MAP = {
   'struct P1Orders.Fill': ['amount', 'price', 'fee', 'isNegativeFee'],
-  'struct P1Types.Index': ['timestamp', 'isPositive', 'value'],
 };
 
 export class Logs {
@@ -132,6 +137,8 @@ export class Logs {
   private parseValue(input: AbiInput, argValue: any): any {
     if (input.type === 'bytes32') {
       switch (input.name) {
+        case 'fundingRate':
+          return this.parseFundingRate(argValue);
         case 'index':
           return this.parseIndex(argValue);
         case 'balance':
@@ -165,7 +172,7 @@ export class Logs {
     const { internalType } = input;
 
     if (!(internalType in TUPLE_MAP)) {
-      throw new Error('Unknown tuple type in event');
+      throw new Error(`Unknown tuple type '${internalType}' in event`);
     }
 
     const expectedTupleArgs = TUPLE_MAP[internalType];
@@ -191,10 +198,14 @@ export class Logs {
     return result;
   }
 
+  private parseFundingRate(fundingRate: string): LoggedFundingRate {
+    return this.parseIndex(fundingRate) as LoggedFundingRate;
+  }
+
   private parseIndex(index: string): Index {
     const timestamp = new BigNumber(index.substr(2, 30), 16);
-    const value = new BigNumber(index.substr(34, 32), 16);
     const isPositive = !new BigNumber(index.substr(32, 2), 16).isZero();
+    const value = new BigNumber(index.substr(34, 32), 16);
     return {
       timestamp,
       rawValue: index,

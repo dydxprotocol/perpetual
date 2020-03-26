@@ -38,6 +38,32 @@ export class Getters {
     this.perpetual = this.contracts.perpetualV1;
   }
 
+  // ============ Helper Functions ============
+
+  /**
+   * Get the margin and position for an account, taking into account unsettled interest.
+   */
+  public async getNetAccountBalance(
+    account: address,
+    options?: CallOptions,
+  ): Promise<Balance> {
+    // Get the unsettled balance.
+    const balance = await this.getAccountBalance(account, options);
+
+    // Calculate the unsettled interest.
+    const globalIndex: Index = await this.getGlobalIndex(options);
+    const localIndex: Index = await this.getAccountIndex(account, options);
+    const indexDiff: BaseValue = globalIndex.baseValue.minus(localIndex.baseValue.value);
+    const interest: BigNumber = indexDiff.times(balance.position.negated()).value;
+
+    // Follow P1Settlement rounding rules: round debits up and credits down.
+    const roundedInterest: BigNumber = interest.integerValue(BigNumber.ROUND_FLOOR);
+
+    // Return the current balance with interest applied.
+    const netMargin = balance.margin.plus(roundedInterest);
+    return new Balance(netMargin, balance.position);
+  }
+
   // ============ Account Getters ============
 
   public async getAccountBalance(

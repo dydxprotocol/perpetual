@@ -26,7 +26,7 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
  * @title BaseMath
  * @author dYdX
  *
- * BaseMath contract for working with numbers that support up to 18 decimal places.
+ * Arithmetic for fixed-point numbers with 18 decimals of precision.
  */
 library BaseMath {
     using SafeMath for uint256;

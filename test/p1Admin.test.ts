@@ -1,7 +1,7 @@
 import { ADDRESSES } from '../src/lib/Constants';
 import { BASE_DECIMALS, BaseValue, Price, address } from '../src/lib/types';
 import { expect, expectBN, expectAddressesEqual, expectThrow } from './helpers/Expect';
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { BigNumber } from '../src';
 
@@ -10,7 +10,7 @@ const oraclePrice = new Price(100);
 let admin: address;
 
 async function init(ctx: ITestContext): Promise<void> {
-  await initializeWithTestContracts(ctx);
+  await initializePerpetual(ctx);
   admin = ctx.accounts[0];
   await ctx.perpetual.testing.oracle.setPrice(oraclePrice);
 }
@@ -43,7 +43,6 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
       const newOracle = ctx.perpetual.contracts.testP1Monolith.options.address;
       const originalOracle = await ctx.perpetual.getters.getOracleContract();
       await ctx.perpetual.testing.monolith.setPrice(new Price(1));
-      console.log(await ctx.perpetual.testing.monolith.getPrice());
       const txResult = await ctx.perpetual.admin.setOracle(newOracle, { from: admin });
 
       // Check result

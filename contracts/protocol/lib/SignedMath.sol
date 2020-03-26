@@ -40,6 +40,9 @@ library SignedMath {
 
     // ============ Functions ============
 
+    /**
+     * Returns a new signed integer equal to a signed integer plus an unsigned integer.
+     */
     function add(
         Int memory sint,
         uint256 value
@@ -66,6 +69,9 @@ library SignedMath {
         });
     }
 
+    /**
+     * Returns a new signed integer equal to a signed integer minus an unsigned integer.
+     */
     function sub(
         Int memory sint,
         uint256 value
@@ -90,5 +96,60 @@ library SignedMath {
             value: value.sub(sint.value),
             isPositive: false
         });
+    }
+
+    /**
+     * Returns true if signed integer a is greater than signed integer b, and false otherwise.
+     */
+    function gt(
+        Int memory a,
+        Int memory b
+    )
+        internal
+        pure
+        returns (bool)
+    {
+        if (a.isPositive) {
+            if (b.isPositive) {
+                return a.value > b.value;
+            } else {
+                // True, unless both values are zero.
+                return a.value != 0 || b.value != 0;
+            }
+        } else {
+            if (b.isPositive) {
+                return false;
+            } else {
+                return a.value < b.value;
+            }
+        }
+    }
+
+    /**
+     * Returns the minimum between signed integers a and b.
+     */
+    function min(
+        Int memory a,
+        Int memory b
+    )
+        internal
+        pure
+        returns (Int memory)
+    {
+        return gt(b, a) ? a : b;
+    }
+
+    /**
+     * Returns the maximum between signed integers a and b.
+     */
+    function max(
+        Int memory a,
+        Int memory b
+    )
+        internal
+        pure
+        returns (Int memory)
+    {
+        return gt(a, b) ? a : b;
     }
 }

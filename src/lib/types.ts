@@ -130,6 +130,12 @@ export interface BalanceStruct {
   position: string;
 }
 
+export interface FundingRateStruct {
+  timestamp: BigNumber;
+  isPositive: boolean;
+  value: BigNumber;
+}
+
 export interface TradeArg {
   makerIndex: number;
   takerIndex: number;
@@ -142,6 +148,17 @@ export interface TradeResult {
   positionAmount: BigNumber;
   isBuy: boolean;
   traderFlags: BigNumber;
+}
+
+export interface FundingRateBounds {
+  maxAbsValue: FundingRate;
+  maxAbsDiffPerUpdate: FundingRate;
+  maxAbsDiffPerSecond: FundingRate;
+}
+
+export interface LoggedFundingRate {
+  timestamp: BigNumber;
+  baseValue: BaseValue;
 }
 
 export interface Index {
@@ -230,6 +247,13 @@ export class BaseValue {
     return this.value.abs().shiftedBy(BASE_DECIMALS).toFixed(0);
   }
 
+  public toSoliditySignedInt(): SignedIntStruct {
+    return {
+      value: this.toSolidity(),
+      isPositive: this.isPositive(),
+    };
+  }
+
   static fromSolidity(solidityValue: BigNumberable, isPositive: boolean = true): BaseValue {
     // Help to detect errors in the parsing and typing of Solidity data.
     if (typeof isPositive !== 'boolean') {
@@ -259,6 +283,14 @@ export class BaseValue {
     return new BaseValue(this.value.minus(value));
   }
 
+  public negated(): BaseValue {
+    return new BaseValue(this.value.negated());
+  }
+
+  public isPositive(): boolean {
+    return this.value.isPositive();
+  }
+
   public isNegative(): boolean {
     return this.value.isNegative();
   }
@@ -270,5 +302,17 @@ export class Price extends BaseValue {
 export class Fee extends BaseValue {
   static fromBips(value: BigNumberable): Fee {
     return new Fee(new BigNumber('1e-4').times(value));
+  }
+}
+
+export class FundingRate extends BaseValue {
+  /**
+   * Returns funding rate represented as an annual rate (assumes 365 days/year) given a daily rate.
+   *
+   * Note: Funding interest does not compound, as the interest affects margin balances but
+   * is calculated based on position balances.
+   */
+  static fromDailyRate(rate: BigNumberable): FundingRate {
+    return new FundingRate(new BigNumber(rate).times(365));
   }
 }

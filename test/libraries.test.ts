@@ -9,13 +9,13 @@ import {
 } from '../src/lib/SignatureHelper';
 import { address, BaseValue, Balance, Price } from '../src/lib/types';
 import { expectBN, expectAddressesEqual, expectThrow, expect } from './helpers/Expect';
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 
 let admin: address;
 
 async function init(ctx: ITestContext): Promise<void> {
-  await initializeWithTestContracts(ctx);
+  await initializePerpetual(ctx);
   admin = ctx.accounts[0];
 }
 

@@ -1,10 +1,10 @@
 import { expect, expectThrow } from './helpers/Expect';
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import initializePerpetual from './helpers/initializePerpetual';
 import { address } from '../src/lib/types';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 
-perpetualDescribe('Proxy', initializeWithTestContracts, (ctx: ITestContext) => {
+perpetualDescribe('Proxy', initializePerpetual, (ctx: ITestContext) => {
 
   describe('initialize()', () => {
     it('succeeds', async () => {});

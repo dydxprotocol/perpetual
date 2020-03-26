@@ -1,9 +1,9 @@
 import { BaseValue } from '../src';
 import { expectBN, expectBaseValueEqual } from './helpers/Expect';
-import initializeWithTestContracts from './helpers/initializeWithTestContracts';
+import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 
-perpetualDescribe('Perpetual', initializeWithTestContracts, (ctx: ITestContext) => {
+perpetualDescribe('Perpetual', initializePerpetual, (ctx: ITestContext) => {
 
   describe('initial state', () => {
     it('has proper index', async () => {

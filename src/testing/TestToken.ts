@@ -35,6 +35,10 @@ export class TestToken extends Token {
     super(contracts, contracts.testToken);
   }
 
+  public get address(): string {
+    return this.contracts.testToken.options.address;
+  }
+
   public mint(
     account: address,
     amount: BigNumberable,
