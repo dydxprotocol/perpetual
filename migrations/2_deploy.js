@@ -19,6 +19,7 @@
 const {
   getChainId,
   isDevNetwork,
+  getMakerPriceOracleAddress,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -35,6 +36,9 @@ const P1Orders = artifacts.require('P1Orders');
 const P1Deleveraging = artifacts.require('P1Deleveraging');
 const P1Liquidation = artifacts.require('P1Liquidation');
 
+// Price Oracles
+const P1MakerOracle = artifacts.require('P1MakerOracle');
+
 // Test Contracts
 const TestLib = artifacts.require('Test_Lib');
 const TestP1Funder = artifacts.require('Test_P1Funder');
@@ -42,6 +46,7 @@ const TestP1Monolith = artifacts.require('Test_P1Monolith');
 const TestP1Oracle = artifacts.require('Test_P1Oracle');
 const TestP1Trader = artifacts.require('Test_P1Trader');
 const TestToken = artifacts.require('Test_Token');
+const TestMakerOracle = artifacts.require('Test_MakerOracle');
 
 // ============ Main Migration ============
 
@@ -51,8 +56,8 @@ const migration = async (deployer, network, accounts) => {
     deployProtocol(deployer, network, accounts),
   ]);
 
-  await deployOracles(deployer, network, accounts);
-  await deployTraders(deployer, network, accounts);
+  await deployOracles(deployer, network);
+  await deployTraders(deployer, network);
 };
 
 module.exports = migration;
@@ -68,6 +73,7 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestP1Oracle),
       deployer.deploy(TestP1Trader),
       deployer.deploy(TestToken),
+      deployer.deploy(TestMakerOracle),
     ]);
   }
 }
@@ -82,10 +88,17 @@ async function deployProtocol(deployer, network, accounts) {
   );
 }
 
-async function deployOracles(deployer) {
-  await deployer.deploy(
-    P1FundingOracle,
-  );
+async function deployOracles(deployer, network) {
+  await Promise.all([
+    deployer.deploy(
+      P1FundingOracle,
+    ),
+    deployer.deploy(
+      P1MakerOracle,
+      PerpetualProxy.address,
+      getMakerPriceOracleAddress(network, TestMakerOracle.address),
+    ),
+  ]);
 }
 
 async function deployTraders(deployer, network) {

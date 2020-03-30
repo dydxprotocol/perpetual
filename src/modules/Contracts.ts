@@ -34,6 +34,7 @@ const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'buil
 const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 const p1FundingOracleJson = require(`${jsonFolder}P1FundingOracle.json`);
+const p1MakerOracleJson = require(`${jsonFolder}P1MakerOracle.json`);
 const p1OrdersJson = require(`${jsonFolder}P1Orders.json`);
 const p1DeleveragingJson = require(`${jsonFolder}P1Deleveraging.json`);
 const p1LiquidationJson = require(`${jsonFolder}P1Liquidation.json`);
@@ -43,6 +44,7 @@ const testP1MonolithJson = require(`${jsonFolder}Test_P1Monolith.json`);
 const testP1OracleJson = require(`${jsonFolder}Test_P1Oracle.json`);
 const testP1TraderJson = require(`${jsonFolder}Test_P1Trader.json`);
 const testTokenJson = require(`${jsonFolder}Test_Token.json`);
+const testMakerOracleJson = require(`${jsonFolder}Test_MakerOracle.json`);
 
 import {
   address,
@@ -73,6 +75,7 @@ export class Contracts {
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
   public p1FundingOracle: Contract;
+  public p1MakerOracle: Contract;
   public p1Orders: Contract;
   public p1Deleveraging: Contract;
   public p1Liquidation: Contract;
@@ -84,6 +87,7 @@ export class Contracts {
   public testP1Oracle: Contract;
   public testP1Trader: Contract;
   public testToken: Contract;
+  public testMakerOracle: Contract;
 
   constructor(
     provider: Provider,
@@ -106,6 +110,7 @@ export class Contracts {
     this.perpetualProxy = this.addMainContract(perpetualProxyJson);
     this.perpetualV1 = this.addMainContract(perpetualV1Json);
     this.p1FundingOracle = this.addMainContract(p1FundingOracleJson);
+    this.p1MakerOracle = this.addMainContract(p1MakerOracleJson);
     this.p1Orders = this.addMainContract(p1OrdersJson);
     this.p1Deleveraging = this.addMainContract(p1DeleveragingJson);
     this.p1Liquidation = this.addMainContract(p1LiquidationJson);
@@ -117,6 +122,7 @@ export class Contracts {
     this.testP1Oracle = this.addTestContract(testP1OracleJson);
     this.testP1Trader = this.addTestContract(testP1TraderJson);
     this.testToken = this.addTestContract(testTokenJson);
+    this.testMakerOracle = this.addTestContract(testMakerOracleJson);
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
