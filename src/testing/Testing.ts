@@ -23,6 +23,7 @@ import { TestP1Monolith } from './TestP1Monolith';
 import { TestP1Oracle } from './TestP1Oracle';
 import { TestP1Trader } from './TestP1Trader';
 import { TestToken } from './TestToken';
+import { TestMakerOracle } from './TestMakerOracle';
 import { Provider } from '../lib/types';
 import { Contracts } from '../modules/Contracts';
 
@@ -34,6 +35,7 @@ export class Testing {
   public oracle: TestP1Oracle;
   public trader: TestP1Trader;
   public token: TestToken;
+  public makerOracle: TestMakerOracle;
 
   constructor(
     provider: Provider,
@@ -46,5 +48,6 @@ export class Testing {
     this.oracle = new TestP1Oracle(contracts);
     this.trader = new TestP1Trader(contracts);
     this.token = new TestToken(contracts);
+    this.makerOracle = new TestMakerOracle(contracts);
   }
 }

@@ -64,7 +64,29 @@ function verifyNetwork(network) {
   }
 }
 
+function getPartiallyDelayedMultisigAddress(network) {
+  if (isMainnet(network)) {
+    return '0xba2906b18B069b40C6D2CAFd392E76ad479B1B53';
+  }
+  if (isKovan(network)) {
+    return '0x3d62d8b3ef034e0fde7de8fec4f557a3e6e4efa1';
+  }
+  throw new Error('Cannot find Admin Multisig');
+}
+
+function getMakerPriceOracleAddress(network, devAddress) {
+  if (isMainnet(network)) {
+    return '0x064409168198A7E9108036D072eF59F923dEDC9A';
+  }
+  if (isDevNetwork(network)) {
+    return devAddress;
+  }
+  throw new Error('Cannot find MakerPriceOracle');
+}
+
 module.exports = {
   getChainId,
   isDevNetwork,
+  getPartiallyDelayedMultisigAddress,
+  getMakerPriceOracleAddress,
 };
