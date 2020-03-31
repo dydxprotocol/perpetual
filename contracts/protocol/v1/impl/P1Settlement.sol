@@ -49,7 +49,7 @@ contract P1Settlement is
 
     // ============ Events ============
 
-    event LogIndexUpdated(
+    event LogIndex(
         bytes32 index
     );
 
@@ -105,9 +105,9 @@ contract P1Settlement is
                 value: signedIndex.value.toUint128()
             });
             _GLOBAL_INDEX_ = index;
-
-            emit LogIndexUpdated(index.toBytes32());
         }
+
+        emit LogIndex(index.toBytes32());
 
         return P1Types.Context({
             price: price,

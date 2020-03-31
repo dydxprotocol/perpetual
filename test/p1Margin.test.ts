@@ -46,7 +46,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       expect(logs.length).to.equal(2);
       const [indexUpdatedLog, depositLog] = logs;
-      expect(indexUpdatedLog.name).to.equal('LogIndexUpdated');
+      expect(indexUpdatedLog.name).to.equal('LogIndex');
       expect(depositLog.name).to.equal('LogDeposit');
       expect(depositLog.args.account).to.equal(accountOwner);
       expectBN(depositLog.args.amount).to.eq(amount);
@@ -134,7 +134,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       expect(logs.length).to.equal(2);
       const [indexUpdatedLog, withdrawLog] = logs;
-      expect(indexUpdatedLog.name).to.equal('LogIndexUpdated');
+      expect(indexUpdatedLog.name).to.equal('LogIndex');
       expect(withdrawLog.name).to.equal('LogWithdraw');
       expect(withdrawLog.args.account).to.equal(accountOwner);
       expect(withdrawLog.args.destination).to.eq(accountOwner);
@@ -175,7 +175,7 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       expect(logs.length).to.equal(2);
       const [indexUpdatedLog, withdrawLog] = logs;
-      expect(indexUpdatedLog.name).to.equal('LogIndexUpdated');
+      expect(indexUpdatedLog.name).to.equal('LogIndex');
       expect(withdrawLog.name).to.equal('LogWithdraw');
       expect(withdrawLog.args.account).to.equal(accountOwner);
       expect(withdrawLog.args.destination).to.eq(otherUser);

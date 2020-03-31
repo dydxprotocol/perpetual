@@ -189,8 +189,8 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
 
       // Expect the second deposit not to update the global index.
       const logs = ctx.perpetual.logs.parseLogs(result2);
-      const filteredLogs = _.filter(logs, { name: 'LogIndexUpdated' });
-      expect(filteredLogs.length, 'filter for LogIndexUpdated').to.equal(0);
+      const filteredLogs = _.filter(logs, { name: 'LogIndex' });
+      expect(filteredLogs.length, 'filter for LogIndex').to.equal(0);
     });
   });
 
@@ -374,8 +374,8 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
 
     // Check the logs.
     const logs = ctx.perpetual.logs.parseLogs(txResult);
-    const filteredLogs = _.filter(logs, { name: 'LogIndexUpdated' });
-    expect(filteredLogs.length, 'filter for LogIndexUpdated').to.equal(1);
+    const filteredLogs = _.filter(logs, { name: 'LogIndex' });
+    expect(filteredLogs.length, 'filter for LogIndex').to.equal(1);
     const loggedIndex: Index = filteredLogs[0].args.index;
     expectBaseValueEqual(loggedIndex.baseValue, expectedIndex.baseValue, 'index value from logs');
     expectBN(loggedIndex.timestamp, 'index timestamp from logs').to.eq(expectedIndex.timestamp);

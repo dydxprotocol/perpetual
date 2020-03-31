@@ -167,7 +167,7 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       expect(logs.length).to.equal(2);
       const [indexLog, settlementLog] = logs;
-      expect(indexLog.name).to.equal('LogIndexUpdated');
+      expect(indexLog.name).to.equal('LogIndex');
       expect(settlementLog.name).to.equal('LogFinalSettlementEnabled');
       expectBN(settlementLog.args.settlementPrice).to.equal(oraclePrice.toSolidity());
     });
