@@ -4,6 +4,11 @@
             "links": {},
             "address": "0xD029c869dEc40A3a53a3799A1181306B0f747AdD",
             "transactionHash": "0x0bc8c31a0395fe09bed9945aaf4b56f1dd1c21199688114dad06bb81e21afb4f"
+        },
+        "42": {
+            "links": {},
+            "address": "0x7454dF5d0758D4E7A538c3aCF4841FA9137F0f74",
+            "transactionHash": "0x4ebe1e17dc5b280b735aa59210cfd4cdedfc1d1f4cae1f761c40263c1163a26f"
         }
     },
     "PerpetualV1": {
@@ -11,6 +16,11 @@
             "links": {},
             "address": "0xac4191Fa0CE4F9D9097129F2e614F1a8E0ECC147",
             "transactionHash": "0xa79361ad189e2a6d0210f56ca994aee36bf2aa9e8d07b6d7f9d6930c9fa3c7db"
+        },
+        "42": {
+            "links": {},
+            "address": "0x401dca7116d1CACb3c3bc1B4acE16fC87f7EfaBa",
+            "transactionHash": "0x58d3eb807698184dda7aaee76388ed9276fe9e2eb5452ad8b52052735a8fcab0"
         }
     },
     "P1FundingOracle": {
@@ -18,13 +28,23 @@
             "links": {},
             "address": "0x240E98fFF0373e76dB303cE2E3Ebe24446CE36BE",
             "transactionHash": "0x77c3d53f4f96d22687fc8731bab37ed6ad5033c529f9eab9f2de753aff5fe472"
+        },
+        "42": {
+            "links": {},
+            "address": "0x04A9CbC623847dFFA6b48448D84C8594a8CFAeF6",
+            "transactionHash": "0x7559ef92d5e191bf5dc80c2402d1b2a290aa445295b8e4f97fc329f1f9be57f3"
         }
     },
     "P1MakerOracle": {
         "1": {
             "links": {},
-            "address": "0x510A9B71D928A17d330dAA884754Ac24d3F0a262",
-            "transactionHash": "0x888638c949a43496bff635d4717c42116d390ad8940238299a59fe3554b76ce1"
+            "address": "0x16B68660fF920fb5014001C627b9B06547EcacAA",
+            "transactionHash": "0x4b750752cbb7dd55ba8c1afe965e5f9436722cdbf56c95cda790b6abc1b45ddc"
+        },
+        "42": {
+            "links": {},
+            "address": "0x36c6655ddBF0a6c48C5b93C18A7cCc5650B167be",
+            "transactionHash": "0x290757cd3938d6a60d77ad6b46742cfb8eefadde0313ea1f5ec76c642d9b9614"
         }
     },
     "P1Orders": {
@@ -32,6 +52,11 @@
             "links": {},
             "address": "0x510A9B71D928A17d330dAA884754Ac24d3F0a262",
             "transactionHash": "0x888638c949a43496bff635d4717c42116d390ad8940238299a59fe3554b76ce1"
+        },
+        "42": {
+            "links": {},
+            "address": "0x29d4Df1885B8da83a2E40DB1e5a7E671e1A9a230",
+            "transactionHash": "0x49e6cb04b5b4a33ac0da696699574c1f32f30536a13da9c245eeb202c05f4e00"
         }
     },
     "P1Deleveraging": {
@@ -39,6 +64,11 @@
             "links": {},
             "address": "0x9ED1800709713b8f04b4b2283202cEc78DCC45cD",
             "transactionHash": "0xd624148432c5eec9784f9a40a83374bd8549e8b67aa22e53262eb8527ecc4545"
+        },
+        "42": {
+            "links": {},
+            "address": "0xaEE83ca85Ad63DFA04993adcd76CB2B3589eCa49",
+            "transactionHash": "0x24ed842b28db37dd1dba6effa469a1ca1e7ac45c33bb695c1d35161094130e35"
         }
     },
     "P1Liquidation": {
@@ -46,6 +76,11 @@
             "links": {},
             "address": "0x30eCCA81AdeB5e8C0B3B506df84eF2dEc2f6593c",
             "transactionHash": "0xaabdd65a5587b3077116b204743361b36dfb80cf977878d539a46ab412de39de"
+        },
+        "42": {
+            "links": {},
+            "address": "0xDEf136D9884528e1EB302f39457af0E4d3AD24EB",
+            "transactionHash": "0xa0aaebd59e5f6c63f1e3e0e53b98bc801427cba5de521896a7ee1c750e5d7068"
         }
     }
 }
