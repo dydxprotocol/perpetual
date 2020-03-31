@@ -3,7 +3,6 @@ import { promisify } from 'es6-promisify';
 import mkdirp from 'mkdirp';
 import contracts from './Artifacts';
 import deployed from '../migrations/deployed.json';
-import { abi as perpetualV1Abi } from '../build/contracts/PerpetualV1.json';
 
 const writeFileAsync = promisify(fs.writeFile);
 
@@ -45,10 +44,6 @@ async function clean(): Promise<void> {
       };
     }
 
-    if (contractName === 'PerpetualProxy') {
-      cleaned.abi = cleaned.abi.concat(getAllEvents(perpetualV1Abi))
-    }
-
     const json = JSON.stringify(cleaned, null, 4);
 
     const filename = `${contractName}.json`;
@@ -58,10 +53,6 @@ async function clean(): Promise<void> {
   });
 
   await Promise.all(promises);
-}
-
-function getAllEvents(abi: any) {
-  return abi.filter(e => e.type === 'event');
 }
 
 clean()

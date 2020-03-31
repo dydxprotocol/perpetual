@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/perpetual",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Ethereum Smart Contracts and TypeScript library used for the dYdX Perpetual Contracts",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -25,6 +25,8 @@
     "lint:dydx": "python util/lintcontracts.py",
     "docker_node": "ganache-cli -i 1313 -d -k=istanbul -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "deploy": "truffle migrate --network=$NETWORK --reset && npm run save_deployed_addresses",
+    "deploy_kovan": "NETWORK=kovan npm run deploy",
+    "deploy_mainnet": "NETWORK=mainnet npm run deploy",
     "deploy_test": "npm run reset_test_evm && NETWORK=test npm run deploy && npm run snapshot_test_evm",
     "migrate": "truffle migrate",
     "reset_test_evm": "node scripts/reset-test-evm.js",
@@ -54,6 +56,7 @@
     "web3": "1.2.4"
   },
   "devDependencies": {
+    "@truffle/hdwallet-provider": "^1.0.33",
     "@types/chai": "^4.2.7",
     "@types/es6-promisify": "^6.0.0",
     "@types/lodash": "^4.14.149",
@@ -73,7 +76,7 @@
     "nyc": "^15.0.0",
     "solidity-coverage": "^0.7.1",
     "solium": "^1.2.5",
-    "truffle": "^5.1.12",
+    "truffle": "^5.1.19",
     "ts-node": "^8.6.2",
     "tslint": "^5.20.1",
     "tslint-config-airbnb": "^5.11.2",
