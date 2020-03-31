@@ -164,34 +164,6 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
         1,
       );
     });
-
-    it('Does not update the global index if the timestamp has not increased', async () => {
-      await ctx.perpetual.testing.funder.setFunding(new BaseValue('0.05'));
-
-      // Wait until we get two deposits with the same timestamp.
-      let result1: TxResult;
-      let result2: TxResult;
-      let block1: any;
-      let block2: any;
-      let numTries = 0;
-      do {
-        // Since it's unknown whether the deposit will trigger an index update, we need to use
-        // a high gas amount, in case the estimate is too low.
-        result1 = await ctx.perpetual.margin.deposit(long, new BigNumber(0), { gas: 4000000 });
-        result2 = await ctx.perpetual.margin.deposit(long, new BigNumber(0), { gas: 4000000 });
-        [block1, block2] = await Promise.all([
-          ctx.perpetual.web3.eth.getBlock(result1.blockNumber),
-          ctx.perpetual.web3.eth.getBlock(result2.blockNumber),
-        ]);
-        numTries += 1;
-      }
-      while (block1.timestamp !== block2.timestamp && numTries < 10);
-
-      // Expect the second deposit not to update the global index.
-      const logs = ctx.perpetual.logs.parseLogs(result2);
-      const filteredLogs = _.filter(logs, { name: 'LogIndexUpdated' });
-      expect(filteredLogs.length, 'filter for LogIndexUpdated').to.equal(0);
-    });
   });
 
   describe('_settleAccount()', () => {
@@ -374,8 +346,8 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
 
     // Check the logs.
     const logs = ctx.perpetual.logs.parseLogs(txResult);
-    const filteredLogs = _.filter(logs, { name: 'LogIndexUpdated' });
-    expect(filteredLogs.length, 'filter for LogIndexUpdated').to.equal(1);
+    const filteredLogs = _.filter(logs, { name: 'LogIndex' });
+    expect(filteredLogs.length, 'filter for LogIndex').to.equal(1);
     const loggedIndex: Index = filteredLogs[0].args.index;
     expectBaseValueEqual(loggedIndex.baseValue, expectedIndex.baseValue, 'index value from logs');
     expectBN(loggedIndex.timestamp, 'index timestamp from logs').to.eq(expectedIndex.timestamp);
