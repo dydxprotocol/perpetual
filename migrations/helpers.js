@@ -74,14 +74,27 @@ function getPartiallyDelayedMultisigAddress(network) {
   throw new Error('Cannot find Admin Multisig');
 }
 
-function getMakerPriceOracleAddress(network, devAddress) {
+function getMakerPriceOracleAddress(network, devContract) {
   if (isMainnet(network)) {
     return '0x064409168198A7E9108036D072eF59F923dEDC9A';
   }
+  if (isKovan(network)) {
+    return '0xf8A9Faa25186B14EbF02e7Cd16e39152b85aEEcd';
+  }
   if (isDevNetwork(network)) {
-    return devAddress;
+    return devContract.address;
   }
   throw new Error('Cannot find MakerPriceOracle');
+}
+
+function getDeployerAddress(network, accounts) {
+  if (isMainnet(network) || isKovan(network)) {
+    return process.env.DEPLOYER_ACCOUNT;
+  }
+  if (isDevNetwork(network)) {
+    return accounts[0];
+  }
+  throw new Error('Cannot find Deployer address');
 }
 
 module.exports = {
@@ -89,4 +102,5 @@ module.exports = {
   isDevNetwork,
   getPartiallyDelayedMultisigAddress,
   getMakerPriceOracleAddress,
+  getDeployerAddress,
 };

@@ -20,6 +20,7 @@ const {
   getChainId,
   isDevNetwork,
   getMakerPriceOracleAddress,
+  getDeployerAddress,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -83,7 +84,7 @@ async function deployProtocol(deployer, network, accounts) {
   await deployer.deploy(
     PerpetualProxy,
     PerpetualV1.address, // logic
-    accounts[0], // admin
+    getDeployerAddress(network, accounts), // admin
     '0x', // data
   );
 }
@@ -96,7 +97,7 @@ async function deployOracles(deployer, network) {
     deployer.deploy(
       P1MakerOracle,
       PerpetualProxy.address,
-      getMakerPriceOracleAddress(network, TestMakerOracle.address),
+      getMakerPriceOracleAddress(network, TestMakerOracle),
     ),
   ]);
 }

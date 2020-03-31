@@ -1,1 +1,51 @@
-{}
+{
+    "PerpetualProxy": {
+        "1": {
+            "links": {},
+            "address": "0xD029c869dEc40A3a53a3799A1181306B0f747AdD",
+            "transactionHash": "0x0bc8c31a0395fe09bed9945aaf4b56f1dd1c21199688114dad06bb81e21afb4f"
+        }
+    },
+    "PerpetualV1": {
+        "1": {
+            "links": {},
+            "address": "0xac4191Fa0CE4F9D9097129F2e614F1a8E0ECC147",
+            "transactionHash": "0xa79361ad189e2a6d0210f56ca994aee36bf2aa9e8d07b6d7f9d6930c9fa3c7db"
+        }
+    },
+    "P1FundingOracle": {
+        "1": {
+            "links": {},
+            "address": "0x240E98fFF0373e76dB303cE2E3Ebe24446CE36BE",
+            "transactionHash": "0x77c3d53f4f96d22687fc8731bab37ed6ad5033c529f9eab9f2de753aff5fe472"
+        }
+    },
+    "P1MakerOracle": {
+        "1": {
+            "links": {},
+            "address": "0x510A9B71D928A17d330dAA884754Ac24d3F0a262",
+            "transactionHash": "0x888638c949a43496bff635d4717c42116d390ad8940238299a59fe3554b76ce1"
+        }
+    },
+    "P1Orders": {
+        "1": {
+            "links": {},
+            "address": "0x510A9B71D928A17d330dAA884754Ac24d3F0a262",
+            "transactionHash": "0x888638c949a43496bff635d4717c42116d390ad8940238299a59fe3554b76ce1"
+        }
+    },
+    "P1Deleveraging": {
+        "1": {
+            "links": {},
+            "address": "0x9ED1800709713b8f04b4b2283202cEc78DCC45cD",
+            "transactionHash": "0xd624148432c5eec9784f9a40a83374bd8549e8b67aa22e53262eb8527ecc4545"
+        }
+    },
+    "P1Liquidation": {
+        "1": {
+            "links": {},
+            "address": "0x30eCCA81AdeB5e8C0B3B506df84eF2dEc2f6593c",
+            "transactionHash": "0xaabdd65a5587b3077116b204743361b36dfb80cf977878d539a46ab412de39de"
+        }
+    }
+}
