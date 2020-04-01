@@ -304,13 +304,16 @@ perpetualDescribe('P1Settlement', init, (ctx: ITestContext) => {
 
     it('can handle large values', async () => {
       await mintAndDeposit(ctx, otherAccountA, largeValue);
+      await mineAvgBlock();
       await buy(ctx, otherAccountA, long, 1, 100);
+      await mineAvgBlock();
       await sell(ctx, otherAccountA, long, 1, 100);
+      await mineAvgBlock();
       await ctx.perpetual.margin.withdraw(
         otherAccountA,
         otherAccountA,
         largeValue,
-        { from: otherAccountA, gas: 4000000 },
+        { from: otherAccountA },
       );
     });
   });
