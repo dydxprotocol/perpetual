@@ -85,6 +85,12 @@ jobs:
       - restore_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
       - run:
+          name: Clean contract json
+          command: npm run clean_contract_json
+      - run:
+          name: Copy cleaned json
+          command: cp -r ./build/published_contracts ./dist/build/contracts
+      - run:
           name: Compile Typescript
           command: npm run build:js
       - save_cache:
