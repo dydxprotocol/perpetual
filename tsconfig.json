@@ -19,8 +19,12 @@
   },
   "include": [
     "src",
-    "test",
-    "scripts"
+    "test"
+  ],
+  "exclude": [
+    "scripts/**/*",
+    "build/**/*",
+    "migrations/**/*"
   ],
   "compileOnSave": true
 }
