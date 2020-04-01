@@ -89,10 +89,10 @@ jobs:
           command: npm run build
       - run:
           name: Copy contracts JSON
-          command: mkdir -p dist/build/contracts && cp -r build/contracts/*.json dist/build/contracts
+          command: mkdir -p dist/build/contracts && cp build/contracts/*.json dist/build/contracts
       - run:
           name: Copy deployed contracts JSON
-          command: cp -r build/published_contracts/*.json dist/build/contracts
+          command: cp build/published_contracts/*.json dist/build/contracts
       - publish_dry_run:
           name: Publish to npm (DRY RUN)
           comand: npm publish --dry-run
