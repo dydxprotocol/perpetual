@@ -88,8 +88,26 @@ jobs:
           name: Clean contract json
           command: npm run clean_contract_json
       - run:
-          name: Copy cleaned json
-          command: cp -r ./build/published_contracts ./dist/build/contracts
+          name: BLAH
+          command: pwd && ls -lsa ./build
+      - run:
+          name: BLAH
+          command: pwd && ls -lsa ./build/contracts
+      - run:
+          name: BLAH
+          command: pwd && ls -lsa ./build/published_contracts
+      - run:
+          name: BLAH
+          command: pwd && ls -lsa ./dist
+      - run:
+          name: BLAH
+          command: pwd && ls -lsa ./dist/build
+      - run:
+          name: BLAH
+          command: pwd && ls -lsa ./dist/build/contracts
+      - run:
+          name: BLAH
+          command: pwd && ls -lsa ./dist/build/published_contracts
       - run:
           name: Compile Typescript
           command: npm run build:js
