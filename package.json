@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/perpetual",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "Ethereum Smart Contracts and TypeScript library used for the dYdX Perpetual Contracts",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
@@ -16,7 +16,7 @@
     "clean_contract_json": "ts-node ./scripts/CleanBuild.ts",
     "coverage": "NETWORK_ID=1002 RPC_NODE_URI=http://0.0.0.0:8555 COVERAGE=true truffle run coverage --network coverage",
     "compile": "truffle compile",
-    "build": "npm run compile -- --all && npm run build:js && npm run clean_contract_json",
+    "build": "npm run compile -- --all && npm run clean_contract_json && npm run build:js",
     "build:js": "rm -rf dist/ && tsc",
     "lint": "npm run lint:ts && npm run lint:js && npm run lint:sol && npm run lint:dydx",
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
