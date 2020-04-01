@@ -93,6 +93,9 @@ jobs:
       - run:
           name: Copy deployed contracts JSON
           command: cp build/published_contracts/*.json dist/build/contracts
+      - run:
+          name: Publish to npm (DRY RUN)
+          command: npm publish --dry-run
       - save_cache:
           key: cache-completed-build-js-{{ .Environment.CIRCLE_SHA1 }}
           paths:
