@@ -19,10 +19,10 @@
 import { snapshot, resetEVM, mineAvgBlock } from './EVM';
 import { getPerpetual } from './Perpetual';
 import { address } from '../../src/lib/types';
-import { Perpetual } from '../../src/Perpetual';
+import { TestPerpetual } from '../modules/TestPerpetual';
 
 export interface ITestContext {
-  perpetual?: Perpetual;
+  perpetual?: TestPerpetual;
   accounts?: address[];
 }
 

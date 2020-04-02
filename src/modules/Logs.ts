@@ -37,7 +37,7 @@ export class Logs {
   private get contractsByAddress(): IContractsByAddress {
     if (!this._contractsByAddress) {
       this._contractsByAddress = {};
-      for (const contract of this.contracts.mainContracts) {
+      for (const { contract } of this.contracts.contractsList) {
         if (!contract.options.address) {
           throw new Error('Contract has not been deployed');
         }

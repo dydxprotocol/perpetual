@@ -1,12 +1,12 @@
 import BigNumber from 'bignumber.js';
-import { Contracts } from '../modules/Contracts';
-import { BaseValue, SendOptions, TxResult } from '../lib/types';
+import { BaseValue, SendOptions, TxResult } from '../../src/lib/types';
+import { TestContracts } from './TestContracts';
 
 export class TestP1Funder {
-  private contracts: Contracts;
+  private contracts: TestContracts;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     this.contracts = contracts;
   }

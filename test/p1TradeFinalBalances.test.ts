@@ -7,7 +7,7 @@ import { expectBalances, mintAndDeposit } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { INTEGERS } from '../src/lib/Constants';
 import { BigNumberable, Price, TxResult, address, TradeArg } from '../src/lib/types';
-import { TRADER_FLAG_RESULT_2 } from '../src/testing/TestP1Trader';
+import { TRADER_FLAG_RESULT_2 } from './modules/TestP1Trader';
 
 // Use a large gas value. Had “out of gas” errors with some expectFailure() calls.
 const TX_OPTIONS = { gas: 4000000 };

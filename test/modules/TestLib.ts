@@ -12,14 +12,14 @@ import {
   address,
   bnFromSoliditySignedInt,
   bnToSoliditySignedInt,
-} from '../lib/types';
-import { Contracts } from '../modules/Contracts';
+} from '../../src/lib/types';
+import { TestContracts } from './TestContracts';
 
 export class TestLib {
-  private contracts: Contracts;
+  private contracts: TestContracts;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     this.contracts = contracts;
   }

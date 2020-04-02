@@ -24,8 +24,8 @@ import { TestP1Oracle } from './TestP1Oracle';
 import { TestP1Trader } from './TestP1Trader';
 import { TestToken } from './TestToken';
 import { TestMakerOracle } from './TestMakerOracle';
-import { Provider } from '../lib/types';
-import { Contracts } from '../modules/Contracts';
+import { Provider } from '../../src/lib/types';
+import { TestContracts } from './TestContracts';
 
 export class Testing {
   public evm: EVM;
@@ -39,7 +39,7 @@ export class Testing {
 
   constructor(
     provider: Provider,
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     this.evm = new EVM(provider);
     this.funder = new TestP1Funder(contracts);

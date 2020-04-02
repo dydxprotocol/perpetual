@@ -16,8 +16,9 @@
 
 */
 
-import { Provider } from '../lib/types';
 import { JsonRpcPayload, JsonRpcResponse } from 'web3-core-helpers';
+
+import { Provider } from '../../src/lib/types';
 
 export class EVM {
   private provider: Provider;

@@ -18,25 +18,27 @@
 
 import BigNumber from 'bignumber.js';
 
-import { Contracts } from '../modules/Contracts';
-import { Token } from '../modules/Token';
+import { Token } from '../../src/modules/Token';
 import {
   BigNumberable,
   SendOptions,
   TxResult,
   address,
-} from '../lib/types';
+} from '../../src/lib/types';
+import { TestContracts } from './TestContracts';
 
 export class TestToken extends Token {
+  private testContracts: TestContracts;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     super(contracts, contracts.testToken);
+    this.testContracts = contracts;
   }
 
   public get address(): string {
-    return this.contracts.testToken.options.address;
+    return this.testContracts.testToken.options.address;
   }
 
   public mint(
