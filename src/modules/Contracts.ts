@@ -16,6 +16,7 @@
 
 */
 
+import _ from 'lodash';
 import Web3 from 'web3';
 import {
   PromiEvent,
@@ -29,23 +30,6 @@ import {
   AbiItem,
 } from 'web3-utils';
 
-// JSON
-const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
-const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
-const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
-const p1FundingOracleJson = require(`${jsonFolder}P1FundingOracle.json`);
-const p1MakerOracleJson = require(`${jsonFolder}P1MakerOracle.json`);
-const p1OrdersJson = require(`${jsonFolder}P1Orders.json`);
-const p1DeleveragingJson = require(`${jsonFolder}P1Deleveraging.json`);
-const p1LiquidationJson = require(`${jsonFolder}P1Liquidation.json`);
-const testLibJson = require(`${jsonFolder}Test_Lib.json`);
-const testP1FunderJson = require(`${jsonFolder}Test_P1Funder.json`);
-const testP1MonolithJson = require(`${jsonFolder}Test_P1Monolith.json`);
-const testP1OracleJson = require(`${jsonFolder}Test_P1Oracle.json`);
-const testP1TraderJson = require(`${jsonFolder}Test_P1Trader.json`);
-const testTokenJson = require(`${jsonFolder}Test_Token.json`);
-const testMakerOracleJson = require(`${jsonFolder}Test_MakerOracle.json`);
-
 import {
   address,
   CallOptions,
@@ -55,6 +39,16 @@ import {
   TxResult,
 } from '../lib/types';
 
+// JSON
+const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
+const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
+const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
+const p1FundingOracleJson = require(`${jsonFolder}P1FundingOracle.json`);
+const p1MakerOracleJson = require(`${jsonFolder}P1MakerOracle.json`);
+const p1OrdersJson = require(`${jsonFolder}P1Orders.json`);
+const p1DeleveragingJson = require(`${jsonFolder}P1Deleveraging.json`);
+const p1LiquidationJson = require(`${jsonFolder}P1Liquidation.json`);
+
 enum OUTCOMES {
   INITIAL = 0,
   RESOLVED = 1,
@@ -62,16 +56,14 @@ enum OUTCOMES {
 }
 
 export class Contracts {
-  private web3: Web3;
-  private contractsList: { contract: Contract, json: any }[] = [];
-
   private defaultOptions: SendOptions;
-
   private _cumulativeGasUsed: number = 0;
   private _gasUsedByFunction: { name: string, gasUsed: number }[] = [];
 
+  protected web3: Web3;
+
   // Contract instances
-  public mainContracts: Contract[];
+  public contractsList: { contract: Contract, json: any }[] = [];
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
   public p1FundingOracle: Contract;
@@ -79,15 +71,6 @@ export class Contracts {
   public p1Orders: Contract;
   public p1Deleveraging: Contract;
   public p1Liquidation: Contract;
-
-  // Testing contract instances
-  public testLib: Contract;
-  public testP1Funder: Contract;
-  public testP1Monolith: Contract;
-  public testP1Oracle: Contract;
-  public testP1Trader: Contract;
-  public testToken: Contract;
-  public testMakerOracle: Contract;
 
   constructor(
     provider: Provider,
@@ -106,23 +89,13 @@ export class Contracts {
     };
 
     // Contracts
-    this.mainContracts = [];
-    this.perpetualProxy = this.addMainContract(perpetualProxyJson);
-    this.perpetualV1 = this.addMainContract(perpetualV1Json);
-    this.p1FundingOracle = this.addMainContract(p1FundingOracleJson);
-    this.p1MakerOracle = this.addMainContract(p1MakerOracleJson);
-    this.p1Orders = this.addMainContract(p1OrdersJson);
-    this.p1Deleveraging = this.addMainContract(p1DeleveragingJson);
-    this.p1Liquidation = this.addMainContract(p1LiquidationJson);
-
-    // Testing contracts
-    this.testLib = this.addTestContract(testLibJson);
-    this.testP1Funder = this.addTestContract(testP1FunderJson);
-    this.testP1Monolith = this.addTestContract(testP1MonolithJson);
-    this.testP1Oracle = this.addTestContract(testP1OracleJson);
-    this.testP1Trader = this.addTestContract(testP1TraderJson);
-    this.testToken = this.addTestContract(testTokenJson);
-    this.testMakerOracle = this.addTestContract(testMakerOracleJson);
+    this.perpetualProxy = this.addContract(perpetualProxyJson);
+    this.perpetualV1 = this.addContract(perpetualV1Json);
+    this.p1FundingOracle = this.addContract(p1FundingOracleJson);
+    this.p1MakerOracle = this.addContract(p1MakerOracleJson);
+    this.p1Orders = this.addContract(p1OrdersJson);
+    this.p1Deleveraging = this.addContract(p1DeleveragingJson);
+    this.p1Liquidation = this.addContract(p1LiquidationJson);
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
@@ -196,8 +169,9 @@ export class Contracts {
     if (txOptions.confirmationType === ConfirmationType.Confirmed ||
         txOptions.confirmationType === ConfirmationType.Both) {
 
-      // Only count gas used on contracts we care about; exclude e.g. test contracts.
-      if (this.mainContracts.indexOf((method as any)._parent) >= 0) {
+      // Count gas used.
+      const contract: Contract = (method as any)._parent;
+      if (_.find(this.contractsList, { contract })) {
         const gasUsed = (result as TxResult).gasUsed;
         this._cumulativeGasUsed += gasUsed;
         if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
@@ -210,14 +184,7 @@ export class Contracts {
 
   // ============ Helper Functions ============
 
-  private addMainContract(json: { abi: AbiItem }): Contract {
-    const contract = new this.web3.eth.Contract(json.abi);
-    this.mainContracts.push(contract);
-    this.contractsList.push({ contract, json });
-    return contract;
-  }
-
-  private addTestContract(json: { abi: AbiItem }): Contract {
+  private addContract(json: { abi: AbiItem }): Contract {
     const contract = new this.web3.eth.Contract(json.abi);
     this.contractsList.push({ contract, json });
     return contract;
@@ -335,7 +302,7 @@ export class Contracts {
     };
   }
 
-  private setContractProvider(
+  protected setContractProvider(
     contract: Contract,
     contractJson: any,
     provider: Provider,

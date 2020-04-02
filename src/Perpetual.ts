@@ -22,7 +22,6 @@ import {
   Networks,
   Provider,
 } from './lib/types';
-import { Testing } from './testing/Testing';
 import { Contracts } from './modules/Contracts';
 import { Logs } from './modules/Logs';
 import { Proxy } from './modules/Proxy';
@@ -39,10 +38,8 @@ import { Orders } from './modules/Orders';
 import { Trade } from './modules/Trade';
 
 export class Perpetual {
-
   public web3: Web3;
   public contracts: Contracts;
-  public testing: Testing;
   public proxy: Proxy;
   public admin: Admin;
   public deleveraging: Deleveraging;
@@ -62,8 +59,7 @@ export class Perpetual {
     networkId: number = Networks.MAINNET,
   ) {
     this.web3 = new Web3(provider);
-    this.contracts = new Contracts(provider, networkId, this.web3);
-    this.testing = new Testing(provider, this.contracts);
+    this.contracts = this.getContracts(provider, networkId);
     this.proxy = new Proxy(this.contracts);
     this.admin = new Admin(this.contracts);
     this.deleveraging = new Deleveraging(this.contracts);
@@ -77,6 +73,13 @@ export class Perpetual {
     this.operator = new Operator(this.contracts);
     this.orders = new Orders(this.contracts, this.web3, networkId);
     this.trade = new Trade(this.contracts, this.orders);
+  }
+
+  protected getContracts(
+    provider: Provider,
+    networkId: number,
+  ): Contracts {
+    return new Contracts(provider, networkId, this.web3);
   }
 
   public setDefaultAccount(

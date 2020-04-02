@@ -1,16 +1,16 @@
-import { Contracts } from '../modules/Contracts';
 import {
   CallOptions,
   Price,
   TxResult,
   SendOptions,
-} from '../lib/types';
+} from '../../src/lib/types';
+import { TestContracts } from './TestContracts';
 
 export class TestP1Oracle {
-  private contracts: Contracts;
+  private contracts: TestContracts;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     this.contracts = contracts;
   }

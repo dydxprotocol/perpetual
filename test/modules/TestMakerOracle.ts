@@ -1,15 +1,15 @@
-import { Contracts } from '../modules/Contracts';
 import {
   Price,
   TxResult,
   SendOptions,
-} from '../lib/types';
+} from '../../src/lib/types';
+import { TestContracts } from './TestContracts';
 
 export class TestMakerOracle {
-  private contracts: Contracts;
+  private contracts: TestContracts;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     this.contracts = contracts;
   }

@@ -1,20 +1,20 @@
 require('dotenv-flow').config();
 
 import { address } from '../../src/lib/types';
-import { Perpetual } from '../../src/Perpetual';
+import { TestPerpetual } from '../modules/TestPerpetual';
 import provider from './Provider';
 
 let defaultAccountSet = false;
 let accounts: address[];
 
-export const perpetual = new Perpetual(
+export const perpetual = new TestPerpetual(
   provider,
   Number(process.env.NETWORK_ID),
 );
 
 export async function getPerpetual(
 ): Promise<{
-  perpetual: Perpetual,
+  perpetual: TestPerpetual,
   accounts: address[],
 }> {
   if (!defaultAccountSet) {

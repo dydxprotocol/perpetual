@@ -1,18 +1,18 @@
 import BigNumber from 'bignumber.js';
 
-import { Contracts } from '../modules/Contracts';
-import { bnToBytes32 } from '../lib/BytesHelper';
-import { SendOptions, TradeResult, TxResult } from '../lib/types';
+import { bnToBytes32 } from '../../src/lib/BytesHelper';
+import { SendOptions, TradeResult, TxResult } from '../../src/lib/types';
+import { TestContracts } from './TestContracts';
 
 // Special testing-only trader flag that will cause the second result to be returned from
 // subsequent calls to the trader (within the same transaction).
 export const TRADER_FLAG_RESULT_2 = new BigNumber(2).pow(256).minus(1);
 
 export class TestP1Trader {
-  private contracts: Contracts;
+  private contracts: TestContracts;
 
   constructor(
-    contracts: Contracts,
+    contracts: TestContracts,
   ) {
     this.contracts = contracts;
   }
