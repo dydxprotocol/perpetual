@@ -89,7 +89,7 @@ jobs:
           command: npm run build
       - run:
           name: Copy over contracts
-          command: mkdir -p dist/build/contracts && cp -r build/published_contracts/ dist/build/contracts
+          command: mkdir -p dist/build/contracts && cp build/published_contracts/*.json dist/build/contracts
       - save_cache:
           key: cache-completed-build-js-{{ .Environment.CIRCLE_SHA1 }}
           paths:
