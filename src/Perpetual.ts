@@ -75,6 +75,14 @@ export class Perpetual {
     this.trade = new Trade(this.contracts, this.orders);
   }
 
+  public setProvider(
+    provider: Provider,
+    networkId: number = Networks.MAINNET,
+  ): void {
+    this.web3.setProvider(provider);
+    this.contracts.setProvider(provider, networkId);
+  }
+
   protected getContracts(
     provider: Provider,
     networkId: number,

@@ -50,4 +50,10 @@ export class Testing {
     this.token = new TestToken(contracts);
     this.makerOracle = new TestMakerOracle(contracts);
   }
+
+  public setProvider(
+    provider: Provider,
+  ): void {
+    this.evm.setProvider(provider);
+  }
 }
