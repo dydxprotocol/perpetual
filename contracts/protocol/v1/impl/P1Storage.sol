@@ -19,8 +19,8 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { ReentrancyGuard } from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import { Adminable } from "../../lib/Adminable.sol";
+import { ReentrancyGuard } from "../../lib/ReentrancyGuard.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
 
