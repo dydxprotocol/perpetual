@@ -211,6 +211,15 @@ export class Balance {
     this.position = new BigNumber(position);
   }
 
+  static fromSolidity(struct: BalanceStruct): Balance {
+    const marginBN = new BigNumber(struct.margin);
+    const positionBN = new BigNumber(struct.position);
+    return new Balance(
+      struct.marginIsPositive ? marginBN : marginBN.negated(),
+      struct.positionIsPositive ? positionBN : positionBN.negated(),
+    );
+  }
+
   public toSolidity(): BalanceStruct {
     return {
       marginIsPositive: this.margin.isPositive(),
@@ -220,13 +229,37 @@ export class Balance {
     };
   }
 
-  static fromSolidity(struct: BalanceStruct): Balance {
-    const marginBN = new BigNumber(struct.margin);
-    const positionBN = new BigNumber(struct.position);
-    return new Balance(
-      struct.marginIsPositive ? marginBN : marginBN.negated(),
-      struct.positionIsPositive ? positionBN : positionBN.negated(),
-    );
+  public copy(): Balance {
+    return new Balance(this.margin, this.position);
+  }
+
+  /**
+   * Get the collateralization ratio of the balance, given an oracle price.
+   *
+   * Returns BigNumber(Infinity) if there are no negative balances.
+   */
+  public getCollateralization(price: Price): BigNumber {
+    let positiveValue = new BigNumber(0);
+    let negativeValue = new BigNumber(0);
+
+    if (this.margin.isPositive()) {
+      positiveValue = this.margin;
+    } else {
+      negativeValue = this.margin;
+    }
+
+    const positionValue = this.position.times(price.value);
+    if (this.position.isPositive()) {
+      positiveValue = positiveValue.plus(positionValue);
+    } else {
+      negativeValue = negativeValue.plus(positionValue);
+    }
+
+    if (negativeValue.isZero()) {
+      return new BigNumber(Infinity);
+    }
+
+    return positiveValue.div(negativeValue.abs());
   }
 }
 
