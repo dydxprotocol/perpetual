@@ -58,9 +58,9 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
         { from: admin },
       );
 
-      await expectFunding(INTEGERS.ONE_YEAR_IN_SECONDS.times(1000), '1e-7');
-      await expectFunding(INTEGERS.ONE_YEAR_IN_SECONDS.times(10000), '1e-6');
-      await expectFunding(INTEGERS.ONE_YEAR_IN_SECONDS.times(100000), '1e-5');
+      await expectFunding(1000, '1e-7');
+      await expectFunding(10000, '1e-6');
+      await expectFunding(100000, '1e-5');
     });
   });
 

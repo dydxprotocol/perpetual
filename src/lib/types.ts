@@ -340,13 +340,13 @@ export class Fee extends BaseValue {
 
 export class FundingRate extends BaseValue {
   /**
-   * Returns funding rate represented as an annual rate (assumes 365 days/year) given a daily rate.
+   * Given a daily rate, returns funding rate represented as a per-second rate.
    *
    * Note: Funding interest does not compound, as the interest affects margin balances but
    * is calculated based on position balances.
    */
   static fromDailyRate(rate: BigNumberable): FundingRate {
-    return new FundingRate(new BigNumber(rate).times(365));
+    return new FundingRate(new BigNumber(rate).div(24 * 60 * 60));
   }
 }
 
