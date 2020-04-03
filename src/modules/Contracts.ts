@@ -16,6 +16,8 @@
 
 */
 
+import fs from 'fs';
+
 import _ from 'lodash';
 import Web3 from 'web3';
 import {
@@ -57,6 +59,7 @@ enum OUTCOMES {
 
 export class Contracts {
   private defaultOptions: SendOptions;
+  private allTxResults: TxResult[] = [];
   private _cumulativeGasUsed: number = 0;
   private _gasUsedByFunction: { name: string, gasUsed: number }[] = [];
 
@@ -99,6 +102,11 @@ export class Contracts {
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
+  }
+
+  public writeTxResultsSync(fileName: string): void {
+    fs.writeFileSync(fileName, JSON.stringify(this.allTxResults, null, 2));
+    this.allTxResults = []; // leave work for garbage collector
   }
 
   public getCumulativeGasUsed(): number {
@@ -169,10 +177,15 @@ export class Contracts {
     if (txOptions.confirmationType === ConfirmationType.Confirmed ||
         txOptions.confirmationType === ConfirmationType.Both) {
 
+      const txResult: TxResult = result;
+
+      // Add result to list.
+      this.allTxResults.push(txResult);
+
       // Count gas used.
       const contract: Contract = (method as any)._parent;
       if (_.find(this.contractsList, { contract })) {
-        const gasUsed = (result as TxResult).gasUsed;
+        const gasUsed = txResult.gasUsed;
         this._cumulativeGasUsed += gasUsed;
         if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
           this._gasUsedByFunction.push({ gasUsed, name: (method as any)._method.name });
