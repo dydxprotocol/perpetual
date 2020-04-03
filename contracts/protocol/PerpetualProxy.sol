@@ -27,7 +27,7 @@ import { AdminUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgra
  * @title PerpetualProxy
  * @author dYdX
  *
- * Proxy contract that forwards calls to the main Perpetual conntract.
+ * Proxy contract that forwards calls to the main Perpetual contract.
  */
 contract PerpetualProxy is
     AdminUpgradeabilityProxy
