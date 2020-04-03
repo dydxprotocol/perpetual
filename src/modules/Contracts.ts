@@ -85,13 +85,15 @@ export class Contracts {
     };
 
     // Contracts
-    this.perpetualProxy = this.addContract(perpetualProxyJson);
-    this.perpetualV1 = this.addContract(perpetualV1Json);
-    this.p1FundingOracle = this.addContract(p1FundingOracleJson);
-    this.p1MakerOracle = this.addContract(p1MakerOracleJson);
-    this.p1Orders = this.addContract(p1OrdersJson);
-    this.p1Deleveraging = this.addContract(p1DeleveragingJson);
-    this.p1Liquidation = this.addContract(p1LiquidationJson);
+    if (process.env.COVERAGE !== 'true') {
+      this.perpetualProxy = this.addContract(perpetualProxyJson);
+      this.perpetualV1 = this.addContract(perpetualV1Json);
+      this.p1FundingOracle = this.addContract(p1FundingOracleJson);
+      this.p1MakerOracle = this.addContract(p1MakerOracleJson);
+      this.p1Orders = this.addContract(p1OrdersJson);
+      this.p1Deleveraging = this.addContract(p1DeleveragingJson);
+      this.p1Liquidation = this.addContract(p1LiquidationJson);
+    }
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);

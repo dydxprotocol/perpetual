@@ -46,6 +46,7 @@ export class TestContracts extends Contracts {
     super(provider, networkId, web3);
 
     // Re-assign the JSON for contracts
+    this.contractsList = [];
     this.perpetualProxy = this.addContract(perpetualProxyJson);
     this.perpetualV1 = this.addContract(perpetualV1Json);
     this.p1FundingOracle = this.addContract(p1FundingOracleJson);
