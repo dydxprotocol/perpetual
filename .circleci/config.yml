@@ -44,6 +44,9 @@ jobs:
       - restore_cache:
           key: cache-{{ .Environment.CIRCLE_SHA1 }}
       - run:
+          name: Compile contracts
+          command: npm run compile -- --all
+      - run:
           name: Coverage
           command: python util/fix_contracts_for_coverage.py && npm run coverage
           no_output_timeout: 60m
