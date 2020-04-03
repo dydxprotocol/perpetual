@@ -85,7 +85,9 @@ export class Contracts {
     };
 
     // Contracts
+    console.log("NORMAL");
     if (process.env.COVERAGE !== 'true') {
+      console.log("AM I DOING IT");
       this.perpetualProxy = this.addContract(perpetualProxyJson);
       this.perpetualV1 = this.addContract(perpetualV1Json);
       this.p1FundingOracle = this.addContract(p1FundingOracleJson);

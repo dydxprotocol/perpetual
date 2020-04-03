@@ -45,6 +45,7 @@ export class TestContracts extends Contracts {
   ) {
     super(provider, networkId, web3);
 
+    console.log("TEST");
     // Re-assign the JSON for contracts
     this.contractsList = [];
     this.perpetualProxy = this.addContract(perpetualProxyJson);
