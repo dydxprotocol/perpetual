@@ -19,6 +19,14 @@ export class TestPerpetual extends Perpetual {
     this.testing = new Testing(provider, this.contracts);
   }
 
+  public setProvider(
+    provider: Provider,
+    networkId: number = Networks.MAINNET,
+  ): void {
+    super.setProvider(provider, networkId);
+    this.testing.setProvider(provider);
+  }
+
   protected getContracts(
     provider: Provider,
     networkId: number,

@@ -7,7 +7,6 @@
   "files": [
     "dist/build/",
     "dist/src/",
-    "src/",
     "LICENSE",
     "README.md"
   ],
