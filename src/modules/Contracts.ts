@@ -192,13 +192,26 @@ export class Contracts {
 
   // ============ Helper Functions ============
 
-  protected addContract(
+  private addContract(
     json: Json,
     monitorGasUsage: boolean = true,
   ): Contract {
     const contract = new this.web3.eth.Contract(json.abi);
     this.contractsList.push({ contract, json, monitorGasUsage });
     return contract;
+  }
+
+  private setContractProvider(
+    contract: Contract,
+    contractJson: Json,
+    provider: Provider,
+    networkId: number,
+  ): void {
+    (contract as any).setProvider(provider);
+    const json: Json = (contract === this.perpetualV1)
+      ? _.find(this.contractsList, { contract: this.perpetualProxy }).json
+      : contractJson;
+    contract.options.address = json.networks[networkId] && json.networks[networkId].address;
   }
 
   private async _send( // tslint:disable-line:function-name
@@ -311,27 +324,6 @@ export class Contracts {
       transactionHash,
       confirmation: confirmationPromise,
     };
-  }
-
-  protected setContractProvider(
-    contract: Contract,
-    contractJson: Json,
-    provider: Provider,
-    networkId: number,
-  ): void {
-    (contract as any).setProvider(provider);
-    contract.options.address = this.getAddress(contract, contractJson, networkId);
-  }
-
-  protected getAddress(
-    contract: Contract,
-    contractJson: Json,
-    networkId: number,
-  ): address {
-    const json: Json = (contract === this.perpetualV1)
-      ? _.find(this.contractsList, { contract: this.perpetualProxy }).json
-      : contractJson;
-    return json.networks[networkId] && json.networks[networkId].address;
   }
 
   private async estimateGas(
