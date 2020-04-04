@@ -1,13 +1,9 @@
 import _ from 'lodash';
 import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
-import { AbiItem } from 'web3-utils';
 
 import { Contracts } from '../../src/modules/Contracts';
-import {
-  Provider,
-  address,
-} from '../../src/lib/types';
+import { Provider } from '../../src/lib/types';
 
 // JSON
 const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
@@ -27,7 +23,6 @@ const testTokenJson = require(`${jsonFolder}Test_Token.json`);
 const testMakerOracleJson = require(`${jsonFolder}Test_MakerOracle.json`);
 
 export class TestContracts extends Contracts {
-  private testContractsList: { contract: Contract, json: any }[] = [];
 
   // Test contract instances
   public testLib: Contract;
@@ -56,55 +51,15 @@ export class TestContracts extends Contracts {
     this.p1Liquidation = this.addContract(p1LiquidationJson);
 
     // Test contracts
-    this.testLib = this.addTestContract(testLibJson);
-    this.testP1Funder = this.addTestContract(testP1FunderJson);
-    this.testP1Monolith = this.addTestContract(testP1MonolithJson);
-    this.testP1Oracle = this.addTestContract(testP1OracleJson);
-    this.testP1Trader = this.addTestContract(testP1TraderJson);
-    this.testToken = this.addTestContract(testTokenJson);
-    this.testMakerOracle = this.addTestContract(testMakerOracleJson);
+    this.testLib = this.addContract(testLibJson, false);
+    this.testP1Funder = this.addContract(testP1FunderJson, false);
+    this.testP1Monolith = this.addContract(testP1MonolithJson, false);
+    this.testP1Oracle = this.addContract(testP1OracleJson, false);
+    this.testP1Trader = this.addContract(testP1TraderJson, false);
+    this.testToken = this.addContract(testTokenJson, false);
+    this.testMakerOracle = this.addContract(testMakerOracleJson, false);
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
-  }
-
-  public setProvider(
-    provider: Provider,
-    networkId: number,
-  ): void {
-    super.setProvider(provider, networkId);
-    if (this.testContractsList) {
-      this.testContractsList.forEach(
-        contract => this.setContractProvider(
-          contract.contract,
-          contract.json,
-          provider,
-          networkId,
-        ),
-      );
-    }
-  }
-
-  public setDefaultAccount(
-    account: address,
-  ): void {
-    super.setDefaultAccount(account);
-    if (this.testContractsList) {
-      this.testContractsList.forEach(
-        contract => contract.contract.options.from = account,
-      );
-    }
-  }
-
-  /**
-   * Add the contract to the test contract list.
-   *
-   * Won't add to the base class contract list, so test contracts won't be used for parsing logs
-   * and won't be included in gas usage stats.
-   */
-  private addTestContract(json: { abi: AbiItem }): Contract {
-    const contract = new this.web3.eth.Contract(json.abi);
-    this.testContractsList.push({ contract, json });
-    return contract;
   }
 }

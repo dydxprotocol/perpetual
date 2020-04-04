@@ -56,9 +56,10 @@ interface Json {
   networks: { [network: number]: any };
 }
 
-interface ContractAndJson {
+interface ContractInfo {
   contract: Contract;
   json: Json;
+  monitorGasUsage: boolean;
 }
 
 export class Contracts {
@@ -69,7 +70,7 @@ export class Contracts {
   protected web3: Web3;
 
   // Contract instances
-  public contractsList: ContractAndJson[] = [];
+  public contractsList: ContractInfo[] = [];
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
   public p1FundingOracle: Contract;
@@ -177,7 +178,8 @@ export class Contracts {
 
       // Count gas used.
       const contract: Contract = (method as any)._parent;
-      if (_.find(this.contractsList, { contract })) {
+      const contractInfo = _.find(this.contractsList, { contract });
+      if (contractInfo && contractInfo.monitorGasUsage) {
         const gasUsed = (result as TxResult).gasUsed;
         this._cumulativeGasUsed += gasUsed;
         if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
@@ -190,9 +192,12 @@ export class Contracts {
 
   // ============ Helper Functions ============
 
-  protected addContract(json: Json): Contract {
+  protected addContract(
+    json: Json,
+    monitorGasUsage: boolean = true,
+  ): Contract {
     const contract = new this.web3.eth.Contract(json.abi);
-    this.contractsList.push({ contract, json });
+    this.contractsList.push({ contract, json, monitorGasUsage });
     return contract;
   }
 
