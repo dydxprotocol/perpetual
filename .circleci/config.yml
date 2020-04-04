@@ -36,20 +36,6 @@ jobs:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
           paths:
             - ~/build
-  coverage:
-    docker:
-      - image: dydxprotocol/node:10.16.3-alpine
-    working_directory: ~/build
-    steps:
-      - restore_cache:
-          key: cache-{{ .Environment.CIRCLE_SHA1 }}
-      - run:
-          name: Coverage
-          command: python util/fix_contracts_for_coverage.py && npm run coverage
-          no_output_timeout: 60m
-      - run:
-          name: Coveralls
-          command: cat coverage/lcov.info | node_modules/.bin/coveralls
   lint:
     docker:
       - image: dydxprotocol/node:10.16.3-alpine
@@ -60,6 +46,20 @@ jobs:
       - run:
           name: Lint
           command: npm run lint
+  coverage:
+    docker:
+      - image: dydxprotocol/node:10.16.3-alpine
+    working_directory: ~/build
+    steps:
+      - restore_cache:
+          key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
+      - run:
+          name: Coverage
+          command: python util/fix_contracts_for_coverage.py && npm run coverage
+          no_output_timeout: 60m
+      - run:
+          name: Coveralls
+          command: cat coverage/lcov.info | node_modules/.bin/coveralls
   test:
     docker:
       - image: dydxprotocol/node:10.16.3-alpine
@@ -123,7 +123,7 @@ workflows:
             - checkout_and_install
       - coverage:
           requires:
-            - checkout_and_install
+            - compile_contracts
       - test:
           requires:
             - compile_contracts

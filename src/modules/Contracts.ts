@@ -26,9 +26,6 @@ import {
   ContractSendMethod,
   Contract,
 } from 'web3-eth-contract';
-import {
-  AbiItem,
-} from 'web3-utils';
 
 import {
   address,
@@ -40,19 +37,29 @@ import {
 } from '../lib/types';
 
 // JSON
-const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
-const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
-const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
-const p1FundingOracleJson = require(`${jsonFolder}P1FundingOracle.json`);
-const p1MakerOracleJson = require(`${jsonFolder}P1MakerOracle.json`);
-const p1OrdersJson = require(`${jsonFolder}P1Orders.json`);
-const p1DeleveragingJson = require(`${jsonFolder}P1Deleveraging.json`);
-const p1LiquidationJson = require(`${jsonFolder}P1Liquidation.json`);
+import perpetualProxyJson from '../../build/contracts/PerpetualProxy.json';
+import perpetualV1Json from '../../build/contracts/PerpetualV1.json';
+import p1FundingOracleJson from '../../build/contracts/P1FundingOracle.json';
+import p1MakerOracleJson from '../../build/contracts/P1MakerOracle.json';
+import p1OrdersJson from '../../build/contracts/P1Orders.json';
+import p1DeleveragingJson from '../../build/contracts/P1Deleveraging.json';
+import p1LiquidationJson from '../../build/contracts/P1Liquidation.json';
 
 enum OUTCOMES {
   INITIAL = 0,
   RESOLVED = 1,
   REJECTED = 2,
+}
+
+interface Json {
+  abi: any;
+  networks: { [network: number]: any };
+}
+
+interface ContractInfo {
+  contract: Contract;
+  json: Json;
+  isTest: boolean;
 }
 
 export class Contracts {
@@ -63,7 +70,7 @@ export class Contracts {
   protected web3: Web3;
 
   // Contract instances
-  public contractsList: { contract: Contract, json: any }[] = [];
+  public contractsList: ContractInfo[] = [];
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
   public p1FundingOracle: Contract;
@@ -171,7 +178,8 @@ export class Contracts {
 
       // Count gas used.
       const contract: Contract = (method as any)._parent;
-      if (_.find(this.contractsList, { contract })) {
+      const contractInfo = _.find(this.contractsList, { contract });
+      if (contractInfo && !contractInfo.isTest) {
         const gasUsed = (result as TxResult).gasUsed;
         this._cumulativeGasUsed += gasUsed;
         if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
@@ -184,10 +192,26 @@ export class Contracts {
 
   // ============ Helper Functions ============
 
-  private addContract(json: { abi: AbiItem }): Contract {
+  protected addContract(
+    json: Json,
+    isTest: boolean = false,
+  ): Contract {
     const contract = new this.web3.eth.Contract(json.abi);
-    this.contractsList.push({ contract, json });
+    this.contractsList.push({ contract, json, isTest });
     return contract;
+  }
+
+  private setContractProvider(
+    contract: Contract,
+    contractJson: Json,
+    provider: Provider,
+    networkId: number,
+  ): void {
+    (contract as any).setProvider(provider);
+    const json: Json = (contract === this.perpetualV1)
+      ? _.find(this.contractsList, { contract: this.perpetualProxy }).json
+      : contractJson;
+    contract.options.address = json.networks[networkId] && json.networks[networkId].address;
   }
 
   private async _send( // tslint:disable-line:function-name
@@ -300,24 +324,6 @@ export class Contracts {
       transactionHash,
       confirmation: confirmationPromise,
     };
-  }
-
-  protected setContractProvider(
-    contract: Contract,
-    contractJson: any,
-    provider: Provider,
-    networkId: number,
-  ): void {
-    let json: any = contractJson;
-
-    // Special case: Use the proxy address for the perpetual contract.
-    if (contract === this.perpetualV1) {
-      json = perpetualProxyJson;
-    }
-
-    (contract as any).setProvider(provider);
-    contract.options.address = json.networks[networkId]
-      && json.networks[networkId].address;
   }
 
   private async estimateGas(
