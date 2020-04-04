@@ -323,11 +323,9 @@ export class Contracts {
     contractJson: Json,
     networkId: number,
   ): address {
-    let json: Json = contractJson;
-    const foundContractAndJson = _.find(this.contractsList, { contract });
-    if (foundContractAndJson && foundContractAndJson.contract === this.perpetualV1) {
-      json = _.find(this.contractsList, { contract: this.perpetualProxy }).json;
-    }
+    const json: Json = (contract === this.perpetualV1)
+      ? _.find(this.contractsList, { contract: this.perpetualProxy }).json
+      : contractJson;
     return json.networks[networkId] && json.networks[networkId].address;
   }
 
