@@ -95,17 +95,13 @@ export class Contracts {
     };
 
     // Contracts
-    console.log("NORMAL");
-    if (process.env.COVERAGE !== 'true') {
-      console.log("AM I DOING IT");
-      this.perpetualProxy = this.addContract(perpetualProxyJson);
-      this.perpetualV1 = this.addContract(perpetualV1Json);
-      this.p1FundingOracle = this.addContract(p1FundingOracleJson);
-      this.p1MakerOracle = this.addContract(p1MakerOracleJson);
-      this.p1Orders = this.addContract(p1OrdersJson);
-      this.p1Deleveraging = this.addContract(p1DeleveragingJson);
-      this.p1Liquidation = this.addContract(p1LiquidationJson);
-    }
+    this.perpetualProxy = this.addContract(perpetualProxyJson);
+    this.perpetualV1 = this.addContract(perpetualV1Json);
+    this.p1FundingOracle = this.addContract(p1FundingOracleJson);
+    this.p1MakerOracle = this.addContract(p1MakerOracleJson);
+    this.p1Orders = this.addContract(p1OrdersJson);
+    this.p1Deleveraging = this.addContract(p1DeleveragingJson);
+    this.p1Liquidation = this.addContract(p1LiquidationJson);
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
@@ -328,10 +324,11 @@ export class Contracts {
     networkId: number,
   ): address {
     let json: Json = contractJson;
-    if (this.perpetualV1 === _.find(this.contractsList, { contract }).contract) {
+    const foundContractAndJson = _.find(this.contractsList, { contract });
+    if (foundContractAndJson && foundContractAndJson.contract === this.perpetualV1) {
       json = _.find(this.contractsList, { contract: this.perpetualProxy }).json;
     }
-    return json.networks[networkId].address;
+    return json.networks[networkId] && json.networks[networkId].address;
   }
 
   private async estimateGas(

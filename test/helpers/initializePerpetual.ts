@@ -15,8 +15,6 @@ export default async function initializePerpetual(
   ctx: ITestContext,
   options: PerpetualOptions = {},
 ): Promise<void> {
-  console.log("BLARGH" + ctx.perpetual.contracts.perpetualV1.options.address);
-  console.log("BLIGHH" + ctx.perpetual.contracts.testP1Funder.options.address);
   await ctx.perpetual.contracts.send(
     ctx.perpetual.contracts.perpetualV1.methods.initializeV1(
       options.token || ctx.perpetual.testing.token.address,
