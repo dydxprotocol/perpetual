@@ -51,13 +51,13 @@ export class TestContracts extends Contracts {
     this.p1Liquidation = this.addContract(p1LiquidationJson);
 
     // Test contracts
-    this.testLib = this.addContract(testLibJson, false);
-    this.testP1Funder = this.addContract(testP1FunderJson, false);
-    this.testP1Monolith = this.addContract(testP1MonolithJson, false);
-    this.testP1Oracle = this.addContract(testP1OracleJson, false);
-    this.testP1Trader = this.addContract(testP1TraderJson, false);
-    this.testToken = this.addContract(testTokenJson, false);
-    this.testMakerOracle = this.addContract(testMakerOracleJson, false);
+    this.testLib = this.addContract(testLibJson, true);
+    this.testP1Funder = this.addContract(testP1FunderJson, true);
+    this.testP1Monolith = this.addContract(testP1MonolithJson, true);
+    this.testP1Oracle = this.addContract(testP1OracleJson, true);
+    this.testP1Trader = this.addContract(testP1TraderJson, true);
+    this.testToken = this.addContract(testTokenJson, true);
+    this.testMakerOracle = this.addContract(testMakerOracleJson, true);
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);

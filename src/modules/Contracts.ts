@@ -59,7 +59,7 @@ interface Json {
 interface ContractInfo {
   contract: Contract;
   json: Json;
-  monitorGasUsage: boolean;
+  isTest: boolean;
 }
 
 export class Contracts {
@@ -179,7 +179,7 @@ export class Contracts {
       // Count gas used.
       const contract: Contract = (method as any)._parent;
       const contractInfo = _.find(this.contractsList, { contract });
-      if (contractInfo && contractInfo.monitorGasUsage) {
+      if (contractInfo && !contractInfo.isTest) {
         const gasUsed = (result as TxResult).gasUsed;
         this._cumulativeGasUsed += gasUsed;
         if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
@@ -192,12 +192,12 @@ export class Contracts {
 
   // ============ Helper Functions ============
 
-  private addContract(
+  protected addContract(
     json: Json,
-    monitorGasUsage: boolean = true,
+    isTest: boolean = false,
   ): Contract {
     const contract = new this.web3.eth.Contract(json.abi);
-    this.contractsList.push({ contract, json, monitorGasUsage });
+    this.contractsList.push({ contract, json, isTest });
     return contract;
   }
 
