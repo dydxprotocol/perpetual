@@ -51,6 +51,16 @@ enum OUTCOMES {
   REJECTED = 2,
 }
 
+interface Json {
+  abi: any;
+  networks: { [network: number]: any };
+}
+
+interface ContractAndJson {
+  contract: Contract;
+  json: Json;
+}
+
 export class Contracts {
   private defaultOptions: SendOptions;
   private _cumulativeGasUsed: number = 0;
@@ -59,7 +69,7 @@ export class Contracts {
   protected web3: Web3;
 
   // Contract instances
-  public contractsList: { contract: Contract, json: any }[] = [];
+  public contractsList: ContractAndJson[] = [];
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
   public p1FundingOracle: Contract;
@@ -184,7 +194,7 @@ export class Contracts {
 
   // ============ Helper Functions ============
 
-  protected addContract(json: { abi: any }): Contract {
+  protected addContract(json: Json): Contract {
     const contract = new this.web3.eth.Contract(json.abi);
     this.contractsList.push({ contract, json });
     return contract;
@@ -304,20 +314,24 @@ export class Contracts {
 
   protected setContractProvider(
     contract: Contract,
-    contractJson: any,
+    contractJson: Json,
     provider: Provider,
     networkId: number,
   ): void {
-    let json: any = contractJson;
-
-    // Special case: Use the proxy address for the perpetual contract.
-    if (contract === this.perpetualV1) {
-      json = perpetualProxyJson;
-    }
-
     (contract as any).setProvider(provider);
-    contract.options.address = json.networks[networkId]
-      && json.networks[networkId].address;
+    contract.options.address = this.getAddress(contract, contractJson, networkId);
+  }
+
+  protected getAddress(
+    contract: Contract,
+    contractJson: Json,
+    networkId: number,
+  ): address {
+    let json: Json = contractJson;
+    if (this.perpetualV1 === _.find(this.contractsList, { contract }).contract) {
+      json = _.find(this.contractsList, { contract: this.perpetualProxy }).json;
+    }
+    return json.networks[networkId].address;
   }
 
   private async estimateGas(
