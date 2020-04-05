@@ -75,7 +75,7 @@ export class Perpetual {
     this.operator = new Operator(this.contracts);
     this.orders = new Orders(this.contracts, this.web3, networkId);
     this.trade = new Trade(this.contracts, this.orders);
-    this.token = new Token(this.contracts, this.orders);
+    this.token = new Token(this.contracts);
   }
 
   public setProvider(
