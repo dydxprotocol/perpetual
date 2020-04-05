@@ -36,6 +36,7 @@ import { Margin } from './modules/Margin';
 import { Operator } from './modules/Operator';
 import { Orders } from './modules/Orders';
 import { Trade } from './modules/Trade';
+import { Token } from './modules/Token';
 
 export class Perpetual {
   public web3: Web3;
@@ -53,6 +54,7 @@ export class Perpetual {
   public operator: Operator;
   public orders: Orders;
   public trade: Trade;
+  public token: Token;
 
   constructor(
     provider: Provider,
@@ -73,6 +75,7 @@ export class Perpetual {
     this.operator = new Operator(this.contracts);
     this.orders = new Orders(this.contracts, this.web3, networkId);
     this.trade = new Trade(this.contracts, this.orders);
+    this.token = new Token(this.contracts, this.orders);
   }
 
   public setProvider(
