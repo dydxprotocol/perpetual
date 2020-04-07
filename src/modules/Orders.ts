@@ -18,16 +18,18 @@ import {
   ecRecoverTypedSignature,
 } from '../lib/SignatureHelper';
 import {
-  address,
+  Balance,
   CallOptions,
-  SendOptions,
+  Fee,
   Order,
-  SignedOrder,
   OrderState,
+  Price,
+  SendOptions,
+  SignedOrder,
   SigningMethod,
   TypedSignature,
-  Price,
-  Fee,
+  address,
+  BaseValue,
 } from '../lib/types';
 import { ORDER_FLAGS } from '../lib/Constants';
 
@@ -134,6 +136,52 @@ export class Orders {
         filledAmount: new BigNumber(state[1]),
       };
     });
+  }
+
+  // ============ Off-Chain Helper Functions ============
+
+  /**
+   * Estimate the maker's collateralization after executing a sequence of orders.
+   *
+   * The `maker` of every order must be the same. This function does not make any on-chain calls,
+   * so all information must be passed in, including the oracle price and remaining amounts
+   * on the orders. Orders are assumed to be filled at the limit price and limit fee.
+   *
+   * Returns the ending collateralization ratio for the account, or BigNumber(Infinity) if the
+   * account does not end with any negative balances.
+   */
+  public getAccountCollateralizationAfterMakingOrders(
+    initialBalance: Balance,
+    oraclePrice: Price,
+    orders: Order[],
+    fillAmounts: BigNumber[],
+  ): BigNumber {
+    const runningBalance: Balance = initialBalance.copy();
+
+    // For each order, determine the effect on the balance by following the math in P1Orders.sol.
+    for (let i = 0; i < orders.length; i += 1) {
+      const order = orders[i];
+      const fillAmount = fillAmounts[i];
+
+      // Assume orders are filled at the limit price and limit fee.
+      // Order fee is denoted as a percentage of execution price.
+      const fee: BaseValue = order.limitFee.times(order.limitPrice.value);
+      const marginPerPosition: BaseValue = order.isBuy
+        ? order.limitPrice.plus(fee.value)
+        : order.limitPrice.minus(fee.value);
+
+      const marginAmount: BigNumber = fillAmount.times(marginPerPosition.value);
+
+      if (order.isBuy) {
+        runningBalance.margin = runningBalance.margin.minus(marginAmount);
+        runningBalance.position = runningBalance.position.plus(fillAmount);
+      } else {
+        runningBalance.margin = runningBalance.margin.plus(marginAmount);
+        runningBalance.position = runningBalance.position.minus(fillAmount);
+      }
+    }
+
+    return runningBalance.getCollateralization(oraclePrice);
   }
 
   // ============ Signing Methods ============

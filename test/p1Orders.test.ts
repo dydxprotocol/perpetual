@@ -2,6 +2,7 @@ import _ from 'lodash';
 import BigNumber from 'bignumber.js';
 
 import {
+  Balance,
   Fee,
   Order,
   Price,
@@ -30,7 +31,7 @@ const defaultOrder: Order = {
   isBuy: true,
   isDecreaseOnly: false,
   amount: orderAmount,
-  limitPrice: new Price('987.654320'),
+  limitPrice: new Price('987.65432'),
   triggerPrice: PRICES.NONE,
   limitFee: Fee.fromBips(20),
   maker: ADDRESSES.ZERO,
@@ -73,7 +74,7 @@ async function init(ctx: ITestContext) {
 
 perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
-  describe('Signing', () => {
+  describe('off-chain helpers', () => {
     it('Signs correctly for hash', async () => {
       const typedSignature = await ctx.perpetual.orders.signOrder(
         defaultOrder,
@@ -98,7 +99,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       expect(validSignature).to.be.true;
     });
 
-    it('Recognizes invalid signatures', async () => {
+    it('Recognizes invalid signatures', () => {
       const badSignatures = [
         `0x${'00'.repeat(63)}00`,
         `0x${'ab'.repeat(63)}01`,
@@ -111,6 +112,47 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         });
         expect(validSignature).to.be.false;
       });
+    });
+
+    it('Estimates collateralization after executing orders', () => {
+      // Buy 1e18 at price of 987.65432 with fee of 0.002.
+      // position: 1e18 --> 1000e18 value at price of 1000
+      // margin: -987.65632e18
+      const ratio1 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+        new Balance(0, 0),
+        new Price(1000),
+        [defaultOrder, defaultOrder, defaultOrder],
+        [orderAmount.div(3), orderAmount.div(2), orderAmount.div(6)],
+      );
+      expectBN(ratio1).to.equal(new BigNumber(1000).div(987.65432 * 1.002));
+
+      const ratio2 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+        new Balance(0, 0),
+        new Price(200),
+        [defaultOrder, defaultOrder, defaultOrder],
+        [orderAmount.div(3), orderAmount.div(2), orderAmount.div(6)],
+      );
+      expectBN(ratio2).to.equal(new BigNumber(200).div(987.65432 * 1.002));
+    });
+
+    it('Estimates collateralization when negative balance is zero', () => {
+      const price = new Price(100);
+
+      const ratio1 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+        new Balance(0, 0),
+        price,
+        [],
+        [],
+      );
+      expectBN(ratio1).to.equal(Infinity);
+
+      const ratio2 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+        new Balance(initialMargin, orderAmount),
+        price,
+        [defaultOrder],
+        [orderAmount.div(2)],
+      );
+      expectBN(ratio2).to.equal(Infinity);
     });
   });
 
@@ -580,8 +622,8 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fills a bid', async () => {
         // Give the maker a short position.
         const { limitFee, limitPrice, maker, taker } = defaultOrder;
-        const fee = limitFee.value.times(limitPrice.value);
-        const cost = limitPrice.value.plus(fee).times(orderAmount);
+        const fee = limitFee.times(limitPrice.value);
+        const cost = limitPrice.value.plus(fee.value).times(orderAmount);
         await sell(ctx, maker, taker, orderAmount, cost);
 
         // Fill the order to decrease the short position to zero.
@@ -601,8 +643,8 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fills an ask', async () => {
         // Give the maker a long position.
         const { limitFee, limitPrice, maker, taker } = defaultOrder;
-        const fee = limitFee.value.times(limitPrice.value).negated();
-        const cost = limitPrice.value.plus(fee).times(orderAmount);
+        const fee = limitFee.times(limitPrice.value).negated();
+        const cost = limitPrice.value.plus(fee.value).times(orderAmount);
         await buy(ctx, maker, taker, orderAmount, cost);
 
         // Fill the order to decrease the long position to zero.
@@ -727,10 +769,10 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     const fillFee = args.fee || order.limitFee;
 
     // Order fee is denoted as a percentage of execution price.
-    const feeAmount = fillFee.value.times(fillPrice.value);
+    const feeAmount = fillFee.times(fillPrice.value);
     const effectivePrice = order.isBuy
-      ? fillPrice.plus(feeAmount)
-      : fillPrice.minus(feeAmount);
+      ? fillPrice.plus(feeAmount.value)
+      : fillPrice.minus(feeAmount.value);
     const expectedMarginAmount = fillAmount.times(effectivePrice.value).dp(0);
 
     const txResult = await ctx.perpetual.trade
