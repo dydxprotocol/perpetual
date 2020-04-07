@@ -578,9 +578,13 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
     describe('in decrease-only mode', () => {
       it('fills a bid', async () => {
+        // Give the maker a short position.
         const { limitFee, limitPrice, maker, taker } = defaultOrder;
-        const cost = limitPrice.value.plus(limitFee.value).times(orderAmount);
+        const fee = limitFee.value.times(limitPrice.value);
+        const cost = limitPrice.value.plus(fee).times(orderAmount);
         await sell(ctx, maker, taker, orderAmount, cost);
+
+        // Fill the order to decrease the short position to zero.
         const buyOrder = await getModifiedOrder({ isDecreaseOnly: true });
         const { txResult } = await fillOrder(buyOrder);
 
@@ -595,9 +599,13 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
 
       it('fills an ask', async () => {
+        // Give the maker a long position.
         const { limitFee, limitPrice, maker, taker } = defaultOrder;
-        const cost = limitPrice.value.minus(limitFee.value).times(orderAmount);
+        const fee = limitFee.value.times(limitPrice.value).negated();
+        const cost = limitPrice.value.plus(fee).times(orderAmount);
         await buy(ctx, maker, taker, orderAmount, cost);
+
+        // Fill the order to decrease the long position to zero.
         const sellOrder = await getModifiedOrder({ isBuy: false, isDecreaseOnly: true });
         const { txResult } = await fillOrder(sellOrder);
 
@@ -717,10 +725,14 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     const fillAmount = args.amount || order.amount;
     const fillPrice = args.price || order.limitPrice;
     const fillFee = args.fee || order.limitFee;
-    const effectivePrice = order.isBuy ?
-      fillPrice.plus(fillFee.value) :
-      fillPrice.minus(fillFee.value);
+
+    // Order fee is denoted as a percentage of execution price.
+    const feeAmount = fillFee.value.times(fillPrice.value);
+    const effectivePrice = order.isBuy
+      ? fillPrice.plus(feeAmount)
+      : fillPrice.minus(feeAmount);
     const expectedMarginAmount = fillAmount.times(effectivePrice.value).dp(0);
+
     const txResult = await ctx.perpetual.trade
       .initiate()
       .fillSignedOrder(
