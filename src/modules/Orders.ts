@@ -164,9 +164,11 @@ export class Orders {
       const fillAmount = fillAmounts[i];
 
       // Assume orders are filled at the limit price and limit fee.
+      // Order fee is denoted as a percentage of execution price.
+      const fee: BaseValue = order.limitFee.times(order.limitPrice.value);
       const marginPerPosition: BaseValue = order.isBuy
-        ? order.limitPrice.plus(order.limitFee.value)
-        : order.limitPrice.minus(order.limitFee.value);
+        ? order.limitPrice.plus(fee.value)
+        : order.limitPrice.minus(fee.value);
 
       const marginAmount: BigNumber = fillAmount.times(marginPerPosition.value);
 

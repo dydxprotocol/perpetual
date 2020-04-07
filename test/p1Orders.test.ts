@@ -124,7 +124,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         [defaultOrder, defaultOrder, defaultOrder],
         [orderAmount.div(3), orderAmount.div(2), orderAmount.div(6)],
       );
-      expectBN(ratio1).to.equal(new BigNumber(1000).div(987.65632));
+      expectBN(ratio1).to.equal(new BigNumber(1000).div(987.65432 * 1.002));
 
       const ratio2 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
@@ -132,7 +132,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         [defaultOrder, defaultOrder, defaultOrder],
         [orderAmount.div(3), orderAmount.div(2), orderAmount.div(6)],
       );
-      expectBN(ratio2).to.equal(new BigNumber(200).div(987.65632));
+      expectBN(ratio2).to.equal(new BigNumber(200).div(987.65432 * 1.002));
     });
 
     it('Estimates collateralization when negative balance is zero', () => {
@@ -622,8 +622,8 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fills a bid', async () => {
         // Give the maker a short position.
         const { limitFee, limitPrice, maker, taker } = defaultOrder;
-        const fee = limitFee.value.times(limitPrice.value);
-        const cost = limitPrice.value.plus(fee).times(orderAmount);
+        const fee = limitFee.times(limitPrice.value);
+        const cost = limitPrice.value.plus(fee.value).times(orderAmount);
         await sell(ctx, maker, taker, orderAmount, cost);
 
         // Fill the order to decrease the short position to zero.
@@ -643,8 +643,8 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fills an ask', async () => {
         // Give the maker a long position.
         const { limitFee, limitPrice, maker, taker } = defaultOrder;
-        const fee = limitFee.value.times(limitPrice.value).negated();
-        const cost = limitPrice.value.plus(fee).times(orderAmount);
+        const fee = limitFee.times(limitPrice.value).negated();
+        const cost = limitPrice.value.plus(fee.value).times(orderAmount);
         await buy(ctx, maker, taker, orderAmount, cost);
 
         // Fill the order to decrease the long position to zero.
@@ -769,10 +769,10 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     const fillFee = args.fee || order.limitFee;
 
     // Order fee is denoted as a percentage of execution price.
-    const feeAmount = fillFee.value.times(fillPrice.value);
+    const feeAmount = fillFee.times(fillPrice.value);
     const effectivePrice = order.isBuy
-      ? fillPrice.plus(feeAmount)
-      : fillPrice.minus(feeAmount);
+      ? fillPrice.plus(feeAmount.value)
+      : fillPrice.minus(feeAmount.value);
     const expectedMarginAmount = fillAmount.times(effectivePrice.value).dp(0);
 
     const txResult = await ctx.perpetual.trade
