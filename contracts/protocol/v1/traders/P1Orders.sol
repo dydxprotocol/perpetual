@@ -235,11 +235,15 @@ contract P1Orders is
             tradeData.fill
         );
 
+        // Order fee is denoted as a percentage of execution price.
+        // Convert into an amount per unit position.
+        uint256 fee = tradeData.fill.fee.baseMul(tradeData.fill.price);
+
         // `isBuyOrder` is from the maker's perspective.
         bool isBuyOrder = _isBuy(tradeData.order);
         uint256 marginPerPosition = (isBuyOrder == tradeData.fill.isNegativeFee)
-            ? tradeData.fill.price.sub(tradeData.fill.fee)
-            : tradeData.fill.price.add(tradeData.fill.fee);
+            ? tradeData.fill.price.sub(fee)
+            : tradeData.fill.price.add(fee);
 
         return P1Types.TradeResult({
             marginAmount: tradeData.fill.amount.baseMul(marginPerPosition),
