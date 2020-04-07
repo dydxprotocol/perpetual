@@ -222,8 +222,8 @@ contract P1Trade is
                 account
             );
 
-            // Note that finalPosition can't be zero at this point since that would imply either
-            // finalPositive is zero or the account is well-collateralized.
+            // Note that finalBalance.position can't be zero at this point since that would imply
+            // either finalPositive is zero or the account is well-collateralized.
 
             Require.that(
                 finalBalance.positionIsPositive == initialBalance.positionIsPositive,
@@ -241,7 +241,7 @@ contract P1Trade is
             //   Final margin/position must now be either -/+ or +/-.
             //
             // Which implies one of the following [intial] -> [final] configurations:
-            //   [0,+, -/+] -> [-/+]
+            //   [0/+, -/+] -> [-/+]
             //        [+/-] -> [+/-]
 
             uint256 finalBalanceInitialMargin = finalBalance.position.mul(initialBalance.margin);
