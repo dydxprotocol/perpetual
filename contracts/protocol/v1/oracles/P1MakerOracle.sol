@@ -20,8 +20,8 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { I_MakerOracle } from "../../../external/maker/I_MakerOracle.sol";
+import { BaseMath } from "../../lib/BaseMath.sol";
 import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
-import { BaseMath } from "../lib/BaseMath.sol";
 
 
 /**
