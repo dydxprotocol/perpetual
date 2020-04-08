@@ -425,6 +425,23 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
           [orderAmount, orderAmount.negated()],
         );
       });
+
+      it('succeeds repeating an order (with a different salt)', async () => {
+        // Prevent undercollateralization.
+        await ctx.perpetual.testing.oracle.setPrice(new Price(100));
+
+        // Execute the same order twice, with different salts.
+        const repeatOrder = {
+          ...defaultOrder,
+          salt: defaultOrder.salt.plus(1),
+        };
+        const repeatSignedOrder = await ctx.perpetual.orders.getSignedOrder(
+          repeatOrder,
+          SigningMethod.Hash,
+        );
+        await fillOrder(defaultSignedOrder);
+        await fillOrder(repeatSignedOrder);
+      });
     });
 
     describe('basic failure cases', () => {
@@ -555,6 +572,14 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         await fillOrder(defaultSignedOrder, { amount: halfAmount });
         await expectThrow(
           fillOrder(defaultSignedOrder, { amount: halfAmount.plus(1) }),
+          'Cannot overfill order',
+        );
+      });
+
+      it('fails for an order that was already filled', async () => {
+        await fillOrder(defaultSignedOrder);
+        await expectThrow(
+          fillOrder(defaultSignedOrder),
           'Cannot overfill order',
         );
       });
