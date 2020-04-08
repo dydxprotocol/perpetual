@@ -99,18 +99,36 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       expect(validSignature).to.be.true;
     });
 
+    it('Signs an order cancelation', async () => {
+      const typedSignature = await ctx.perpetual.orders.signCancelOrder(
+        defaultOrder,
+        SigningMethod.Hash,
+      );
+      const validSignature = ctx.perpetual.orders.cancelOrderHasValidSignature(
+        defaultOrder,
+        typedSignature,
+      );
+      expect(validSignature).to.be.true;
+    });
+
     it('Recognizes invalid signatures', () => {
       const badSignatures = [
         `0x${'00'.repeat(63)}00`,
         `0x${'ab'.repeat(63)}01`,
         `0x${'01'.repeat(70)}01`,
       ];
-      badSignatures.map((sig) => {
+      badSignatures.map((typedSignature) => {
         const validSignature = ctx.perpetual.orders.orderHasValidSignature({
           ...defaultOrder,
-          typedSignature: sig,
+          typedSignature,
         });
         expect(validSignature).to.be.false;
+
+        const validCancelSignature = ctx.perpetual.orders.cancelOrderHasValidSignature(
+          defaultOrder,
+          typedSignature,
+        );
+        expect(validCancelSignature).to.be.false;
       });
     });
 
