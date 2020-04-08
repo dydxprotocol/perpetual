@@ -56,7 +56,8 @@ contract P1Settlement is
     event LogAccountSettled(
         address indexed account,
         bool isPositive,
-        uint256 amount
+        uint256 amount,
+        bytes32 balance
     );
 
     // ============ Functions ============
@@ -197,7 +198,8 @@ contract P1Settlement is
         emit LogAccountSettled(
             account,
             settlementIsPositive,
-            settlementAmount
+            settlementAmount,
+            balance.toBytes32()
         );
 
         return balance;
