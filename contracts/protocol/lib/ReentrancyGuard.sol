@@ -27,19 +27,19 @@ pragma experimental ABIEncoderV2;
  * Updated ReentrancyGuard library designed to be used with Proxy Contracts.
  */
 contract ReentrancyGuard {
-    uint256 private constant _NOT_ENTERED = 1;
-    uint256 private constant _ENTERED = uint256(int256(-1));
+    uint256 private constant NOT_ENTERED = 1;
+    uint256 private constant ENTERED = uint256(int256(-1));
 
-    uint256 private _status;
+    uint256 private _STATUS_;
 
     constructor () internal {
-        _status = _NOT_ENTERED;
+        _STATUS_ = NOT_ENTERED;
     }
 
     modifier nonReentrant() {
-        require(_status != _ENTERED, "ReentrancyGuard: reentrant call");
-        _status = _ENTERED;
+        require(_STATUS_ != ENTERED, "ReentrancyGuard: reentrant call");
+        _STATUS_ = ENTERED;
         _;
-        _status = _NOT_ENTERED;
+        _STATUS_ = NOT_ENTERED;
     }
 }
