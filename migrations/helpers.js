@@ -97,10 +97,21 @@ function getDeployerAddress(network, accounts) {
   throw new Error('Cannot find Deployer address');
 }
 
+function getOracleAdjustment(network) {
+  if (isMainnet(network) || isKovan(network)) {
+    return '10000000000000000'; // 0.01e18
+  }
+  if (isDevNetwork(network)) {
+    return '1000000000000000000'; // 1e18
+  }
+  throw new Error('Cannot find oracle adjustment');
+}
+
 module.exports = {
   getChainId,
   isDevNetwork,
   getPartiallyDelayedMultisigAddress,
   getMakerPriceOracleAddress,
   getDeployerAddress,
+  getOracleAdjustment,
 };
