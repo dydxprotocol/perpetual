@@ -66,7 +66,7 @@ export default function perpetualDescribe(
     // Runs before any after() calls made within the perpetualDescribe() call.
     after(async () => {
       await resetEVM(preInitSnapshotId);
-      ctx.perpetual.contracts.writeTxResultsSync(`all_tx_results-${name.replace(/ /g, '_')}.json`);
+      ctx.perpetual.contracts.writeTxResultsSync(ctx.perpetual, `all_tx_results-${name.replace(/ /g, '_')}`);
     });
 
     // Runs before any afterEach() calls made within the perpetualDescribe() call.

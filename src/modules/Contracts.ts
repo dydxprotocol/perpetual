@@ -37,6 +37,7 @@ import {
   SendOptions,
   TxResult,
 } from '../lib/types';
+import { Perpetual } from '../Perpetual';
 
 // JSON
 import perpetualProxyJson from '../../build/contracts/PerpetualProxy.json';
@@ -111,8 +112,14 @@ export class Contracts {
     this.setDefaultAccount(this.web3.eth.defaultAccount);
   }
 
-  public writeTxResultsSync(fileName: string): void {
-    fs.writeFileSync(fileName, JSON.stringify(this.allTxResults, null, 2));
+  public writeTxResultsSync(perpetual: Perpetual, dirName: string): void {
+    fs.mkdirSync(dirName);
+    let i = 0;
+    for (const txResult of this.allTxResults) {
+      const logs = perpetual.logs.parseLogs(txResult);
+      fs.writeFileSync(`${dirName}/${i}.json`, JSON.stringify(logs, null, 2));
+      i += 1;
+    }
     this.allTxResults = []; // leave work for garbage collector
   }
 
