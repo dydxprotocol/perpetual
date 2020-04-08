@@ -21,6 +21,7 @@ const {
   isDevNetwork,
   getMakerPriceOracleAddress,
   getDeployerAddress,
+  getOracleAdjustment,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -98,6 +99,7 @@ async function deployOracles(deployer, network) {
       P1MakerOracle,
       PerpetualProxy.address,
       getMakerPriceOracleAddress(network, TestMakerOracle),
+      getOracleAdjustment(network),
     ),
   ]);
 }

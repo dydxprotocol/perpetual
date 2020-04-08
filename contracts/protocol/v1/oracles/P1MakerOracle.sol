@@ -20,6 +20,7 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { I_MakerOracle } from "../../../external/maker/I_MakerOracle.sol";
+import { BaseMath } from "../../lib/BaseMath.sol";
 import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
 
 
@@ -27,27 +28,33 @@ import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
  * @title P1MakerOracle
  * @author dYdX
  *
- * P1Oracle that reads the price directly from a Maker V2 Oracle.
+ * P1Oracle that reads the price from a Maker V2 Oracle.
  */
 contract P1MakerOracle is
     I_P1Oracle
 {
+    using BaseMath for uint256;
+
     // ============ Storage ============
 
     address public _ORACLE_ADDRESS_;
 
     address public _PERPETUAL_V1_;
 
+    uint256 public _ADJUSTMENT_;
+
     // ============ Constructor ============
 
     constructor(
         address perpetualV1,
-        address oracleAddress
+        address oracleAddress,
+        uint256 adjustment
     )
         public
     {
         _PERPETUAL_V1_ = perpetualV1;
         _ORACLE_ADDRESS_ = oracleAddress;
+        _ADJUSTMENT_ = adjustment;
     }
 
     // ============ Public Functions ============
@@ -64,6 +71,7 @@ contract P1MakerOracle is
             msg.sender == _PERPETUAL_V1_,
             "msg.sender must be PerpetualV1"
         );
-        return uint256(I_MakerOracle(_ORACLE_ADDRESS_).read());
+        uint256 rawPrice = uint256(I_MakerOracle(_ORACLE_ADDRESS_).read());
+        return rawPrice.baseMul(_ADJUSTMENT_);
     }
 }
