@@ -79,6 +79,7 @@ export class Api {
       maker,
       taker,
       expiration,
+      postOnly,
       limitFeeNumber: limitFee,
     });
 
@@ -103,6 +104,7 @@ export class Api {
     maker,
     taker,
     expiration,
+    postOnly,
     limitFeeNumber,
   }: {
     side: ApiSide,
@@ -111,6 +113,7 @@ export class Api {
     maker: address,
     taker: address,
     expiration: BigNumberable,
+    postOnly: boolean,
     limitFeeNumber?: BigNumberable,
   }): Promise<SignedOrder> {
     if (!Object.values(ApiSide).includes(side)) {
@@ -118,9 +121,9 @@ export class Api {
     }
 
     const amountNumber: BigNumber = new BigNumber(amount);
-    const limitFee = limitFeeNumber
-      ? new BigNumber(limitFeeNumber)
-      : this.perpetualOrders.getFeeForOrder();
+    const limitFee: Fee = limitFeeNumber
+      ? new Fee(limitFeeNumber)
+      : this.perpetualOrders.getFeeForOrder(amountNumber, !postOnly);
 
     const realExpiration: BigNumber = getRealExpiration(expiration);
     const order: Order = {

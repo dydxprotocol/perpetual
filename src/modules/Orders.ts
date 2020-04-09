@@ -184,6 +184,21 @@ export class Orders {
     return runningBalance.getCollateralization(oraclePrice);
   }
 
+  public getFeeForOrder(
+    amount: BigNumber,
+    isTaker: boolean = true,
+  ): Fee {
+    const isSmall = amount.lt('0.01e8');
+    if (!isTaker) {
+      return isSmall
+        ? Fee.fromBips('0.0')
+        : Fee.fromBips('-2.5');
+    }
+    return isSmall
+      ? Fee.fromBips('50.0')
+      : Fee.fromBips('7.5');
+  }
+
   // ============ Signing Methods ============
 
   public async getSignedOrder(

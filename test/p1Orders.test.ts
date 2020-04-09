@@ -99,18 +99,36 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       expect(validSignature).to.be.true;
     });
 
+    it('Signs an order cancelation', async () => {
+      const typedSignature = await ctx.perpetual.orders.signCancelOrder(
+        defaultOrder,
+        SigningMethod.Hash,
+      );
+      const validSignature = ctx.perpetual.orders.cancelOrderHasValidSignature(
+        defaultOrder,
+        typedSignature,
+      );
+      expect(validSignature).to.be.true;
+    });
+
     it('Recognizes invalid signatures', () => {
       const badSignatures = [
         `0x${'00'.repeat(63)}00`,
         `0x${'ab'.repeat(63)}01`,
         `0x${'01'.repeat(70)}01`,
       ];
-      badSignatures.map((sig) => {
+      badSignatures.map((typedSignature) => {
         const validSignature = ctx.perpetual.orders.orderHasValidSignature({
           ...defaultOrder,
-          typedSignature: sig,
+          typedSignature,
         });
         expect(validSignature).to.be.false;
+
+        const validCancelSignature = ctx.perpetual.orders.cancelOrderHasValidSignature(
+          defaultOrder,
+          typedSignature,
+        );
+        expect(validCancelSignature).to.be.false;
       });
     });
 
@@ -407,6 +425,23 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
           [orderAmount, orderAmount.negated()],
         );
       });
+
+      it('succeeds repeating an order (with a different salt)', async () => {
+        // Prevent undercollateralization.
+        await ctx.perpetual.testing.oracle.setPrice(new Price(100));
+
+        // Execute the same order twice, with different salts.
+        const repeatOrder = {
+          ...defaultOrder,
+          salt: defaultOrder.salt.plus(1),
+        };
+        const repeatSignedOrder = await ctx.perpetual.orders.getSignedOrder(
+          repeatOrder,
+          SigningMethod.Hash,
+        );
+        await fillOrder(defaultSignedOrder);
+        await fillOrder(repeatSignedOrder);
+      });
     });
 
     describe('basic failure cases', () => {
@@ -537,6 +572,14 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         await fillOrder(defaultSignedOrder, { amount: halfAmount });
         await expectThrow(
           fillOrder(defaultSignedOrder, { amount: halfAmount.plus(1) }),
+          'Cannot overfill order',
+        );
+      });
+
+      it('fails for an order that was already filled', async () => {
+        await fillOrder(defaultSignedOrder);
+        await expectThrow(
+          fillOrder(defaultSignedOrder),
           'Cannot overfill order',
         );
       });

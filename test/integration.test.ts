@@ -16,7 +16,7 @@ import { expectBN, expectBaseValueEqual } from './helpers/Expect';
 
 // Percentage error tolerance when comparing effective daily rate to nominal daily rate.
 // The only source of error should be small variations in transaction timing.
-const FUNDING_ERROR_BOUND = 0.0002;
+const FUNDING_ERROR_TOLERANCE = 0.001;
 
 const initialPrice = new Price('118.75');
 const positionSize = new BigNumber('10.25e18');
@@ -88,10 +88,12 @@ perpetualDescribe('Integration testing', init, (ctx: ITestContext) => {
 
     // Check that the effective daily rate is approximately equal to the nominal daily rate.
     // The only source of error should be small variations in transaction timing.
-    expectBN(longDailyRate.minus('-0.005').abs().div('0.005'), 'long error')
-      .to.be.lessThan(FUNDING_ERROR_BOUND);
-    expectBN(shortDailyRate.minus('0.005').abs().div('0.005'), 'short error')
-      .to.be.lessThan(FUNDING_ERROR_BOUND);
+    expectBN(
+      longDailyRate.minus('-0.005').abs().div('0.005'), 'long error',
+    ).to.be.lessThan(FUNDING_ERROR_TOLERANCE);
+    expectBN(
+      shortDailyRate.minus('0.005').abs().div('0.005'), 'short error',
+    ).to.be.lessThan(FUNDING_ERROR_TOLERANCE);
 
     // REPEAT THE EXPERIMENT with a different funding rate and less frequent index updates.
     //
@@ -127,10 +129,12 @@ perpetualDescribe('Integration testing', init, (ctx: ITestContext) => {
 
     // Check that the effective daily rate is approximately equal to the nominal daily rate.
     // The only source of error should be small variations in transaction timing.
-    expectBN(longDailyRate2.minus('0.02').abs().div('0.02'), 'long error')
-      .to.be.lessThan(FUNDING_ERROR_BOUND);
-    expectBN(shortDailyRate2.minus('-0.02').abs().div('0.02'), 'short error')
-      .to.be.lessThan(FUNDING_ERROR_BOUND);
+    expectBN(
+      longDailyRate2.minus('0.02').abs().div('0.02'), 'long error',
+    ).to.be.lessThan(FUNDING_ERROR_TOLERANCE);
+    expectBN(
+      shortDailyRate2.minus('-0.02').abs().div('0.02'), 'short error',
+    ).to.be.lessThan(FUNDING_ERROR_TOLERANCE);
   });
 
   /**
