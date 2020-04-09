@@ -36,15 +36,14 @@ __V2 Order fields__
 |Field Name|JSON type|Description|
 |----------|---------|-----------|
 |isBuy|boolean|If the order is a buy order|
-|isDecreaseOnly|boolean|(Optional)If the Stop-Limit order is tied to an existing Isolated Position|
-|market|string|The perpetual base [market](https://docs.dydx.exchange/#/overview?id=markets)|
+|isDecreaseOnly|boolean|(Optional)Positions can only decrease in magnitude when trading this order. Note - must be false currently|
+|market|string|The perpetual market|
 |amount|string|The amount of token being offered in base units|
 |limitPrice|string| The worst base/quote price at which the transaction will be accepted|
 |triggerPrice|string|(Optional)The price at which the order will go to market.|
-|limitFee|string| Makers will pay 0% fees. Takers with greater than or equal to 0.5Eth in the transaction will pay 0.15% of ETH-DAI and ETH-USDC transactions and 0.05% for DAI-USDC transactions.
-For transactions below 0.5Eth they will pay 0.50% fees.
-|makerAccountNumber|string|The Solo [account number](https://docs.dydx.exchange/#/overview?id=markets) of the Maker|
-|makerAccountOwner|string|The Ethereum address of the Maker.|
+|limitFee|string| Makers with greater than or equal to 0.01Sats in the transaction will will be paid 0.025% fees, otherwise they will pay no fee. Takers with greater than or equal to 0.01Sats in the transaction will pay 0.075% for PBTC-USDC transactions. For transactions below 0.01Sats they will pay 0.50% fees.
+|maker|string|The Ethereum address of the Maker.|
+|taker|string|The Ethereum address of the Taker.|
 |expiration|string|The time in unix seconds at which this order will be expired and can no longer be filled. Use `"0"` to specify that there is no expiration on the order.|
 |salt|string|A random number to make the orderHash unique.|
 |typedSignature|string|The signature of the order.|
@@ -54,21 +53,20 @@ Example:
 {
     "isBuy": true,
     "isDecreaseOnly": false,
-    "baseMarket": "0",
+    "market": "PBTC-USDC",
     "amount": "10000000000",
     "limitPrice": "20.3",
     "triggerPrice": "0",
     "limitFee": "0.0015",
-    "makerAccountNumber": "0",
-    "makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+    "maker": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+    "taker": "0x7a94831b66a7ae1948b1a94a9555a7efa99cb426",
     "expiration": "4294967295",
     "salt": "100",
     "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
   },
 };
 
-Note: The tick size is 0.01 for ETH-DAI, 0.01e-12 for ETH-USDC and 0.0001e-12 for DAI-USDC transactions. The negative twelfth power is because USDC has 6 decimal places of specificity whereas ETH and DAI have 18.
-The `limitPrice` must be divisible by the tick size.
+Note: The tick size is 1 for PBTC-USDC. The `limitPrice` must be divisible by the tick size.
 If `triggerPrice` is set, it must be divisible by the tick size.
 
 ```
@@ -123,14 +121,13 @@ Example Request Body:
   "order": {
     "isBuy": true,
     "isDecreaseOnly": false,
-    "baseMarket": "0",
-    "quoteMarket": "3",
+    "market": "PBTC-USDC",
     "amount": "10000000000",
     "limitPrice": "20.3",
     "triggerPrice": "0",
     "limitFee": "0.0015",
-    "makerAccountNumber": "0",
-    "makerAccountOwner": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+    "maker": "0x3E5e9111Ae8eB78Fe1CC3bb8915d5D461F3Ef9A9",
+    "taker": "0x7a94831b66a7ae1948b1a94a9555a7efa99cb426",
     "expiration": "4294967295",
     "salt": "100",
     "typedSignature": "0xd9c006cf9066e89c2e75de72604751f63985f173ca3c69b195f1f5f445289a1f2229c0475949858522c821190c5f1ec387f31712bd21f6ac31e4510d5711c2681f00"
@@ -147,7 +144,7 @@ Description:
 Cancels an open order by hash.
 
 Please note you will need to provide a valid cancelation signature in the Authorization header in order to cancel an order.
-The Authorization header signature should be hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md) and include the original orderHash but will not include any information about the order format, version, or chainId since these are already baked-into the hash of the order. You can see working examples of signing in the [CanonicalOrders](https://github.com/dydxprotocol/solo/blob/master/src/modules/CanonicalOrders.ts) module of Solo.js.
+The Authorization header signature should be hashed according to [EIP712](https://github.com/ethereum/EIPs/blob/master/EIPS/eip-712.md) and include the original orderHash but will not include any information about the order format, version, or chainId since these are already baked-into the hash of the order. You can see working examples of signing in the [Orders](https://github.com/dydxprotocol/solo/blob/master/src/modules/Orders.ts) module of Perpetual.js.
 
 The response will have a status of `200` as long as the order already existed and the signature is valid (even if the order is already unfillable for any reason). For example, if a user cancels an order twice, then `200` will be returned both times. For another example, canceling a fully-filled order will return `200` but will NOT update the status of the order from `FILLED` to `CANCELED`. Therefore, receiving a `200` status does not necessarily mean that the order was canceled.
 
@@ -168,10 +165,10 @@ Example Response Body:
       "status": "PENDING",
       "accountOwner": "0x998497ffc64240d6a70c38e544521d09dcd23293",
       "accountNumber": "0",
-      "orderType": "CANONICAL_CROSS",
+      "orderType": "PERPETUAL_CROSS",
       "fillOrKill": false,
       "postOnly": null,
-      "market": "WETH-DAI",
+      "market": "PBTC-USDC",
       "side": "BUY",
       "baseAmount": "50900000000000000000",
       "quoteAmount": "8386480372200000000000",
@@ -212,7 +209,7 @@ export const STATUSES = {
 };
 ```
 
-### GET /v2/markets
+### GET /v1/perpetual-markets
 Description:
 Get all information on all markets
 
@@ -228,72 +225,23 @@ Query Params:
 Example Response Body:
 ```json
 {
- "markets": {
-    "WETH-DAI": {
-      "name": "WETH-DAI",
-      "baseCurrency": {
-        "currency": "WETH",
-        "decimals": 18,
-        "soloMarketId": 0,
-      },
-      "quoteCurrency": {
-        "currency": "DAI",
-        "decimals": 18,
-        "soloMarketId": 3,
-      },
-      "minimumTickSize": "0.01",
-      "minimumOrderSize": "100000000000000000",
-      "smallOrderThreshold": "500000000000000000",
-      "makerFee": "0",
-      "largeTakerFee": "0.005",
-      "smallTakerFee": "0.0015",
+  "markets": [
+    {
+      "createdAt": "2020-02-18T17:56:06.219Z",
+      "updatedAt": "2020-02-18T17:56:06.219Z",
+      "market": "PBTC-USDC",
+      "oraclePrice": "6000000000000000000000",
+      "fundingRate": "0.999991",
+      "globalIndexValue": "6000000000000000000000",
+      "globalIndexTimestamp": "1585933964",
     },
-    "WETH-USDC": {
-      "name": "WETH-USDC",
-      "baseCurrency": {
-        "currency": "WETH",
-        "decimals": 18,
-        "soloMarketId": 0,
-      },
-      "quoteCurrency": {
-        "currency": "USDC",
-        "decimals": 6,
-        "soloMarketId": 2,
-      },
-      "minimumTickSize": "0.00000000000001",
-      "minimumOrderSize": "100000000000000000",
-      "smallOrderThreshold": "500000000000000000",
-      "makerFee": "0",
-      "largeTakerFee": "0.005",
-      "smallTakerFee": "0.0015",
-    },
-    "DAI-USDC": {
-      "name": "DAI-USDC",
-      "baseCurrency": {
-        "currency": "DAI",
-        "decimals": 18,
-        "soloMarketId": 3,
-      },
-      "quoteCurrency": {
-        "currency": "USDC",
-        "decimals": 6,
-        "soloMarketId": 1,
-      },
-      "minimumTickSize": "0.0000000000000001",
-      "minimumOrderSize": "20000000000000000000",
-      "smallOrderThreshold": "100000000000000000000",
-      "makerFee": "0",
-      "largeTakerFee": "0.005",
-      "smallTakerFee": "0.0005",
-    },
-  }
+  ]
 }
 ```
 
-
 ## Accounts
 
-### GET /v1/accounts/:address
+### GET /v1/perpetual-accounts/:address
 
 Description:
 Get account balances for a particular account owner. This endpoint can also be used to get pending balances for an account corresponding to pending fills.
@@ -310,35 +258,21 @@ Query Params:
 
 |Field Name|Description|
 |----------|-----------|
-|?number|(Optional) The Solo Acount number of the account to request balances for.|
+|maker|string|The Ethereum address of the Maker.|
 
 Example Response Body:
 ```json
 {
-  "owner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
-  "number": "0",
-  "uuid": "72cd6a2a-17ff-4394-92d3-e951a96aa266",
+  "owner": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc3",
+  "uuid": "5ad65af5-3fd3-40d9-9e4a-247cfe3fe43a",
   "balances": {
-    "0": {
-      "owner": "0x0913017c740260fea4b2c62828a4008ca8b0d6e4",
-      "number": "0",
-      "marketId": 0,
-      "accountUuid": "72cd6a2a-17ff-4394-92d3-e951a96aa266",
-      "wei": "10000184397123234.892111593021043502",
-      "pendingWei": "20000184397123234.892111593021043502",
-      "expiresAt": null,
-      "par": "9994719126810778",
+    "BTC-USDC": {
+      "margin": "120000",
+      "position": "20",
+      "indexValue": "6000000000000000000000",
+      "indexTimestamp": "1585933964",
+      "cachedMargin": "12005",
     },
-    "1": {
-      "par": 0,
-      "wei": 0,
-      "expiresAt": null
-    },
-    "2": {
-      "par": 0,
-      "wei": 0,
-      "expiresAt": null
-    }
-  }
+  },
 }
 ```
