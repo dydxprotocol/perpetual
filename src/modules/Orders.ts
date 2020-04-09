@@ -188,10 +188,13 @@ export class Orders {
     amount: BigNumber,
     isTaker: boolean = true,
   ): Fee {
+    const isSmall = amount.lt('0.01e8');
     if (!isTaker) {
-      return Fee.fromBips('-2.5');
+      return isSmall
+        ? Fee.fromBips('0.0')
+        : Fee.fromBips('-2.5');
     }
-    return (amount.lt('0.01e8'))
+    return isSmall
       ? Fee.fromBips('50.0')
       : Fee.fromBips('7.5');
   }
