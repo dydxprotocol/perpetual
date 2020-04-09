@@ -349,3 +349,78 @@ export class FundingRate extends BaseValue {
     return new FundingRate(new BigNumber(rate).times(365));
   }
 }
+
+export enum ApiOrderStatus {
+  PENDING = 'PENDING',
+  OPEN = 'OPEN',
+  FILLED = 'FILLED',
+  PARTIALLY_FILLED = 'PARTIALLY_FILLED',
+  CANCELED = 'CANCELED',
+  UNTRIGGERED = 'UNTRIGGERED',
+}
+
+export enum ApiOrderType {
+  PERPETUAL_CROSS = 'PERPETUAL_CROSS',
+  PERPETUAL_STOP_LIMIT = 'PERPETUAL_STOP_LIMIT',
+}
+
+export enum ApiMarketName {
+  PBTC_USDC = 'PBTC-USDC',
+}
+
+export enum ApiSide {
+  BUY = 'BUY',
+  SELL = 'SELL',
+}
+
+export enum ApiOrderCancelReason {
+  EXPIRED = 'EXPIRED',
+  UNDERCOLLATERALIZED = 'UNDERCOLLATERALIZED',
+  CANCELED_ON_CHAIN = 'CANCELED_ON_CHAIN',
+  USER_CANCELED = 'USER_CANCELED',
+  SELF_TRADE = 'SELF_TRADE',
+  FAILED = 'FAILED',
+  COULD_NOT_FILL = 'COULD_NOT_FILL',
+  POST_ONLY_WOULD_CROSS = 'POST_ONLY_WOULD_CROSS',
+}
+
+export interface ApiOrder {
+  uuid: string;
+  id: string;
+  status: ApiOrderStatus;
+  accountOwner: string;
+  accountNumber: string;
+  orderType: ApiOrderType;
+  fillOrKill: boolean;
+  market: ApiMarketName;
+  side: ApiSide;
+  baseAmount: string;
+  quoteAmount: string;
+  filledAmount: string;
+  price: string;
+  cancelReason: ApiOrderCancelReason;
+}
+
+export interface ApiMarketMessage {
+  createdAt: string;
+  updatedAt: string;
+  market: ApiMarketName;
+  oraclePrice: BigNumber;
+  fundingRate: BigNumber;
+  globalIndexValue: string;
+  globalIndexTimeStamp: string;
+}
+
+export interface ApiAccount {
+  owner: string;
+  uuid: string;
+  balances: {
+    Market: {
+      Margin: BigNumber;
+      position: BigNumber;
+      indexValue: BigNumber;
+      indexTimestamp: string;
+      cachedMargin: BigNumber;
+    };
+  };
+}
