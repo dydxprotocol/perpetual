@@ -79,7 +79,7 @@ export class Api {
       maker,
       taker,
       expiration,
-      limitFee,
+      limitFeeNumber: limitFee,
     });
 
     return this.submitPerpetualOrder({
@@ -103,7 +103,7 @@ export class Api {
     maker,
     taker,
     expiration,
-    limitFee,
+    limitFeeNumber,
   }: {
     side: ApiSide,
     amount: BigNumberable,
@@ -111,29 +111,27 @@ export class Api {
     maker: address,
     taker: address,
     expiration: BigNumberable,
-    limitFee?: BigNumberable,
+    limitFeeNumber?: BigNumberable,
   }): Promise<SignedOrder> {
     if (!Object.values(ApiSide).includes(side)) {
       throw new Error(`side: ${side} is invalid`);
     }
 
     const amountNumber: BigNumber = new BigNumber(amount);
-    const limitFeeNumber = new Fee(0);
-    // TODO
-    // const limitFeeNumber: BigNumber = limitFee
-    //   ? new BigNumber(limitFee)
-    //   : this.perpetualOrders.getFeeForOrder(baseMarket, amountNumber, isTaker);
+    const limitFee = limitFeeNumber
+      ? new BigNumber(limitFeeNumber)
+      : this.perpetualOrders.getFeeForOrder();
 
     const realExpiration: BigNumber = getRealExpiration(expiration);
     const order: Order = {
       maker,
       taker,
+      limitFee,
       isBuy: side === ApiSide.BUY,
       isDecreaseOnly: false,
       amount: amountNumber,
       limitPrice: new Price(price),
       triggerPrice: new Price('0'),
-      limitFee: limitFeeNumber,
       expiration: realExpiration,
       salt: generatePseudoRandom256BitNumber(),
     };
