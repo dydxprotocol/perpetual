@@ -320,4 +320,19 @@ perpetualDescribe('Solidity libraries', init, (ctx: ITestContext) => {
       expect(await ctx.perpetual.testing.lib.setPosition(negPos, -300)).to.deep.equal(negNeg);
     });
   });
+
+  describe('ReentrancyGuard', () => {
+
+    it('nonReentrant() blocks', async () => {
+      await expectThrow(
+        ctx.perpetual.testing.lib.nonReentrant1(),
+        'ReentrancyGuard: reentrant call',
+      );
+    });
+
+    it('nonReentrant() success', async () => {
+      const result = await ctx.perpetual.testing.lib.nonReentrant2();
+      expectBN(result).to.equal(0);
+    });
+  });
 });
