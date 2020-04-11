@@ -55,13 +55,18 @@ contract P1FundingOracle is
      * Bounding params constraining updates to the funding rate.
      *
      * Like the funding rate, these are per-second rates, fixed-point with 18 decimals.
+     * We calculate the per-second rates from the market specifications, which uses 8-hour rates:
+     *   - The max absolute funding rate is 0.75% (8-hour rate).
+     *   - The max change in a single update is 0.75% (8-hour rate).
+     *   - The max change over a 55-minute period is 0.75% (8-hour rate).
      *
-     * Setting MAX_ABS_DIFF_PER_SECOND = MAX_ABS_VALUE / 3600 indicates that the fastest the funding
-     * rate can go from zero to its min or max allowed value (or vice versa) is in one hour.
+     * This means the fastest the funding rate can go from zero to its min or max allowed value
+     * (or vice versa) is in 55 minutes.
      */
-    uint128 public constant MAX_ABS_VALUE = 2 * 10 ** 16 / uint128(1 days); // 2% daily
-    uint128 public constant MAX_ABS_DIFF_PER_UPDATE = MAX_ABS_VALUE / 2; // 1% daily
-    uint128 public constant MAX_ABS_DIFF_PER_SECOND = MAX_ABS_VALUE / 3600; // 0.00055…% daily / sec
+    uint128 constant internal BASE = 10 ** 18;
+    uint128 public constant MAX_ABS_VALUE = BASE * 75 / 10000 / (8 hours);
+    uint128 public constant MAX_ABS_DIFF_PER_UPDATE = MAX_ABS_VALUE;
+    uint128 public constant MAX_ABS_DIFF_PER_SECOND = MAX_ABS_VALUE / (55 minutes);
 
     // ============ Events ============
 

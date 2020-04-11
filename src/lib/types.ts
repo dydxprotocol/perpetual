@@ -300,6 +300,13 @@ export class BaseValue {
     return new BaseValue(value);
   }
 
+  /**
+   * Return the BaseValue, rounded down to the nearest Solidity-representable value.
+   */
+  public roundedDown(): BaseValue {
+    return new BaseValue(this.value.decimalPlaces(BASE_DECIMALS, BigNumber.ROUND_DOWN));
+  }
+
   public times(value: BigNumberable): BaseValue {
     return new BaseValue(this.value.times(value));
   }
@@ -345,8 +352,8 @@ export class FundingRate extends BaseValue {
    * Note: Funding interest does not compound, as the interest affects margin balances but
    * is calculated based on position balances.
    */
-  static fromDailyRate(rate: BigNumberable): FundingRate {
-    return new FundingRate(new BigNumber(rate).div(24 * 60 * 60));
+  static fromEightHourRate(rate: BigNumberable): FundingRate {
+    return new FundingRate(new BigNumber(rate).div(8 * 60 * 60));
   }
 }
 
