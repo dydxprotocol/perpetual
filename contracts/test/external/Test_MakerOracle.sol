@@ -58,6 +58,8 @@ contract Test_MakerOracle is
     function read()
         external
         view
+        virtual
+        override
         returns (bytes32)
     {
         require(
@@ -70,6 +72,8 @@ contract Test_MakerOracle is
     function peek()
         external
         view
+        virtual
+        override
         returns (bytes32, bool)
     {
         return (bytes32(_PRICE_), _VALID_);

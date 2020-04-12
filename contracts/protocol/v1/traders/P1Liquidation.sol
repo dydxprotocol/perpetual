@@ -82,6 +82,7 @@ contract P1Liquidation is
         bytes32 /* traderFlags */
     )
         external
+        virtual
         returns(P1Types.TradeResult memory)
     {
         address perpetual = _PERPETUAL_V1_;

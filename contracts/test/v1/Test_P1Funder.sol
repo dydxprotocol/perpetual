@@ -40,6 +40,8 @@ contract Test_P1Funder is
     )
         external
         view
+        virtual
+        override
         returns (bool, uint256)
     {
         return (_FUNDING_IS_POSITIVE_, _FUNDING_);

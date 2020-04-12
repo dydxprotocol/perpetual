@@ -98,6 +98,8 @@ contract P1FundingOracle is
     )
         external
         view
+        virtual
+        override
         returns (bool, uint256)
     {
         // Note: Funding interest does not compound, as the interest affects margin balances but

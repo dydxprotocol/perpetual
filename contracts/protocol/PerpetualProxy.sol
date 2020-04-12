@@ -20,7 +20,7 @@ pragma solidity 0.6.6;
 pragma experimental ABIEncoderV2;
 
 /* solium-disable-next-line */
-import { AdminUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgradeability/AdminUpgradeabilityProxy.sol";
+import { AdminUpgradeabilityProxy } from "./lib/upgradeability/AdminUpgradeabilityProxy.sol";
 
 
 /**
@@ -51,5 +51,7 @@ contract PerpetualProxy is
      */
     function _willFallback()
         internal
+        virtual
+        override
     { /* solium-disable-line no-empty-blocks */ }
 }

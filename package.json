@@ -48,7 +48,6 @@
   "homepage": "https://github.com/dydxprotocol/perpetual#readme",
   "dependencies": {
     "@openzeppelin/contracts": "3.0.0-rc.1",
-    "@openzeppelin/upgrades": "2.8.0",
     "bignumber.js": "^8.1.1",
     "es6-promisify": "^6.0.2",
     "lodash": "^4.17.15",

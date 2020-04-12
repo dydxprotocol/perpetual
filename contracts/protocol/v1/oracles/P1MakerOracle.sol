@@ -65,6 +65,8 @@ contract P1MakerOracle is
     function getPrice()
         external
         view
+        virtual
+        override
         returns (uint256)
     {
         require(

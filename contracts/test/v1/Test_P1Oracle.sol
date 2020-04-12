@@ -37,6 +37,8 @@ contract Test_P1Oracle is
     function getPrice()
         external
         view
+        virtual
+        override
         returns (uint256)
     {
         return _PRICE_;

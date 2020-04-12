@@ -48,6 +48,8 @@ contract Test_P1Trader is
         bytes32 traderFlags
     )
         external
+        virtual
+        override
         returns(P1Types.TradeResult memory)
     {
         if (traderFlags == TRADER_FLAG_RESULT_2) {
