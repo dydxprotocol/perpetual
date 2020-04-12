@@ -16,7 +16,7 @@
 
 */
 
-pragma solidity 0.5.16;
+pragma solidity 0.6.6;
 pragma experimental ABIEncoderV2;
 
 import { I_MakerOracle } from "../../../external/maker/I_MakerOracle.sol";

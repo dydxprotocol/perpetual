@@ -5,7 +5,7 @@ const HDWalletProvider = require('@truffle/hdwallet-provider'); // eslint-disabl
 module.exports = {
   compilers: {
     solc: {
-      version: '0.5.16',
+      version: '0.6.6',
       docker: process.env.DOCKER_COMPILER !== 'false',
       parser: 'solcjs',
       settings: {

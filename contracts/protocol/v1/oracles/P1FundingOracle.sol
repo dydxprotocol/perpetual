@@ -16,11 +16,11 @@
 
 */
 
-pragma solidity 0.5.16;
+pragma solidity 0.6.6;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
-import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
+import { Ownable } from "@openzeppelin/contracts/access/Ownable.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { Math } from "../../lib/Math.sol";
 import { SafeCast } from "../../lib/SafeCast.sol";

@@ -16,11 +16,10 @@
 
 */
 
-pragma solidity 0.5.16;
+pragma solidity 0.6.6;
 pragma experimental ABIEncoderV2;
 
 import { ERC20 } from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import { ERC20Detailed } from "@openzeppelin/contracts/token/ERC20/ERC20Detailed.sol";
 
 
 /**
@@ -31,8 +30,7 @@ import { ERC20Detailed } from "@openzeppelin/contracts/token/ERC20/ERC20Detailed
  */
 /* solium-disable-next-line camelcase */
 contract Test_Token is
-    ERC20,
-    ERC20Detailed("Test Token", "TEST", 18)
+    ERC20("Test Token", "TEST")
 {
     function mint(address account, uint256 amount) external {
         _mint(account, amount);
