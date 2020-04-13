@@ -300,6 +300,13 @@ export class BaseValue {
     return new BaseValue(value);
   }
 
+  /**
+   * Return the BaseValue, rounded down to the nearest Solidity-representable value.
+   */
+  public roundedDown(): BaseValue {
+    return new BaseValue(this.value.decimalPlaces(BASE_DECIMALS, BigNumber.ROUND_DOWN));
+  }
+
   public times(value: BigNumberable): BaseValue {
     return new BaseValue(this.value.times(value));
   }
@@ -340,13 +347,13 @@ export class Fee extends BaseValue {
 
 export class FundingRate extends BaseValue {
   /**
-   * Returns funding rate represented as an annual rate (assumes 365 days/year) given a daily rate.
+   * Given a daily rate, returns funding rate represented as a per-second rate.
    *
    * Note: Funding interest does not compound, as the interest affects margin balances but
    * is calculated based on position balances.
    */
-  static fromDailyRate(rate: BigNumberable): FundingRate {
-    return new FundingRate(new BigNumber(rate).times(365));
+  static fromEightHourRate(rate: BigNumberable): FundingRate {
+    return new FundingRate(new BigNumber(rate).div(8 * 60 * 60));
   }
 }
 

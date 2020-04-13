@@ -17,7 +17,11 @@
 */
 
 import BigNumber from 'bignumber.js';
-import { Fee, Price } from './types';
+import {
+  Fee,
+  FundingRate,
+  Price,
+} from './types';
 
 const ONE_MINUTE_IN_SECONDS = new BigNumber(60);
 const ONE_HOUR_IN_SECONDS = ONE_MINUTE_IN_SECONDS.times(60);
@@ -76,3 +80,15 @@ export const ORDER_FLAGS = {
   IS_DECREASE_ONLY: 2,
   IS_NEGATIVE_LIMIT_FEE: 4,
 };
+
+// ============ P1FundingOracle.sol ============
+
+// Rate limiting is based on a 55 minute period, equal to the funding rate update interval
+// of one hour, with five minutes as a buffer.
+const FUNDING_LIMIT_PERIOD = INTEGERS.ONE_MINUTE_IN_SECONDS.times(55);
+
+// Funding rate limits set by the smart contract.
+export const FUNDING_RATE_MAX_ABS_VALUE = FundingRate.fromEightHourRate('0.0075').roundedDown();
+export const FUNDING_RATE_MAX_ABS_DIFF_PER_UPDATE = FUNDING_RATE_MAX_ABS_VALUE;
+export const FUNDING_RATE_MAX_ABS_DIFF_PER_SECOND =
+  FUNDING_RATE_MAX_ABS_VALUE.div(FUNDING_LIMIT_PERIOD).roundedDown();

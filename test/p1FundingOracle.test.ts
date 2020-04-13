@@ -1,4 +1,9 @@
-import { INTEGERS } from '../src/lib/Constants';
+import {
+  FUNDING_RATE_MAX_ABS_VALUE,
+  FUNDING_RATE_MAX_ABS_DIFF_PER_UPDATE,
+  FUNDING_RATE_MAX_ABS_DIFF_PER_SECOND,
+  INTEGERS,
+} from '../src/lib/Constants';
 import {
   BaseValue,
   BigNumberable,
@@ -16,13 +21,7 @@ import {
 import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 
-// Funding rate limits. Some of these are set by the deploy script.
 const minUnit = INTEGERS.ONE.shiftedBy(-18);
-const maxRate = FundingRate.fromDailyRate('0.02');
-const minRate = maxRate.negated();
-const maxDiffPerUpdate = FundingRate.fromDailyRate('0.01');
-const maxDiffPerSecond = maxRate.div(INTEGERS.ONE_HOUR_IN_SECONDS);
-
 const oraclePrice = new Price(100);
 
 let admin: address;
@@ -39,9 +38,9 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
 
     it('the bounds are set as expected', async () => {
       const bounds = await ctx.perpetual.fundingOracle.getBounds();
-      expectBaseValueEqual(bounds.maxAbsValue, maxRate);
-      expectBaseValueEqual(bounds.maxAbsDiffPerUpdate, maxDiffPerUpdate);
-      expectBaseValueEqual(bounds.maxAbsDiffPerSecond, maxDiffPerSecond);
+      expectBaseValueEqual(bounds.maxAbsValue, FUNDING_RATE_MAX_ABS_VALUE);
+      expectBaseValueEqual(bounds.maxAbsDiffPerUpdate, FUNDING_RATE_MAX_ABS_DIFF_PER_UPDATE);
+      expectBaseValueEqual(bounds.maxAbsDiffPerSecond, FUNDING_RATE_MAX_ABS_DIFF_PER_SECOND);
     });
   });
 
@@ -58,9 +57,9 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
         { from: admin },
       );
 
-      await expectFunding(INTEGERS.ONE_YEAR_IN_SECONDS.times(1000), '1e-7');
-      await expectFunding(INTEGERS.ONE_YEAR_IN_SECONDS.times(10000), '1e-6');
-      await expectFunding(INTEGERS.ONE_YEAR_IN_SECONDS.times(100000), '1e-5');
+      await expectFunding(1000, '1e-7');
+      await expectFunding(10000, '1e-6');
+      await expectFunding(100000, '1e-5');
     });
   });
 
@@ -93,37 +92,57 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
 
       it('cannot exceed the max value', async () => {
         // Set to max value, while obeying the per-update speed limit.
-        await setFundingRate(FundingRate.fromDailyRate('0.01'));
-        await setFundingRate(maxRate);
+        console.log('FUNDING_RATE_MAX_ABS_VALUE', FUNDING_RATE_MAX_ABS_VALUE.value.toString());
+        await setFundingRate(FUNDING_RATE_MAX_ABS_VALUE);
 
         // Try to set above max value.
-        await setFundingRate(maxRate.plus(minUnit), maxRate);
+        await setFundingRate(FUNDING_RATE_MAX_ABS_VALUE.plus(minUnit), FUNDING_RATE_MAX_ABS_VALUE);
       });
 
       it('cannot exceed the min value', async () => {
+        const minFundingRate = FUNDING_RATE_MAX_ABS_VALUE.negated();
+
         // Set to min value, while obeying the per-update speed limit.
-        await setFundingRate(FundingRate.fromDailyRate('-0.01'));
-        await setFundingRate(minRate);
+        await setFundingRate(minFundingRate);
 
         // Try to set below min value.
-        await setFundingRate(minRate.minus(minUnit), minRate);
+        await setFundingRate(minFundingRate.minus(minUnit), minFundingRate);
       });
 
       it('cannot increase faster than the per update limit', async () => {
-        await setFundingRate(maxDiffPerUpdate.plus(minUnit), maxDiffPerUpdate);
-        await setFundingRate(maxDiffPerUpdate.times(2).plus(minUnit), maxDiffPerUpdate.times(2));
+        // Start at the min rate.
+        await setFundingRate(FUNDING_RATE_MAX_ABS_VALUE.negated());
+
+        // Incrase by the max-update amount, twice.
+        await setFundingRate(
+          FUNDING_RATE_MAX_ABS_VALUE,
+          new FundingRate(0),
+        );
+        await setFundingRate(
+          FUNDING_RATE_MAX_ABS_VALUE,
+          FUNDING_RATE_MAX_ABS_VALUE,
+        );
       });
 
       it('cannot decrease faster than the per update limit', async () => {
-        const negativeMaxDiff = maxDiffPerUpdate.negated();
-        await setFundingRate(negativeMaxDiff.minus(minUnit), negativeMaxDiff);
-        await setFundingRate(negativeMaxDiff.times(2).minus(minUnit), negativeMaxDiff.times(2));
+        // Start at the max rate.
+        await setFundingRate(FUNDING_RATE_MAX_ABS_VALUE);
+
+        // Decrease by the max-update amount, twice.
+        await setFundingRate(
+          FUNDING_RATE_MAX_ABS_VALUE.negated(),
+          new FundingRate(0),
+        );
+        await setFundingRate(
+          FUNDING_RATE_MAX_ABS_VALUE.negated(),
+          FUNDING_RATE_MAX_ABS_VALUE.negated(),
+        );
       });
 
       it('cannot increase faster than the per second limit', async () => {
         const quarterHour = 60 * 15;
-        const quarterHourMaxDiff = maxDiffPerSecond.times(quarterHour);
-        const initialRate = new FundingRate('0.123');
+        const quarterHourMaxDiff = FUNDING_RATE_MAX_ABS_DIFF_PER_SECOND.times(quarterHour);
+        const initialRate = FundingRate.fromEightHourRate('0.00123');
         const targetRate = initialRate.plus(quarterHourMaxDiff.value);
 
         // Update the funding rate timestamp so we can more accurately estimate the
@@ -149,8 +168,8 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
 
       it('cannot decrease faster than the per second limit', async () => {
         const quarterHour = 60 * 15;
-        const quarterHourMaxDiff = maxDiffPerSecond.times(quarterHour);
-        const initialRate = new FundingRate('0.123');
+        const quarterHourMaxDiff = FUNDING_RATE_MAX_ABS_DIFF_PER_SECOND.times(quarterHour);
+        const initialRate = FundingRate.fromEightHourRate('0.00123');
         const targetRate = initialRate.minus(quarterHourMaxDiff.value);
 
         // Update the funding rate timestamp so we can more accurately estimate the

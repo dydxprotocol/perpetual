@@ -5,16 +5,19 @@ import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy } from './helpers/trade';
 import {
+  FUNDING_RATE_MAX_ABS_VALUE,
+  INTEGERS,
+} from '../src/lib/Constants';
+import {
   BigNumberable,
   FundingRate,
   Price,
   address,
 } from '../src/lib/types';
 import { fastForward } from './helpers/EVM';
-import { INTEGERS } from '../src/lib/Constants';
 import { expectBN, expectBaseValueEqual } from './helpers/Expect';
 
-// Percentage error tolerance when comparing effective daily rate to nominal daily rate.
+// Percentage error tolerance when comparing effective 8-hour rate to nominal 8-hour rate.
 // The only source of error should be small variations in transaction timing.
 const FUNDING_ERROR_TOLERANCE = 0.001;
 
@@ -71,28 +74,32 @@ perpetualDescribe('Integration testing', init, (ctx: ITestContext) => {
 
     // Suppose the perpetual market is initially trading above the oracle price.
     // Then the funding rate is likely to be positive, indicating that longs pay shorts.
-    // Use a “real world” example of a +0.5% daily funding rate.
-    await setFundingRateAndCheckLogs('0.005');
+    // Use a “real world” example of a +0.17% 8-hour funding rate.
+    const targetRate1 = 0.0017;
+    await setFundingRateAndCheckLogs(targetRate1);
 
-    // Allow a day to elapse. Suppose that the contract is interacted with once an hour.
+    // Allow funding to accumulate for 24 hours.
+    // Suppose that the contract is interacted with once an hour.
     for (let i = 0; i < 24; i += 1) {
       await fastForward(INTEGERS.ONE_HOUR_IN_SECONDS.toNumber());
       await ctx.perpetual.margin.deposit(admin, 0);
     }
 
-    // Calculate the effective daily rate.
+    // Calculate the effective 8-hour rate.
     const [longDailyRate, shortDailyRate] = await Promise.all([
-      getEffectiveDailyRate(long, longInitialMargin),
-      getEffectiveDailyRate(short, shortInitialMargin),
+      getEffectiveEightHourRate(long, longInitialMargin),
+      getEffectiveEightHourRate(short, shortInitialMargin),
     ]);
 
-    // Check that the effective daily rate is approximately equal to the nominal daily rate.
+    // Check that the effective 8-hour rate is approximately equal to the nominal 8-hour rate.
     // The only source of error should be small variations in transaction timing.
     expectBN(
-      longDailyRate.minus('-0.005').abs().div('0.005'), 'long error',
+      longDailyRate.minus(targetRate1 * -1).abs().div(targetRate1),
+      'long funding error',
     ).to.be.lessThan(FUNDING_ERROR_TOLERANCE);
     expectBN(
-      shortDailyRate.minus('0.005').abs().div('0.005'), 'short error',
+      shortDailyRate.minus(targetRate1).abs().div(targetRate1),
+      'short funding error',
     ).to.be.lessThan(FUNDING_ERROR_TOLERANCE);
 
     // REPEAT THE EXPERIMENT with a different funding rate and less frequent index updates.
@@ -104,43 +111,43 @@ perpetualDescribe('Integration testing', init, (ctx: ITestContext) => {
     // diff-per-second limits do not take effect.
     await ctx.perpetual.fundingOracle.setFundingRate(new FundingRate(0), { from: admin });
     await fastForward(INTEGERS.ONE_HOUR_IN_SECONDS.toNumber());
-    await ctx.perpetual.fundingOracle.setFundingRate(
-      FundingRate.fromDailyRate('-0.01'),
-      { from: admin },
-    );
-    await fastForward(INTEGERS.ONE_HOUR_IN_SECONDS.toNumber());
 
     // Settle the accounts and get checkpoint balances.
     await buy(ctx, long, short, 0, 0);
     const longCheckpointMargin = (await ctx.perpetual.getters.getAccountBalance(long)).margin;
     const shortCheckpointMargin = (await ctx.perpetual.getters.getAccountBalance(short)).margin;
 
-    // Use a “boundary case” example of a -2% daily funding rate.
-    await setFundingRateAndCheckLogs('-0.02');
+    // Test boundary case of the min rate.
+    const targetRate2: BigNumber = FUNDING_RATE_MAX_ABS_VALUE.negated().value;
+    await setFundingRateAndCheckLogs(targetRate2);
 
     // Allow a day to elapse with no intervening updates to the index.
     await fastForward(INTEGERS.ONE_DAY_IN_SECONDS.toNumber());
 
-    // Calculate the effective daily rate.
+    // Calculate the effective 8-hour rate.
     const [longDailyRate2, shortDailyRate2] = await Promise.all([
-      getEffectiveDailyRate(long, longCheckpointMargin),
-      getEffectiveDailyRate(short, shortCheckpointMargin),
+      getEffectiveEightHourRate(long, longCheckpointMargin),
+      getEffectiveEightHourRate(short, shortCheckpointMargin),
     ]);
 
-    // Check that the effective daily rate is approximately equal to the nominal daily rate.
+    // Check that the effective 8-hour rate is approximately equal to the nominal 8-hour rate.
     // The only source of error should be small variations in transaction timing.
     expectBN(
-      longDailyRate2.minus('0.02').abs().div('0.02'), 'long error',
+      longDailyRate2.minus(targetRate2.negated()).abs().div(targetRate2.abs()),
+      'long funding error',
     ).to.be.lessThan(FUNDING_ERROR_TOLERANCE);
     expectBN(
-      shortDailyRate2.minus('-0.02').abs().div('0.02'), 'short error',
+      shortDailyRate2.minus(targetRate2).abs().div(targetRate2.abs()),
+      'short funding error',
     ).to.be.lessThan(FUNDING_ERROR_TOLERANCE);
   });
 
   /**
-   * Get effective daily rate, assuming the initial position size and price.
+   * Get effective 8-hour rate, given initial margin and assuming initial position and price.
+   *
+   * Assumes that funding has accumulated for 24 hours.
    */
-  async function getEffectiveDailyRate(
+  async function getEffectiveEightHourRate(
     account: address,
     initialMargin: BigNumber,
   ): Promise<BigNumber> {
@@ -150,14 +157,15 @@ perpetualDescribe('Integration testing', init, (ctx: ITestContext) => {
     const balance = await ctx.perpetual.getters.getAccountBalance(account);
     const interestPaid = balance.margin.minus(initialMargin);
     const positionValue = positionSize.times(initialPrice.value);
-    return interestPaid.div(positionValue);
+    const dailyRate = interestPaid.div(positionValue);
+    return dailyRate.div(3);
   }
 
   /**
    * Set the funding rate and verify the emitted logs.
    */
-  async function setFundingRateAndCheckLogs(dailyRate: BigNumberable): Promise<void> {
-    const fundingRate = FundingRate.fromDailyRate(dailyRate);
+  async function setFundingRateAndCheckLogs(eightHourRate: BigNumberable): Promise<void> {
+    const fundingRate = FundingRate.fromEightHourRate(eightHourRate);
 
     // Verify the return value is as expected.
     const simulatedResult = await ctx.perpetual.fundingOracle.getBoundedFundingRate(
