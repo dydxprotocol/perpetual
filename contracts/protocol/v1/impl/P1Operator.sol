@@ -44,6 +44,7 @@ contract P1Operator is
     /**
      * @notice Approves or disapproves an other account to perform certain actions on behalf of the
      * sender's account.
+     * @dev Emits the LogSetLocalOperator event.
      * @param operator The account that is approved or disapproved.
      * @param approved True for approval, False for disapproval.
      */

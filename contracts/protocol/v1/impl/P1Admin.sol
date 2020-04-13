@@ -64,7 +64,7 @@ contract P1Admin is
 
     /**
      * @notice Add or remove a Global Operator address.
-     * @dev Can only be called by the Admin of PerpetualV1.
+     * @dev Can only be called by the Admin of PerpetualV1. Emits the LogSetGlobalOperator event.
      * @param operator The address for which to enable or disable global operator privileges.
      * @param approved True if approved, False if disapproved.
      */
@@ -82,7 +82,7 @@ contract P1Admin is
 
     /**
      * @notice Sets a new price oracle contract.
-     * @dev Can only be called by the Admin of PerpetualV1.
+     * @dev Can only be called by the Admin of PerpetualV1. Emits the LogSetOracle event.
      * @param funder The address of the new price oracle contract.
      */
     function setOracle(
@@ -102,7 +102,7 @@ contract P1Admin is
 
     /**
      * @notice Sets a new funder contract.
-     * @dev Can only be called by the Admin of PerpetualV1.
+     * @dev Can only be called by the Admin of PerpetualV1. Emits the LogSetFunder event.
      * @param funder The address of the new funder contract.
      */
     function setFunder(
@@ -122,7 +122,7 @@ contract P1Admin is
     /**
      * @notice Sets a new value for the minimum collateralization percentage.
      * @dev Can only be called by the Admin of PerpetualV1. The supplied value is a number with 18
-     * decimal places of precision.
+     * decimal places of precision. Emits the LogSetMinCollateral event.
      * @param The new value of the minimum acceptable collateralization percentage.
      */
     function setMinCollateral(
@@ -143,7 +143,7 @@ contract P1Admin is
     /**
      * @notice Enables final settlement if the oracle price is between the two bounds.
      * @dev Can only be called by the Admin of PerpetualV1. The current result of the price oracle
-     * must be between the two bounds supplied.
+     * must be between the two bounds supplied. Emits the LogFinalSettlementEnabled event.
      * @param priceLowerBound The lower-bound (inclusive) of the acceptable price range.
      * @param priceUpperBound The upper-bound (inclusive) of the acceptable price range.
      */

@@ -77,6 +77,7 @@ contract P1FinalSettlement is
     /**
      * @notice Withdraw the number of margin tokens equal to the value of the account at the time
      * that final settlement occurred.
+     * @dev Emits the LogAccountSettled and LogWithdrawFinalSettlement events.
      */
     function withdrawFinalSettlement()
         external
