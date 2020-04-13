@@ -32,7 +32,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Trade
  * @author dYdX
  *
- * Contract for trading between two accounts.
+ * @notice Contract for trading between two accounts.
  */
 contract P1Trade is
     P1FinalSettlement
@@ -64,6 +64,11 @@ contract P1Trade is
 
     // ============ Functions ============
 
+    /**
+     * @notice Submits one or many trades between any number of accounts
+     * @param accounts The sorted list of accounts that are involved in trades
+     * @param trades The ordered list of trades to execute
+     */
     function trade(
         address[] memory accounts,
         TradeArg[] memory trades

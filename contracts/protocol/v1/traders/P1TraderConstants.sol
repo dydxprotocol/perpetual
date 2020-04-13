@@ -24,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * @title P1TraderConstants
  * @author dYdX
  *
- * Constants for P1Traders
+ * @notice Constants for setting traderFlags from P1Trader contracts.
  */
 contract P1TraderConstants {
     bytes32 constant internal TRADER_FLAG_ORDERS = bytes32(uint256(1));

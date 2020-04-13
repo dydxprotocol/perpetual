@@ -33,7 +33,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Deleveraging
  * @author dYdX
  *
- * P1Deleveraging contract
+ * @notice Contract allowing underwater accounts to be deleveraged against offsetting accounts.
  */
 contract P1Deleveraging is
     Ownable,

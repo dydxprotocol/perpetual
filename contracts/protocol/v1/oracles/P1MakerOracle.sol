@@ -28,7 +28,7 @@ import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
  * @title P1MakerOracle
  * @author dYdX
  *
- * P1Oracle that reads the price from a Maker V2 Oracle.
+ * @notice P1Oracle that reads the price from a Maker V2 Oracle.
  */
 contract P1MakerOracle is
     I_P1Oracle

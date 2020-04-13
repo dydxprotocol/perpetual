@@ -32,7 +32,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Liquidation
  * @author dYdX
  *
- * P1Liquidation contract
+ * @notice Contract allowing accounts to be liquidated by other accounts.
  */
 contract P1Liquidation is
     P1TraderConstants

@@ -24,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * @title Require
  * @author dYdX
  *
- * Stringifies parameters to pretty-print revert messages. Costs more gas than regular require()
+ * @notice Stringifies parameters to pretty-print revert messages.
  */
 library Require {
 

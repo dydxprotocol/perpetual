@@ -34,7 +34,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1FundingOracle
  * @author dYdX
  *
- * Oracle providing the funding rate for a perpetual market.
+ * @notice Oracle providing the funding rate for a perpetual market.
  */
 contract P1FundingOracle is
     Ownable,

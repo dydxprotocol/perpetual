@@ -31,7 +31,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Orders
  * @author dYdX
  *
- * P1Orders contract
+ * @notice Contract allowing trading between accounts using cryptographicall signed messages.
  */
 contract P1Orders is
     P1TraderConstants

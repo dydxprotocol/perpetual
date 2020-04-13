@@ -24,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * @title SafeCast
  * @author dYdX
  *
- * Casting to different integers
+ * @notice Casting to different integers
  */
 library SafeCast {
 

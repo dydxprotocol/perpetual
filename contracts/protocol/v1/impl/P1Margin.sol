@@ -31,7 +31,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Margin
  * @author dYdX
  *
- * Contract for withdrawing and depositing.
+ * @notice Contract for withdrawing and depositing.
  */
 contract P1Margin is
     P1FinalSettlement,
@@ -57,7 +57,9 @@ contract P1Margin is
     // ============ Functions ============
 
     /**
-     * Deposit some amount of margin tokens from the msg.sender into an account.
+     * @notice Deposit some amount of margin tokens from the msg.sender into an account.
+     * @param account The account for which to credit the deposit.
+     * @param amount the amount of tokens to deposit.
      */
     function deposit(
         address account,
@@ -88,7 +90,10 @@ contract P1Margin is
     }
 
     /**
-     * Withdraw some amount of margin tokens from an account to a destination address.
+     * @notice Withdraw some amount of margin tokens from an account to a destination address.
+     * @param account The account for which to debit the withdrawal.
+     * @param destination The address to which the tokens are transferred.
+     * @param amount The amount of tokens to withdraw.
      */
     function withdraw(
         address account,
