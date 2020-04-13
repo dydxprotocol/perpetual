@@ -5,7 +5,7 @@ import initializePerpetual from './helpers/initializePerpetual';
 import { expectBalances, mintAndDeposit, expectPositions } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
-import { expect, expectBN, expectThrow } from './helpers/Expect';
+import { expect, expectBN, expectBaseValueEqual, expectThrow } from './helpers/Expect';
 import { FEES, INTEGERS, PRICES } from '../src/lib/Constants';
 import {
   BigNumberable,
@@ -86,10 +86,12 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       const filteredLogs = _.filter(logs, { name: 'LogLiquidated' });
       expect(filteredLogs.length).to.equal(1);
-      expect(filteredLogs[0].args.maker).to.equal(long);
-      expect(filteredLogs[0].args.taker).to.equal(short);
-      expectBN(filteredLogs[0].args.amount).to.equal(liquidationAmount);
-      expect(filteredLogs[0].args.isBuy).to.equal(true);
+      const liquidatedLog = filteredLogs[0];
+      expect(liquidatedLog.args.maker).to.equal(long);
+      expect(liquidatedLog.args.taker).to.equal(short);
+      expectBN(liquidatedLog.args.amount).to.equal(liquidationAmount);
+      expect(liquidatedLog.args.isBuy).to.equal(true);
+      expectBaseValueEqual(liquidatedLog.args.oraclePrice, longUndercollateralizedPrice);
     });
 
     it('Succeeds partially liquidating a short position', async () => {
@@ -108,10 +110,12 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       const filteredLogs = _.filter(logs, { name: 'LogLiquidated' });
       expect(filteredLogs.length).to.equal(1);
-      expect(filteredLogs[0].args.maker).to.equal(short);
-      expect(filteredLogs[0].args.taker).to.equal(long);
-      expectBN(filteredLogs[0].args.amount).to.equal(liquidationAmount);
-      expect(filteredLogs[0].args.isBuy).to.equal(false);
+      const liquidatedLog = filteredLogs[0];
+      expect(liquidatedLog.args.maker).to.equal(short);
+      expect(liquidatedLog.args.taker).to.equal(long);
+      expectBN(liquidatedLog.args.amount).to.equal(liquidationAmount);
+      expect(liquidatedLog.args.isBuy).to.equal(false);
+      expectBaseValueEqual(liquidatedLog.args.oraclePrice, shortUndercollateralizedPrice);
     });
 
     it('Succeeds fully liquidating an undercollateralized long position', async () => {

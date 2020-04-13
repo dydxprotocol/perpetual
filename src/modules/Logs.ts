@@ -160,6 +160,7 @@ export class Logs {
         case 'fee':
           return Fee.fromSolidity(argValue);
         case 'price':
+        case 'oraclePrice':
         case 'settlementPrice':
         case 'triggerPrice':
           return Price.fromSolidity(argValue);
