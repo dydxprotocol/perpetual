@@ -21,6 +21,7 @@ pragma experimental ABIEncoderV2;
 
 import { BaseMath } from "../protocol/lib/BaseMath.sol";
 import { Math } from "../protocol/lib/Math.sol";
+import { ReentrancyGuard } from "../protocol/lib/ReentrancyGuard.sol";
 import { Require } from "../protocol/lib/Require.sol";
 import { SafeCast } from "../protocol/lib/SafeCast.sol";
 import { SignedMath } from "../protocol/lib/SignedMath.sol";
@@ -37,7 +38,9 @@ import { P1Types } from "../protocol/v1/lib/P1Types.sol";
  * Exposes library functions for testing.
  */
 /* solium-disable-next-line camelcase */
-contract Test_Lib {
+contract Test_Lib is
+    ReentrancyGuard
+{
 
     // ============ BaseMath.sol ============
 
@@ -356,5 +359,23 @@ contract Test_Lib {
         P1Types.Balance memory _balance = balance;
         P1BalanceMath.setPosition(_balance, newPosition);
         return _balance;
+    }
+
+    // ============ ReentrancyGuard.sol ============
+
+    function nonReentrant1()
+        public
+        nonReentrant
+        returns (uint256)
+    {
+        return this.nonReentrant2();
+    }
+
+    function nonReentrant2()
+        public
+        nonReentrant
+        returns (uint256)
+    {
+        return 0;
     }
 }

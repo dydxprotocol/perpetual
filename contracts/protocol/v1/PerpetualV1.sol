@@ -64,6 +64,7 @@ contract PerpetualV1 is
     )
         external
         onlyAdmin
+        nonReentrant
     {
         // only allow initialization once
         require(

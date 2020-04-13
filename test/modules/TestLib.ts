@@ -420,4 +420,26 @@ export class TestLib {
     );
     return Balance.fromSolidity(result);
   }
+
+  // ============ ReentrancyGuard.sol ============
+
+  public async nonReentrant1(
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: string = await this.contracts.call(
+      this.contracts.testLib.methods.nonReentrant1(),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
+  public async nonReentrant2(
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: string = await this.contracts.call(
+      this.contracts.testLib.methods.nonReentrant2(),
+      options,
+    );
+    return new BigNumber(result);
+  }
 }
