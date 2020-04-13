@@ -1,6 +1,6 @@
 import { ADDRESSES } from '../src/lib/Constants';
 import { BASE_DECIMALS, BaseValue, Price, address } from '../src/lib/types';
-import { expect, expectBN, expectAddressesEqual, expectThrow } from './helpers/Expect';
+import { expect, expectBN, expectAddressesEqual, expectThrow, expectBaseValueEqual } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { BigNumber } from '../src';
@@ -169,7 +169,7 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
       const [indexLog, settlementLog] = logs;
       expect(indexLog.name).to.equal('LogIndex');
       expect(settlementLog.name).to.equal('LogFinalSettlementEnabled');
-      expectBN(settlementLog.args.settlementPrice).to.equal(oraclePrice.toSolidity());
+      expectBaseValueEqual(settlementLog.args.settlementPrice, oraclePrice);
     });
 
     it('succeeds if the bounds are equal to the price', async () => {

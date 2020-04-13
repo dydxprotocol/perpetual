@@ -9,8 +9,10 @@ import { Contracts } from '../modules/Contracts';
 import {
   Balance,
   BaseValue,
+  Fee,
   Index,
   LoggedFundingRate,
+  Price,
   TxResult,
 } from '../lib/types';
 import { ORDER_FLAGS } from '../lib/Constants';
@@ -140,16 +142,27 @@ export class Logs {
   private parseValue(input: AbiInput, argValue: any): any {
     if (input.type === 'bytes32') {
       switch (input.name) {
-        case 'fundingRate':
-          return this.parseFundingRate(argValue);
-        case 'index':
-          return this.parseIndex(argValue);
         case 'balance':
         case 'makerBalance':
         case 'takerBalance':
           return this.parseBalance(argValue);
+        case 'index':
+          return this.parseIndex(argValue);
         case 'flags':
           return this.parseOrderFlags(argValue);
+        case 'fundingRate':
+          return this.parseFundingRate(argValue);
+      }
+    }
+
+    if (input.type === 'uint256') {
+      switch (input.name) {
+        case 'fee':
+          return Fee.fromSolidity(argValue);
+        case 'price':
+        case 'settlementPrice':
+        case 'triggerPrice':
+          return Price.fromSolidity(argValue);
       }
     }
 
