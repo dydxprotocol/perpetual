@@ -114,10 +114,10 @@ export class Contracts {
   }
 
   public writeTxResultsSync(perpetual: Perpetual, describeTitle: string, itTitle: string): void {
-    const dirName = path.join('TX_RESULTS', describeTitle, itTitle).replace(/ /g, '_');
+    const dirName = path.join('LOGS_JSON', describeTitle, itTitle).replace(/ /g, '_');
     fs.mkdirSync(dirName, { recursive: true });
 
-    for (let i = 0; i < this.txResults.length; i++) {
+    for (let i = 0; i < this.txResults.length; i += 1) {
       const { functionName, txResult } = this.txResults[i];
       const logs = perpetual.logs.parseLogs(txResult);
       const fileName = `${i}_${functionName}.json`;
