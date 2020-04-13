@@ -250,7 +250,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
   describe('trade()', () => {
     describe('basic success cases', () => {
-      it.only('fills a bid at the limit price', async () => {
+      it('fills a bid at the limit price', async () => {
         const { expectedMarginAmount, txResult } = await fillOrder(defaultSignedOrder);
         await expectBalances(
           ctx,
@@ -282,7 +282,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         expect(filteredLogs[0].args.fill.isNegativeFee).to.equal(false);
       });
 
-      it.only('fills an ask at the limit price', async () => {
+      it('fills an ask at the limit price', async () => {
         const sellOrder = await getModifiedOrder({ isBuy: false });
         const { expectedMarginAmount, txResult } = await fillOrder(sellOrder);
         await expectBalances(

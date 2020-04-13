@@ -321,7 +321,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
       await liquidate(long, short, positionSize);
     });
 
-    it.only('Succeeds liquidating a short against a short', async () => {
+    it('Succeeds liquidating a short against a short', async () => {
       // Turn the long into a short.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
       const txResult = await sell(ctx, long, thirdParty, positionSize.times(2), 2500);
@@ -339,7 +339,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
       await liquidate(short, long, positionSize);
     });
 
-    it.only('Succeeds liquidating after an order has executed in the same tx', async () => {
+    it('Succeeds liquidating after an order has executed in the same tx', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
 
       const defaultOrder: Order = {
