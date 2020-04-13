@@ -26,8 +26,15 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
     it('Account owner can deposit', async () => {
       // Set initial balances and allowances.
       const amount = new BigNumber(150);
-      await ctx.perpetual.testing.token.mint(accountOwner, amount);
-      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
+      await ctx.perpetual.testing.token.mint(
+        ctx.perpetual.testing.token.address,
+        accountOwner,
+        amount,
+      );
+      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
+        ctx.perpetual.testing.token.address,
+        accountOwner,
+      );
 
       // Execute deposit.
       const txResult = await ctx.perpetual.margin.deposit(
@@ -55,8 +62,15 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
     it('Non-owner can deposit', async () => {
       // Set initial balances and allowances.
       const amount = new BigNumber(150);
-      await ctx.perpetual.testing.token.mint(otherUser, amount);
-      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(otherUser);
+      await ctx.perpetual.testing.token.mint(
+        ctx.perpetual.testing.token.address,
+        otherUser,
+        amount,
+      );
+      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
+        ctx.perpetual.testing.token.address,
+        otherUser,
+      );
 
       // Execute deposit.
       const txResult = await ctx.perpetual.margin.deposit(
@@ -74,10 +88,24 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
 
     it('Can make multiple deposits', async () => {
       // Set initial balances and allowances.
-      await ctx.perpetual.testing.token.mint(accountOwner, new BigNumber(1000));
-      await ctx.perpetual.testing.token.mint(otherUser, new BigNumber(1000));
-      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
-      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(otherUser);
+      await ctx.perpetual.testing.token.mint(
+        ctx.perpetual.testing.token.address,
+        accountOwner,
+        new BigNumber(1000),
+      );
+      await ctx.perpetual.testing.token.mint(
+        ctx.perpetual.testing.token.address,
+        otherUser,
+        new BigNumber(1000),
+      );
+      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
+        ctx.perpetual.testing.token.address,
+        accountOwner,
+      );
+      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
+        ctx.perpetual.testing.token.address,
+        otherUser,
+      );
 
       // Execute deposits.
       await ctx.perpetual.margin.deposit(accountOwner, new BigNumber(50), { from: accountOwner });
@@ -96,8 +124,15 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
     it('Cannot deposit more than the sender\'s balance', async () => {
       // Set initial balances and allowances.
       const amount = new BigNumber(1000);
-      await ctx.perpetual.testing.token.mint(accountOwner, amount);
-      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(otherUser);
+      await ctx.perpetual.testing.token.mint(
+        ctx.perpetual.testing.token.address,
+        accountOwner,
+        amount,
+      );
+      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
+        ctx.perpetual.testing.token.address,
+        otherUser,
+      );
 
       await expectThrow(
         ctx.perpetual.margin.deposit(accountOwner, amount.plus(1), { from: accountOwner }),

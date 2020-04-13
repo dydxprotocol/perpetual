@@ -17,6 +17,7 @@
 */
 
 import BigNumber from 'bignumber.js';
+import { Contract } from 'web3-eth-contract';
 
 import { Token } from '../../src/modules/Token';
 import {
@@ -28,30 +29,35 @@ import {
 import { TestContracts } from './TestContracts';
 
 export class TestToken extends Token {
-  private testContracts: TestContracts;
-
   constructor(
     contracts: TestContracts,
   ) {
-    super(contracts, contracts.testToken);
-    this.testContracts = contracts;
+    super(contracts);
   }
 
   public get address(): string {
-    return this.testContracts.testToken.options.address;
+    return (this.contracts as TestContracts).testToken.options.address;
   }
 
   public mint(
+    tokenAddress: address,
     account: address,
     amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
+    const token = this.getToken(tokenAddress);
     return this.contracts.send(
-      this.token.methods.mint(
+      token.methods.mint(
         account,
         new BigNumber(amount).toFixed(0),
       ),
       { ...options },
     );
+  }
+
+  // ============ Helper Functions ============
+
+  protected tokenContract(): Contract {
+    return (this.contracts as TestContracts).testToken;
   }
 }

@@ -50,6 +50,7 @@ export async function expectMarginBalances(
   if (fullySettled) {
     const accountSumMargin = actualMargins.reduce((a, b) => a.plus(b), INTEGERS.ZERO);
     const perpetualTokenBalance = await ctx.perpetual.testing.token.getBalance(
+      ctx.perpetual.testing.token.address,
       ctx.perpetual.contracts.perpetualV1.options.address,
     );
     expectBN(accountSumMargin, 'sum of margins equals token balance').eq(perpetualTokenBalance);
@@ -98,7 +99,10 @@ export async function expectTokenBalances(
   expectedBalances: BigNumberable[],
 ): Promise<void> {
   const balances = await Promise.all(accounts.map((account: address) =>
-    ctx.perpetual.testing.token.getBalance(account),
+    ctx.perpetual.testing.token.getBalance(
+      ctx.perpetual.testing.token.address,
+      account,
+    ),
   ));
   for (const i in expectedBalances) {
     expectBN(balances[i], `accounts[${i}] token balance`).to.eq(expectedBalances[i]);
@@ -120,6 +124,7 @@ export async function expectContractSurplus(
   }));
   const accountSumMargin = marginBalances.reduce((a, b) => a.plus(b), INTEGERS.ZERO);
   const perpetualTokenBalance = await ctx.perpetual.testing.token.getBalance(
+    ctx.perpetual.testing.token.address,
     ctx.perpetual.contracts.perpetualV1.options.address,
   );
   const actualSurplus = perpetualTokenBalance.minus(accountSumMargin);
@@ -135,8 +140,15 @@ export async function mintAndDeposit(
   amount: BigNumberable,
 ): Promise<void> {
   const amountBN = new BigNumber(amount);
-  await ctx.perpetual.testing.token.mint(account, amountBN);
-  await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(account);
+  await ctx.perpetual.testing.token.mint(
+    ctx.perpetual.testing.token.address,
+    account,
+    amountBN,
+  );
+  await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
+    ctx.perpetual.testing.token.address,
+    account,
+  );
   await ctx.perpetual.margin.deposit(account, amountBN, { from: account });
 }
 
