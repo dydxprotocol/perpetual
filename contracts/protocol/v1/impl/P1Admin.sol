@@ -66,7 +66,7 @@ contract P1Admin is
      * @notice Add or remove a Global Operator address.
      * @dev Can only be called by the Admin of PerpetualV1. Emits the LogSetGlobalOperator event.
      * @param operator The address for which to enable or disable global operator privileges.
-     * @param approved True if approved, False if disapproved.
+     * @param approved True if approved, false if disapproved.
      */
     function setGlobalOperator(
         address operator,

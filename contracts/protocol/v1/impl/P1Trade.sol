@@ -68,8 +68,8 @@ contract P1Trade is
      * @notice Submits one or many trades between any number of accounts
      * @dev Emits the LogIndex event, the LogAccountSettled event for each account in accounts, and
      * the LogTrade event for each trade in trades.
-     * @param accounts The sorted list of accounts that are involved in trades
-     * @param trades The ordered list of trades to execute
+     * @param accounts The sorted list of accounts that are involved in trades.
+     * @param trades The list of trades to execute in-order.
      */
     function trade(
         address[] memory accounts,

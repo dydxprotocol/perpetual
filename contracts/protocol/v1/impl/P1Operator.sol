@@ -46,7 +46,7 @@ contract P1Operator is
      * sender's account.
      * @dev Emits the LogSetLocalOperator event.
      * @param operator The account that is approved or disapproved.
-     * @param approved True for approval, False for disapproval.
+     * @param approved True for approval, false for disapproval.
      */
     function setLocalOperator(
         address operator,

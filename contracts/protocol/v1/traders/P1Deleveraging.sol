@@ -182,10 +182,10 @@ contract P1Deleveraging is
     }
 
     /**
-     * @notice Mark an account as underwater.
-     *
-     * @dev An account must be marked for a period of time before any non-admin is allowed to
-     * deleverage that account.
+     * @notice Mark an account as underwater. An account must be marked for a period of time before
+     * any non-admin is allowed to deleverage that account.
+     * @dev Emits the LogMarkedForDeleveraging event.
+     * @param account The account to mark.
      */
     function mark(
         address account
@@ -202,6 +202,7 @@ contract P1Deleveraging is
 
     /**
      * @notice Un-mark an account as underwater if it no longer is.
+     * @dev Emits the LogUnmarkedForDeleveraging event.
      * @param account The account to unmark.
      */
     function unmark(

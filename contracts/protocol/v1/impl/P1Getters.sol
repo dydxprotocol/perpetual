@@ -80,7 +80,7 @@ contract P1Getters is
     /**
      * @notice Gets the global operator status of an address.
      * @param operator The address of the operator to query the status of.
-     * @return True if the address is a global operator, False otherwise.
+     * @return True if the address is a global operator, false otherwise.
      */
     function getIsGlobalOperator(
         address operator
@@ -155,7 +155,7 @@ contract P1Getters is
 
     /**
      * @notice Gets the status of whether final-settlement was initiated by the Admin.
-     * @return True if final-settlement was enabled, False otherwise.
+     * @return True if final-settlement was enabled, false otherwise.
      */
     function getFinalSettlementEnabled()
         external
@@ -171,7 +171,7 @@ contract P1Getters is
      * @notice Gets whether an address has permissions to operate an account.
      * @param account The account to query.
      * @param operator The address to query.
-     * @return True if the operator has permission to operate the account.
+     * @return True if the operator has permission to operate the account, false otherwise.
      */
     function hasAccountPermissions(
         address account,
