@@ -171,7 +171,7 @@ contract P1Getters is
      * @norice Gets whether an address has permissions to operate an account.
      * @param account The account to query.
      * @param operator The address to query.
-     * @returns True if the operator has permission to operate the account.
+     * @return True if the operator has permission to operate the account.
      */
     function hasAccountPermissions(
         address account,
