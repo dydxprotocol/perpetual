@@ -95,6 +95,20 @@ contract P1Deleveraging is
         _PERPETUAL_V1_ = perpetualV1;
     }
 
+    // ============ External Functions ============
+
+    /**
+     * @notice Allows an underwater (less than 100% collateralization) account to be subsumed by any
+     * other account with an offsetting position (a position of opposite sign). The sender must be
+     * the owner account unless the account has been marked as underwater for a timelock period.
+     * @dev Emits the LogDeleveraged event. May emit the LogUnmarkedForDeleveraging event.
+     * @param sender The address that called the trade() function on PerpetualV1.
+     * @param maker The underwater account.
+     * @param taker The offsetting account.
+     * @param price The current price of the underlying asset.
+     * @param data A struct of type TradeData.
+     * @return The assets to be traded and traderFlags that indicate that a deleverage occurred.
+     */
     function trade(
         address sender,
         address maker,
@@ -168,9 +182,9 @@ contract P1Deleveraging is
     }
 
     /**
-     * Mark an account as underwater.
+     * @notice Mark an account as underwater.
      *
-     * An account must be marked for a period of time before any non-admin is allowed to
+     * @dev An account must be marked for a period of time before any non-admin is allowed to
      * deleverage that account.
      */
     function mark(
@@ -186,6 +200,10 @@ contract P1Deleveraging is
         emit LogMarkedForDeleveraging(account);
     }
 
+    /**
+     * @notice Un-mark an account as underwater if it no longer is.
+     * @param account The account to unmark.
+     */
     function unmark(
         address account
     )
@@ -197,6 +215,8 @@ contract P1Deleveraging is
         );
         _unmark(account);
     }
+
+    // ============ Helper Functions ============
 
     function _unmark(
         address account
