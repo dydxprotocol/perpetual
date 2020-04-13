@@ -55,7 +55,8 @@ contract P1Liquidation is
         address indexed maker,
         address indexed taker,
         uint256 amount,
-        bool isBuy // from taker's perspective
+        bool isBuy, // from taker's perspective
+        uint256 oraclePrice
     );
 
     // ============ Immutable Storage ============
@@ -122,7 +123,8 @@ contract P1Liquidation is
             maker,
             taker,
             amount,
-            tradeData.isBuy
+            tradeData.isBuy,
+            price
         );
 
         return P1Types.TradeResult({
