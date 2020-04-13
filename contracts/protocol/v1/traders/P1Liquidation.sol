@@ -32,7 +32,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Liquidation
  * @author dYdX
  *
- * P1Liquidation contract
+ * @notice Contract allowing accounts to be liquidated by other accounts.
  */
 contract P1Liquidation is
     P1TraderConstants
@@ -74,6 +74,19 @@ contract P1Liquidation is
         _PERPETUAL_V1_ = perpetualV1;
     }
 
+    // ============ External Functions ============
+
+    /**
+     * @notice Allows an account below the minimum collateralization to be liquidated by another
+     * account. This allows the account to be partially or fully subsumed by the liquidator.
+     * @dev Emits the LogLiquidated event.
+     * @param sender The address that called the trade() function on PerpetualV1.
+     * @param maker The account to be liquidated.
+     * @param taker The account of the liquidator.
+     * @param price The current oracle price of the underlying asset.
+     * @param data A struct of type TradeData.
+     * @return The assets to be traded and traderFlags that indicate that a liquidation occurred.
+     */
     function trade(
         address sender,
         address maker,
@@ -134,6 +147,8 @@ contract P1Liquidation is
             traderFlags: TRADER_FLAG_LIQUIDATION
         });
     }
+
+    // ============ Helper Functions ============
 
     function _verifyTrade(
         TradeData memory tradeData,

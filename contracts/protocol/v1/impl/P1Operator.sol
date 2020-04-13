@@ -26,7 +26,7 @@ import { P1Storage } from "./P1Storage.sol";
  * @title P1Operator
  * @author dYdX
  *
- * Contract for setting local operators for an account.
+ * @notice Contract for setting local operators for an account.
  */
 contract P1Operator is
     P1Storage
@@ -42,7 +42,11 @@ contract P1Operator is
     // ============ Functions ============
 
     /**
-     * Approves or disapproves an account to perform certain actions on behalf of your account.
+     * @notice Approves or disapproves an other account to perform certain actions on behalf of the
+     * sender's account.
+     * @dev Emits the LogSetLocalOperator event.
+     * @param operator The account that is approved or disapproved.
+     * @param approved True for approval, false for disapproval.
      */
     function setLocalOperator(
         address operator,

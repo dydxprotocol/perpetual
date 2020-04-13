@@ -34,7 +34,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1FundingOracle
  * @author dYdX
  *
- * Oracle providing the funding rate for a perpetual market.
+ * @notice Oracle providing the funding rate for a perpetual market.
  */
 contract P1FundingOracle is
     Ownable,
@@ -92,10 +92,13 @@ contract P1FundingOracle is
         emit LogFundingRateUpdated(_FUNDING_RATE_.toBytes32());
     }
 
+    // ============ External Functions ============
+
     /**
-     * Returns the signed funding amount according to the amount of time that has passed.
-     *
-     * The returned funding amount is a unitless rate, as a fixed-point number with 18 decimals.
+     * @notice Calculates the signed funding amount that has accumulated over a period of time.
+     * @param timeDelta Number of seconds over which to calculate the accumulated funding amount.
+     * @return True if the funding rate is positive, and false otherwise.
+     * @return Funding amount as a unitless rate, as a fixed-point number with 18 decimals.
      */
     function getFunding(
         uint256 timeDelta
@@ -112,9 +115,11 @@ contract P1FundingOracle is
     }
 
     /**
-     * Set the funding rate.
-     *
-     * The funding rate is denoted in units per second, as a fixed-point number with 18 decimals.
+     * @notice Set the funding rate.
+     * @dev Can only be called by the owner of this contract. Emits the LogFundingRateUpdated event.
+     * The rate is denoted in units per second, as a fixed-point number with 18 decimals.
+     * @param newRate The intended new funding rate. Is bounded by the global constant bounds.
+     * @return The new funding rate with a timestamp of the update.
      */
     function setFundingRate(
         SignedMath.Int calldata newRate
@@ -134,8 +139,10 @@ contract P1FundingOracle is
         return boundedNewRateWithTimestamp;
     }
 
+    // ============ Helper Functions ============
+
     /**
-     * Apply the contract-defined bounds and return the bounded rate.
+     * @dev Apply the contract-defined bounds and return the bounded rate.
      */
     function _boundRate(
         SignedMath.Int memory newRate

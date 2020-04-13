@@ -27,13 +27,18 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Getters
  * @author dYdX
  *
- * Contract for read-only getters.
+ * @notice Contract for read-only getters.
  */
 contract P1Getters is
     P1Storage
 {
     // ============ Account Getters ============
 
+    /**
+     * @notice Gets the most recently cached balance of an account.
+     * @param account The address of the account to query the balances of.
+     * @return The balances of the account.
+     */
     function getAccountBalance(
         address account
     )
@@ -44,6 +49,11 @@ contract P1Getters is
         return _BALANCES_[account];
     }
 
+    /**
+     * @notice Gets the most recently cached index of an account.
+     * @param account The address of the account to query the index of.
+     * @return The index of the account.
+     */
     function getAccountIndex(
         address account
     )
@@ -67,6 +77,11 @@ contract P1Getters is
 
     // ============ Global Getters ============
 
+    /**
+     * @notice Gets the global operator status of an address.
+     * @param operator The address of the operator to query the status of.
+     * @return True if the address is a global operator, false otherwise.
+     */
     function getIsGlobalOperator(
         address operator
     )
@@ -77,6 +92,10 @@ contract P1Getters is
         return _GLOBAL_OPERATORS_[operator];
     }
 
+    /**
+     * @notice Gets the address of the ERC20 margin contract used for margin deposits.
+     * @return The address of the ERC20 token.
+     */
     function getTokenContract()
         external
         view
@@ -85,6 +104,10 @@ contract P1Getters is
         return _TOKEN_;
     }
 
+    /**
+     * @notice Gets the current address of the price oracle contract.
+     * @return The address of the price oracle contract.
+     */
     function getOracleContract()
         external
         view
@@ -93,6 +116,10 @@ contract P1Getters is
         return _ORACLE_;
     }
 
+    /**
+     * @notice Gets the current address of the funder contract.
+     * @return The address of the funder contract.
+     */
     function getFunderContract()
         external
         view
@@ -101,6 +128,10 @@ contract P1Getters is
         return _FUNDER_;
     }
 
+    /**
+     * @notice Gets the most recently cached global index.
+     * @return The most recently cached global index.
+     */
     function getGlobalIndex()
         external
         view
@@ -109,6 +140,11 @@ contract P1Getters is
         return _GLOBAL_INDEX_;
     }
 
+    /**
+     * @notice Gets minimum collateralization ratio of the protocol.
+     * @return The minimum-acceptable collateralization ratio, returned as a fixed-point number with
+     * 18 decimals of precision.
+     */
     function getMinCollateral()
         external
         view
@@ -117,6 +153,10 @@ contract P1Getters is
         return _MIN_COLLATERAL_;
     }
 
+    /**
+     * @notice Gets the status of whether final-settlement was initiated by the Admin.
+     * @return True if final-settlement was enabled, false otherwise.
+     */
     function getFinalSettlementEnabled()
         external
         view
@@ -127,6 +167,12 @@ contract P1Getters is
 
     // ============ Public Getters ============
 
+    /**
+     * @notice Gets whether an address has permissions to operate an account.
+     * @param account The account to query.
+     * @param operator The address to query.
+     * @return True if the operator has permission to operate the account, false otherwise.
+     */
     function hasAccountPermissions(
         address account,
         address operator

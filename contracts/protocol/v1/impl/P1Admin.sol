@@ -31,7 +31,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Admin
  * @author dYdX
  *
- * Contract allowing the Admin address to set certain parameters.
+ * @notice Contract allowing the Admin address to set certain parameters.
  */
 contract P1Admin is
     P1Storage,
@@ -63,7 +63,10 @@ contract P1Admin is
     // ============ Functions ============
 
     /**
-     * Add or remove a Global Operator address.
+     * @notice Add or remove a Global Operator address.
+     * @dev Can only be called by the Admin of PerpetualV1. Emits the LogSetGlobalOperator event.
+     * @param operator The address for which to enable or disable global operator privileges.
+     * @param approved True if approved, false if disapproved.
      */
     function setGlobalOperator(
         address operator,
@@ -78,7 +81,9 @@ contract P1Admin is
     }
 
     /**
-     * Sets a new price oracle contract.
+     * @notice Sets a new price oracle contract.
+     * @dev Can only be called by the Admin of PerpetualV1. Emits the LogSetOracle event.
+     * @param oracle The address of the new price oracle contract.
      */
     function setOracle(
         address oracle
@@ -96,7 +101,9 @@ contract P1Admin is
     }
 
     /**
-     * Sets a new funding contract.
+     * @notice Sets a new funder contract.
+     * @dev Can only be called by the Admin of PerpetualV1. Emits the LogSetFunder event.
+     * @param funder The address of the new funder contract.
      */
     function setFunder(
         address funder
@@ -113,7 +120,10 @@ contract P1Admin is
     }
 
     /**
-     * Sets a new value for the minimum collateralization percentage.
+     * @notice Sets a new value for the minimum collateralization percentage.
+     * @dev Can only be called by the Admin of PerpetualV1. The supplied value is a number with 18
+     * decimal places of precision. Emits the LogSetMinCollateral event.
+     * @param minCollateral The new value of the minimum initial collateralization percentage.
      */
     function setMinCollateral(
         uint256 minCollateral
@@ -131,7 +141,11 @@ contract P1Admin is
     }
 
     /**
-     * Enables final settlement if the oracle price is between the two bounds.
+     * @notice Enables final settlement if the oracle price is between the two bounds.
+     * @dev Can only be called by the Admin of PerpetualV1. The current result of the price oracle
+     * must be between the two bounds supplied. Emits the LogFinalSettlementEnabled event.
+     * @param priceLowerBound The lower-bound (inclusive) of the acceptable price range.
+     * @param priceUpperBound The upper-bound (inclusive) of the acceptable price range.
      */
     function enableFinalSettlement(
         uint256 priceLowerBound,

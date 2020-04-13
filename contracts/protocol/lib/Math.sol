@@ -26,7 +26,7 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
  * @title Math
  * @author dYdX
  *
- * Library for non-standard Math functions
+ * @dev Library for non-standard Math functions.
  */
 library Math {
     using SafeMath for uint256;

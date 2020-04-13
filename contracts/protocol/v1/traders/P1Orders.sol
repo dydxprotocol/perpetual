@@ -31,7 +31,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Orders
  * @author dYdX
  *
- * P1Orders contract
+ * @notice Contract allowing trading between accounts using cryptographically signed messages.
  */
 contract P1Orders is
     P1TraderConstants
@@ -176,8 +176,18 @@ contract P1Orders is
         ));
     }
 
-    // ============ Public Functions ============
+    // ============ External Functions ============
 
+    /**
+     * @notice Allows an account to take an order cryptographically signed by a different account.
+     * @dev Emits the LogOrderFilled event.
+     * @param sender The address that called the trade() function on PerpetualV1.
+     * @param maker The maker of the order.
+     * @param taker The taker of the order.
+     * @param price The current oracle price of the underlying asset.
+     * @param data A struct of type TradeData.
+     * @return The assets to be traded and traderFlags that indicate that a trade occurred.
+     */
     function trade(
         address sender,
         address maker,
@@ -253,6 +263,11 @@ contract P1Orders is
         });
     }
 
+    /**
+     * @notice On-chain approves an order.
+     * @notice emits the LogOrderApproved event.
+     * @param order The order that will be approved.
+     */
     function approveOrder(
         Order calldata order
     )
@@ -271,6 +286,11 @@ contract P1Orders is
         emit LogOrderApproved(msg.sender, orderHash);
     }
 
+    /**
+     * @notice On-chain cancels an order.
+     * @notice emits the LogOrderCanceled event.
+     * @param order The order that will be permanently canceled.
+     */
     function cancelOrder(
         Order calldata order
     )
@@ -285,6 +305,14 @@ contract P1Orders is
         emit LogOrderCanceled(msg.sender, orderHash);
     }
 
+    // ============ Getter Functions ============
+
+    /**
+     * @notice Gets the status (open/approved/canceled) and the amount-filled of a list of orders.
+     * @param orderHashes A list of the hashes of the orders to check.
+     * @return A list of OrderQueryOutput structs which contain the status and amount-filled of each
+     * order.
+     */
     function getOrdersStatus(
         bytes32[] calldata orderHashes
     )

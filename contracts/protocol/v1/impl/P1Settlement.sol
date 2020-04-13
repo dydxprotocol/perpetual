@@ -35,7 +35,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Settlement
  * @author dYdX
  *
- * Contract containing logic for settling funding payments between accounts.
+ * @notice Contract containing logic for settling funding payments between accounts.
  */
 contract P1Settlement is
     P1Storage
@@ -63,8 +63,9 @@ contract P1Settlement is
     // ============ Functions ============
 
     /**
-     * Calculates the funding change since the last update and stores it in the Global Index.
-     * Returns a Context that contains the current Price, Index, and Minimum Collateralization.
+     * @dev Calculates the funding change since the last update and stores it in the Global Index.
+     * @return Context struct that contains The current Oracle Price, Global Index, and Minimum
+     * Collateralization.
      */
     function _loadContext()
         internal
@@ -118,7 +119,7 @@ contract P1Settlement is
     }
 
     /**
-     * Settle the funding payments for a list of accounts and return their resulting balances.
+     * @dev Settle the funding payments for a list of accounts and return their resulting balances.
      */
     function _settleAccounts(
         P1Types.Context memory context,
@@ -138,7 +139,7 @@ contract P1Settlement is
     }
 
     /**
-     * Settle the funding payment for a single account and return its resulting balance.
+     * @dev Settle the funding payment for a single account and return its resulting balance.
      */
     function _settleAccount(
         P1Types.Context memory context,
@@ -206,7 +207,7 @@ contract P1Settlement is
     }
 
     /**
-     * Returns true if the balance is collateralized according to the price and minimum
+     * @dev Returns true if the balance is collateralized according to the price and minimum
      * collateralization passed-in through the context.
      */
     function _isCollateralized(

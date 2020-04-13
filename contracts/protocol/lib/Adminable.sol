@@ -26,7 +26,7 @@ import { Storage } from "./Storage.sol";
  * @title Adminable
  * @author dYdX
  *
- * EIP-1967 Proxy Admin contract
+ * @dev EIP-1967 Proxy Admin contract.
  */
 contract Adminable {
     /**

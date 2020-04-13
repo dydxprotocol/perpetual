@@ -24,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * @title Storage
  * @author dYdX
  *
- * Storage library for reading/writing at a low level.
+ * @dev Storage library for reading/writing storage at a low level.
  */
 library Storage {
 

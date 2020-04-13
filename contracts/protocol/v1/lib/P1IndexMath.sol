@@ -26,7 +26,7 @@ import { P1Types } from "./P1Types.sol";
  * @title P1IndexMath
  * @author dYdX
  *
- * Library for manipulating P1Types.Index structs.
+ * @dev Library for manipulating P1Types.Index structs.
  */
 library P1IndexMath {
 

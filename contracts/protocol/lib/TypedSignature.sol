@@ -24,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * @title TypedSignature
  * @author dYdX
  *
- * Library to unparse typed signatures.
+ * @dev Library to unparse typed signatures.
  */
 library TypedSignature {
 

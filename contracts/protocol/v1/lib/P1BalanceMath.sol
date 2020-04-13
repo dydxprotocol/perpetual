@@ -30,7 +30,7 @@ import { SignedMath } from "../../lib/SignedMath.sol";
  * @title P1BalanceMath
  * @author dYdX
  *
- * Library for manipulating P1Types.Balance structs.
+ * @dev Library for manipulating P1Types.Balance structs.
  */
 library P1BalanceMath {
     using BaseMath for uint256;

@@ -26,12 +26,21 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title I_P1Trader
  * @author dYdX
  *
- * Interface that PerpetualV1 Traders must implement.
+ * @notice Interface that PerpetualV1 Traders must implement.
  */
 interface I_P1Trader {
 
     /**
-     * Returns the result of the trade between the maker and the taker.
+     * @notice Returns the result of the trade between the maker and the taker. Expected to be
+     * called by PerpetualV1. Reverts if the trade is disallowed.
+     * @param sender The address that called the `trade()` function of PerpetualV1.
+     * @param maker The address of the passive maker account.
+     * @param taker The address of the active taker account.
+     * @param price The current oracle price of the underlying asset.
+     * @param data Arbitrary data passed-in to the `trade()` function of PerpetualV1.
+     * @param traderFlags Any flags that have been set by other I_P1Trader contracts during the same
+     * call to the `trade()` function of PerpetualV1.
+     * @return The result of the trade from the perspective of the taker.
      */
     function trade(
         address sender,

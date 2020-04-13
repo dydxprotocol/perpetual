@@ -24,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * @title SafeCast
  * @author dYdX
  *
- * Casting to different integers
+ * @dev Library for casting uint256 to other types of uint.
  */
 library SafeCast {
 

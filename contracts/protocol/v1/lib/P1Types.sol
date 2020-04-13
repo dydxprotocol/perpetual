@@ -24,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * @title P1Types
  * @author dYdX
  *
- * Library for common types used in PerpetualV1 contracts.
+ * @dev Library for common types used in PerpetualV1 contracts.
  */
 library P1Types {
     // ============ Structs ============

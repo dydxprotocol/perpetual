@@ -27,11 +27,17 @@ import { AdminUpgradeabilityProxy } from "@openzeppelin/upgrades/contracts/upgra
  * @title PerpetualProxy
  * @author dYdX
  *
- * Proxy contract that forwards calls to the main Perpetual contract.
+ * @notice Proxy contract that forwards calls to the main Perpetual contract.
  */
 contract PerpetualProxy is
     AdminUpgradeabilityProxy
 {
+    /**
+     * @dev The constructor of the proxy that sets the admin and logic.
+     * @param logic The address of the contract that implements the underlying logic.
+     * @param admin The address of the admin of the proxy.
+     * @param data Any data to send immediately to the implementation contract.
+     */
     constructor(
         address logic,
         address admin,
@@ -46,7 +52,7 @@ contract PerpetualProxy is
     {}
 
     /**
-     * Overrides the default functionality that prevents the admin from reaching the
+     * @dev Overrides the default functionality that prevents the admin from reaching the
      * implementation contract.
      */
     function _willFallback()

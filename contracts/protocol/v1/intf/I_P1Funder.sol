@@ -24,14 +24,15 @@ pragma experimental ABIEncoderV2;
  * @title I_P1Funder
  * @author dYdX
  *
- * Interface for an oracle providing the funding rate for a perpetual market.
+ * @notice Interface for an oracle providing the funding rate for a perpetual market.
  */
 interface I_P1Funder {
 
     /**
-     * Returns the signed funding percentage according to the amount of time that has passed.
-     *
-     * The funding percentage is a unitless rate with 18 decimals of precision.
+     * @notice Calculates the signed funding amount that has accumulated over a period of time.
+     * @param timeDelta Number of seconds over which to calculate the accumulated funding amount.
+     * @return True if the funding rate is positive, and false otherwise.
+     * @return Funding amount as a unitless rate, as a fixed-point number with 18 decimals.
      */
     function getFunding(
         uint256 timeDelta

@@ -26,7 +26,7 @@ import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
  * @title SignedMath
  * @author dYdX
  *
- * SignedMath library for doing math with signed integers.
+ * @dev SignedMath library for doing math with signed integers.
  */
 library SignedMath {
     using SafeMath for uint256;
