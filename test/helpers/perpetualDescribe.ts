@@ -66,11 +66,15 @@ export default function perpetualDescribe(
     // Runs before any after() calls made within the perpetualDescribe() call.
     after(async () => {
       await resetEVM(preInitSnapshotId);
-      ctx.perpetual.contracts.writeTxResultsSync(ctx.perpetual, `all_tx_results-${name.replace(/ /g, '_')}`);
-    });
+    })
 
     // Runs before any afterEach() calls made within the perpetualDescribe() call.
-    afterEach(() => {
+    afterEach(async function () {
+      // Output logs to a JSON file.
+      const itTitle = this.currentTest.title;
+      const describeTitle = this.currentTest.parent.fullTitle();
+      ctx.perpetual.contracts.writeTxResultsSync(ctx.perpetual, describeTitle, itTitle);
+
       // Output the gas used in each test case.
       if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
         for (const { gasUsed, name } of ctx.perpetual.contracts.getGasUsedByFunction()) {

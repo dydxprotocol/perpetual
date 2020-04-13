@@ -119,7 +119,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       expectBaseValueEqual(deleveragedLog.args.oraclePrice, shortUnderwaterPrice);
     });
 
-    it('Succeeds fully deleveraging a long position', async () => {
+    it.only('Succeeds fully deleveraging a long position', async () => {
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
       const txResult = await deleverage(long, short, positionSize);
       await expectBalances(

@@ -17,6 +17,7 @@
 */
 
 import fs from 'fs';
+import path from 'path';
 
 import _ from 'lodash';
 import Web3 from 'web3';
@@ -67,7 +68,7 @@ interface ContractInfo {
 
 export class Contracts {
   private defaultOptions: SendOptions;
-  private allTxResults: TxResult[] = [];
+  private txResults: { functionName: string, txResult: TxResult }[] = [];
   private _cumulativeGasUsed: number = 0;
   private _gasUsedByFunction: { name: string, gasUsed: number }[] = [];
 
@@ -112,15 +113,18 @@ export class Contracts {
     this.setDefaultAccount(this.web3.eth.defaultAccount);
   }
 
-  public writeTxResultsSync(perpetual: Perpetual, dirName: string): void {
-    fs.mkdirSync(dirName);
-    let i = 0;
-    for (const txResult of this.allTxResults) {
+  public writeTxResultsSync(perpetual: Perpetual, describeTitle: string, itTitle: string): void {
+    const dirName = path.join('TX_RESULTS', describeTitle, itTitle).replace(/ /g, '_');
+    fs.mkdirSync(dirName, { recursive: true });
+
+    for (let i = 0; i < this.txResults.length; i++) {
+      const { functionName, txResult } = this.txResults[i];
       const logs = perpetual.logs.parseLogs(txResult);
-      fs.writeFileSync(`${dirName}/${i}.json`, JSON.stringify(logs, null, 2));
-      i += 1;
+      const fileName = `${i}_${functionName}.json`;
+      fs.writeFileSync(path.join(dirName, fileName), JSON.stringify(logs, null, 2));
     }
-    this.allTxResults = []; // leave work for garbage collector
+
+    this.txResults = []; // leave work for garbage collector
   }
 
   public getCumulativeGasUsed(): number {
@@ -194,7 +198,7 @@ export class Contracts {
       const txResult: TxResult = result;
 
       // Add result to list.
-      this.allTxResults.push(txResult);
+      this.txResults.push({ txResult, functionName: (method as any)._method.name });
 
       // Count gas used.
       const contract: Contract = (method as any)._parent;
