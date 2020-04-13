@@ -1,0 +1,19 @@
+[
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x000000000000000000000000aca94ef8bd5ffee41947b4585a84bda5a3d3da6e0000000000000000000000000000000000000000000000000000000000000001",
+    "topics": [
+      "0xeaeee7699e70e6b31ac89ec999ef6936b97ac1e364f0e1fcf584772372caa0d3"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0x1f019365bdf155c2228192d41f52365a1f8f1d9bb0e12a74931f1a03d5eee9af",
+    "transactionIndex": 0,
+    "blockHash": "0x87ff79c19cecfe9c9222986053bd93890eee0e1a05f70fcb40d6e1f29d5ad772",
+    "blockNumber": 954,
+    "name": "LogSetGlobalOperator",
+    "args": {
+      "operator": "0xACa94ef8bD5ffEE41947b4585a84BdA5a3d3DA6E",
+      "approved": true
+    }
+  }
+]

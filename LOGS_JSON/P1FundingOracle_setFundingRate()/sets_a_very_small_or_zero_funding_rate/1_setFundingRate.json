@@ -1,0 +1,24 @@
+[
+  {
+    "address": "0x82c052Bbea74E8721C2cEd1b35C5bAC20F296180",
+    "data": "0x00000000000000000000005e95014e0000000000000000000000000000000001",
+    "topics": [
+      "0x2ebf65220b5046a8d9cff102710ef15de0a0bf3709dcc11c3af50abe472e1c22"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0x1f16157467fe0c90dbb22617452f19555a9386fa4776247434a2953acd3c5eca",
+    "transactionIndex": 0,
+    "blockHash": "0x055bae6e4133e6263010c7070e919e0abd1ebaa3f9c5bb7d24dd4d20b9ef0776",
+    "blockNumber": 952,
+    "name": "LogFundingRateUpdated",
+    "args": {
+      "fundingRate": {
+        "timestamp": "1586823502",
+        "rawValue": "0x00000000000000000000005e95014e0000000000000000000000000000000001",
+        "baseValue": {
+          "value": "-0.000000000000000001"
+        }
+      }
+    }
+  }
+]

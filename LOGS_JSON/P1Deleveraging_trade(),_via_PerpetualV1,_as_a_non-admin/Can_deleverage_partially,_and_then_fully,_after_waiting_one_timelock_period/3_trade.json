@@ -1,0 +1,98 @@
+[
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x00000000000000000000005e94ec210000000000000000000000000000000000",
+    "topics": [
+      "0x995e61c355733308eab39a59e1e1ac167274cdd1ad707fe4d13e127a01076428"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0xe727275a0865f47052f1d255f5819147ed70ec60ca0ac9b9236f8edebade48a4",
+    "transactionIndex": 0,
+    "blockHash": "0x8b5fe67bc72dff313b87d4aae1f526bc24c3725fd7527fb5b17fbc5891c333b1",
+    "blockNumber": 961,
+    "name": "LogIndex",
+    "args": {
+      "index": {
+        "timestamp": "1586818081",
+        "rawValue": "0x00000000000000000000005e94ec210000000000000000000000000000000000",
+        "baseValue": {
+          "value": "-0"
+        }
+      }
+    }
+  },
+  {
+    "address": "0x15118cf0f444497C6807fa8e6168dD02672F13bD",
+    "data": "0x",
+    "topics": [
+      "0x9771b33aeb53e1bf116f495e5f185f99fd84b523e3da950a84ca36ad10b8160e",
+      "0x000000000000000000000000ffcf8fdee72ac11b5c542428b35eef5769c409f0"
+    ],
+    "logIndex": 1,
+    "transactionHash": "0xe727275a0865f47052f1d255f5819147ed70ec60ca0ac9b9236f8edebade48a4",
+    "transactionIndex": 0,
+    "blockHash": "0x8b5fe67bc72dff313b87d4aae1f526bc24c3725fd7527fb5b17fbc5891c333b1",
+    "blockNumber": 961,
+    "name": "LogUnmarkedForDeleveraging",
+    "args": {
+      "account": "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0"
+    }
+  },
+  {
+    "address": "0x15118cf0f444497C6807fa8e6168dD02672F13bD",
+    "data": "0x00000000000000000000000000000000000000000000000000000000000000050000000000000000000000000000000000000000000000000000000000000001000000000000000000000000000000000000000000000002b5e3ae2ddce2f000",
+    "topics": [
+      "0x750eb1daab9f5a06890a5126e981abeeb7d50b590d48e4a9e523016de22985bb",
+      "0x000000000000000000000000ffcf8fdee72ac11b5c542428b35eef5769c409f0",
+      "0x00000000000000000000000022d491bde2303f2f43325b2108d26f1eaba1e32b"
+    ],
+    "logIndex": 2,
+    "transactionHash": "0xe727275a0865f47052f1d255f5819147ed70ec60ca0ac9b9236f8edebade48a4",
+    "transactionIndex": 0,
+    "blockHash": "0x8b5fe67bc72dff313b87d4aae1f526bc24c3725fd7527fb5b17fbc5891c333b1",
+    "blockNumber": 961,
+    "name": "LogDeleveraged",
+    "args": {
+      "maker": "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0",
+      "taker": "0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b",
+      "amount": "5",
+      "isBuy": true,
+      "oraclePrice": {
+        "value": "49.999999"
+      }
+    }
+  },
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x00000000000000000000000015118cf0f444497c6807fa8e6168dd02672f13bd00000000000000000000000000000000000000000000000000000000000000fa000000000000000000000000000000000000000000000000000000000000000500000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000000010000000000000000000000000003e800000000000000000000000000000000",
+    "topics": [
+      "0x5171a2ba3550a103fd09ca39b7dcfdf328a5acef18e290c7802d69c8ba73d8d9",
+      "0x000000000000000000000000ffcf8fdee72ac11b5c542428b35eef5769c409f0",
+      "0x00000000000000000000000022d491bde2303f2f43325b2108d26f1eaba1e32b"
+    ],
+    "logIndex": 3,
+    "transactionHash": "0xe727275a0865f47052f1d255f5819147ed70ec60ca0ac9b9236f8edebade48a4",
+    "transactionIndex": 0,
+    "blockHash": "0x8b5fe67bc72dff313b87d4aae1f526bc24c3725fd7527fb5b17fbc5891c333b1",
+    "blockNumber": 961,
+    "name": "LogTrade",
+    "args": {
+      "maker": "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0",
+      "taker": "0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b",
+      "trader": "0x15118cf0f444497C6807fa8e6168dD02672F13bD",
+      "marginAmount": "250",
+      "positionAmount": "5",
+      "isBuy": true,
+      "makerBalance": {
+        "margin": "-0",
+        "position": "-0",
+        "rawValue": "0x0000000000000000000000000000000000000000000000000000000000000000"
+      },
+      "takerBalance": {
+        "margin": "1000",
+        "position": "-0",
+        "rawValue": "0x010000000000000000000000000003e800000000000000000000000000000000"
+      }
+    }
+  }
+]

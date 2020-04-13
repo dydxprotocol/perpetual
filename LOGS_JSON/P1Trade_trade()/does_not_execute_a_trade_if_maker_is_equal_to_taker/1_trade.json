@@ -1,0 +1,24 @@
+[
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x00000000000000000000005e94e5720000000000000000000000000000000000",
+    "topics": [
+      "0x995e61c355733308eab39a59e1e1ac167274cdd1ad707fe4d13e127a01076428"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0x03e3d183038f3bbbf8587f4107d8b1618a549f7bc0ee1fdee8693f1e0c3957a8",
+    "transactionIndex": 0,
+    "blockHash": "0x7e74dddeb35ff8815c8bdbd092d9d4dcc3030d3070e297d72c654a4564c0a716",
+    "blockNumber": 955,
+    "name": "LogIndex",
+    "args": {
+      "index": {
+        "timestamp": "1586816370",
+        "rawValue": "0x00000000000000000000005e94e5720000000000000000000000000000000000",
+        "baseValue": {
+          "value": "-0"
+        }
+      }
+    }
+  }
+]

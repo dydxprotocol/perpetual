@@ -1,0 +1,42 @@
+[
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x00000000000000000000005e94e5310000000000000000000000000000000000",
+    "topics": [
+      "0x995e61c355733308eab39a59e1e1ac167274cdd1ad707fe4d13e127a01076428"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0xfb196d0bdccba8ca9408e6cc6ad938a855084985c6f80978ff960ea15cfe429b",
+    "transactionIndex": 0,
+    "blockHash": "0x8e25133dc2cd482fed6f4871eb62ba2eeba650edf3cb95ef10a9716a7b5c569e",
+    "blockNumber": 956,
+    "name": "LogIndex",
+    "args": {
+      "index": {
+        "timestamp": "1586816305",
+        "rawValue": "0x00000000000000000000005e94e5310000000000000000000000000000000000",
+        "baseValue": {
+          "value": "-0"
+        }
+      }
+    }
+  },
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x0000000000000000000000000000000000000000000000000000000000000000",
+    "topics": [
+      "0x68e4c41627e835051be46337f1542645a60c7e6d6ea79efc5f20bdadae5f88d2"
+    ],
+    "logIndex": 1,
+    "transactionHash": "0xfb196d0bdccba8ca9408e6cc6ad938a855084985c6f80978ff960ea15cfe429b",
+    "transactionIndex": 0,
+    "blockHash": "0x8e25133dc2cd482fed6f4871eb62ba2eeba650edf3cb95ef10a9716a7b5c569e",
+    "blockNumber": 956,
+    "name": "LogFinalSettlementEnabled",
+    "args": {
+      "settlementPrice": {
+        "value": "0"
+      }
+    }
+  }
+]

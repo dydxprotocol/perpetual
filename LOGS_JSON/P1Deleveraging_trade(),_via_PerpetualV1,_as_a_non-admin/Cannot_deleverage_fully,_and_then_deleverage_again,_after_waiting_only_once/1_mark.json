@@ -1,0 +1,19 @@
+[
+  {
+    "address": "0x15118cf0f444497C6807fa8e6168dD02672F13bD",
+    "data": "0x",
+    "topics": [
+      "0xc5c00dddf28309e25cd647751e97c5c3b8be3425d81f33ba7835ac8e710aa8b9",
+      "0x000000000000000000000000ffcf8fdee72ac11b5c542428b35eef5769c409f0"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0xeb1c53a62c7e7e98b872d9523e15376c0f1a4d68577288aadf500f8b94cd6d98",
+    "transactionIndex": 0,
+    "blockHash": "0x4b68542d82eed153c66f833382c1f80bbae1032396fb6a211672b5bf3cabb669",
+    "blockNumber": 958,
+    "name": "LogMarkedForDeleveraging",
+    "args": {
+      "account": "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0"
+    }
+  }
+]

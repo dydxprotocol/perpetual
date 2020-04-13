@@ -1,0 +1,48 @@
+[
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x00000000000000000000005e94e5520000000000000000000000000000000000",
+    "topics": [
+      "0x995e61c355733308eab39a59e1e1ac167274cdd1ad707fe4d13e127a01076428"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0xffa4131741a3c0afe276da8776233df06f05ab49ca9eda9209d428e366ef98c5",
+    "transactionIndex": 0,
+    "blockHash": "0xac469af18b5d51be333c6e593713059db9cd264fbba2d03053204b94f491fbd2",
+    "blockNumber": 952,
+    "name": "LogIndex",
+    "args": {
+      "index": {
+        "timestamp": "1586816338",
+        "rawValue": "0x00000000000000000000005e94e5520000000000000000000000000000000000",
+        "baseValue": {
+          "value": "-0"
+        }
+      }
+    }
+  },
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x00000000000000000000000022d491bde2303f2f43325b2108d26f1eaba1e32b00000000000000000000000000000000000000000000000000000000000000640100000000000000000000000000003200000000000000000000000000000000",
+    "topics": [
+      "0x74348e8cb927b5536fe550310d0cdf05914498fcb04ad61b99c29e3899b0bce9",
+      "0x00000000000000000000000022d491bde2303f2f43325b2108d26f1eaba1e32b"
+    ],
+    "logIndex": 2,
+    "transactionHash": "0xffa4131741a3c0afe276da8776233df06f05ab49ca9eda9209d428e366ef98c5",
+    "transactionIndex": 0,
+    "blockHash": "0xac469af18b5d51be333c6e593713059db9cd264fbba2d03053204b94f491fbd2",
+    "blockNumber": 952,
+    "name": "LogWithdraw",
+    "args": {
+      "account": "0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b",
+      "destination": "0x22d491Bde2303f2f43325b2108D26f1eAbA1e32b",
+      "amount": "100",
+      "balance": {
+        "margin": "50",
+        "position": "-0",
+        "rawValue": "0x0100000000000000000000000000003200000000000000000000000000000000"
+      }
+    }
+  }
+]

@@ -1,0 +1,18 @@
+[
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x00000000000000000000000000000000000000000000000010a741a462780000",
+    "topics": [
+      "0x248b36ced4662a14c995e0872f00eb61be4e3dea3913226cdeb513d64728cdca"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0xcfe3107ae34a47cbd12d15feebbfd3d576e568df74c408277cf6d9dff5b95945",
+    "transactionIndex": 0,
+    "blockHash": "0x939671fe6f0a4b6a0e13ba80e28a614b4b3cf67a6db03e4f9ff607867694f702",
+    "blockNumber": 949,
+    "name": "LogSetMinCollateral",
+    "args": {
+      "minCollateral": "1200000000000000000"
+    }
+  }
+]

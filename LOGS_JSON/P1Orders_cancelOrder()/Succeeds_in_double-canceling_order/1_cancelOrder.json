@@ -1,0 +1,20 @@
+[
+  {
+    "address": "0xF68f33c1C8AC88106234302D482019adcFf11e47",
+    "data": "0xec8b6a47da6c7e41351db175eef4e180b75993b811c0db1879472c52290d7fbd",
+    "topics": [
+      "0x4117a4c82505f7102c183e1fb9daa8f8e06d56d6af04479fc417fa8c04902893",
+      "0x00000000000000000000000095ced938f7991cd0dfcb48f0a06a40fa1af46ebc"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0xb4dcd08bca1eb0f42843fefbbd0c912303b28cb1928fa4c38029945b41cc4de5",
+    "transactionIndex": 0,
+    "blockHash": "0xcf309bb89048452170a3cac7394b0dc83967594fcda877f1bcd344fb78691e8f",
+    "blockNumber": 955,
+    "name": "LogOrderCanceled",
+    "args": {
+      "maker": "0x95cED938F7991cd0dFcb48F0a06a40FA1aF46EBC",
+      "orderHash": "0xec8b6a47da6c7e41351db175eef4e180b75993b811c0db1879472c52290d7fbd"
+    }
+  }
+]

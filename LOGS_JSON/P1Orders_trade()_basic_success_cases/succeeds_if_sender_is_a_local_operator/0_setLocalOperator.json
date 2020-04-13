@@ -1,0 +1,21 @@
+[
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x000000000000000000000000aca94ef8bd5ffee41947b4585a84bda5a3d3da6e0000000000000000000000000000000000000000000000000000000000000001",
+    "topics": [
+      "0xfe9fa8ad7dbd5e50cbcd1a903ea64717cb80b02e6b737e74f7e2f070b3e4d15f",
+      "0x000000000000000000000000ffcf8fdee72ac11b5c542428b35eef5769c409f0"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0x9fadd4cd473e471abfdae0b5c246bd8d4201c9814067c60c611ec03533c7b77d",
+    "transactionIndex": 0,
+    "blockHash": "0xbc0baf98051b361af89787cb4dcb3df7a6e905dbdb9afe7b00884d1b06300c9c",
+    "blockNumber": 954,
+    "name": "LogSetLocalOperator",
+    "args": {
+      "sender": "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0",
+      "operator": "0xACa94ef8bD5ffEE41947b4585a84BdA5a3d3DA6E",
+      "approved": true
+    }
+  }
+]

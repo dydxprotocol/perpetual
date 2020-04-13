@@ -1,0 +1,18 @@
+[
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x00000000000000000000000054f2560b05888b9f898e5e16ad98135b6e0813f5",
+    "topics": [
+      "0xad675642c3cba5442815383698d42cd28889533d9671a6d32cffea58ef0874da"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0xc9c34e7e6ad5581caf0f9a992ef8c5a2375ff14c64e1c383b7af2ea38b6a0ac7",
+    "transactionIndex": 0,
+    "blockHash": "0x36542f29508af976bc51860984d002eaac5912ae8859bbc05c281480fe100ce5",
+    "blockNumber": 950,
+    "name": "LogSetOracle",
+    "args": {
+      "oracle": "0x54F2560b05888b9f898E5e16aD98135B6e0813F5"
+    }
+  }
+]

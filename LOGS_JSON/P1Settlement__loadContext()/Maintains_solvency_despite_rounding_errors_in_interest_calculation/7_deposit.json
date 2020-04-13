@@ -1,0 +1,47 @@
+[
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x00000000000000000000005e94e5590000000000000000000000000000000000",
+    "topics": [
+      "0x995e61c355733308eab39a59e1e1ac167274cdd1ad707fe4d13e127a01076428"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0x39769bf5a36d2270a96557b81e2940038c4bc28271baae5ccb4cc31b39226213",
+    "transactionIndex": 0,
+    "blockHash": "0x0d0c84df318a5f3e3c6da1a42b4782798becc1a143a704247b972a3765d96902",
+    "blockNumber": 964,
+    "name": "LogIndex",
+    "args": {
+      "index": {
+        "timestamp": "1586816345",
+        "rawValue": "0x00000000000000000000005e94e5590000000000000000000000000000000000",
+        "baseValue": {
+          "value": "-0"
+        }
+      }
+    }
+  },
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x000000000000000000000000000000000000000000000000000000000000000a0100000000000000000000000000000a00000000000000000000000000000000",
+    "topics": [
+      "0x40a9cb3a9707d3a68091d8ef7ffd4158d01d0b2ad92b1e489abe8312dd543023",
+      "0x00000000000000000000000095ced938f7991cd0dfcb48f0a06a40fa1af46ebc"
+    ],
+    "logIndex": 3,
+    "transactionHash": "0x39769bf5a36d2270a96557b81e2940038c4bc28271baae5ccb4cc31b39226213",
+    "transactionIndex": 0,
+    "blockHash": "0x0d0c84df318a5f3e3c6da1a42b4782798becc1a143a704247b972a3765d96902",
+    "blockNumber": 964,
+    "name": "LogDeposit",
+    "args": {
+      "account": "0x95cED938F7991cd0dFcb48F0a06a40FA1aF46EBC",
+      "amount": "10",
+      "balance": {
+        "margin": "10",
+        "position": "-0",
+        "rawValue": "0x0100000000000000000000000000000a00000000000000000000000000000000"
+      }
+    }
+  }
+]

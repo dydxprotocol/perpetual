@@ -1,0 +1,57 @@
+[
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x00000000000000000000005e94e5540000000000000000000000000000000000",
+    "topics": [
+      "0x995e61c355733308eab39a59e1e1ac167274cdd1ad707fe4d13e127a01076428"
+    ],
+    "logIndex": 0,
+    "transactionHash": "0xaf2a9d975c44db63b87b26f78c03b4ed916996a8574e4bcc6f46da0251194149",
+    "transactionIndex": 0,
+    "blockHash": "0xc14a4619685a0e4e9b0395f7d4cd944700f8ffd14ac0abbcb7febac7204100e9",
+    "blockNumber": 955,
+    "name": "LogIndex",
+    "args": {
+      "index": {
+        "timestamp": "1586816340",
+        "rawValue": "0x00000000000000000000005e94e5540000000000000000000000000000000000",
+        "baseValue": {
+          "value": "-0"
+        }
+      }
+    }
+  },
+  {
+    "address": "0xb0fe9E2Bb72e4Ec53e30F708414F4bE4D06352e6",
+    "data": "0x000000000000000000000000aa25622140cd0af064bac0878cd09a314040342a0000000000000000000000000000000000000000000000358a7503391ffafc240000000000000000000000000000000000000000000000000de0b6b3a763ffff000000000000000000000000000000000000000000000000000000000000000001000000000000358a7503391ffb03dc01000000000000000de0b6b3a763ffff01000000000000a09f5f09ab5ff0fc2400000000000000000de0b6b3a763ffff",
+    "topics": [
+      "0x5171a2ba3550a103fd09ca39b7dcfdf328a5acef18e290c7802d69c8ba73d8d9",
+      "0x000000000000000000000000ffcf8fdee72ac11b5c542428b35eef5769c409f0",
+      "0x00000000000000000000000095ced938f7991cd0dfcb48f0a06a40fa1af46ebc"
+    ],
+    "logIndex": 1,
+    "transactionHash": "0xaf2a9d975c44db63b87b26f78c03b4ed916996a8574e4bcc6f46da0251194149",
+    "transactionIndex": 0,
+    "blockHash": "0xc14a4619685a0e4e9b0395f7d4cd944700f8ffd14ac0abbcb7febac7204100e9",
+    "blockNumber": 955,
+    "name": "LogTrade",
+    "args": {
+      "maker": "0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0",
+      "taker": "0x95cED938F7991cd0dFcb48F0a06a40FA1aF46EBC",
+      "trader": "0xAA25622140cD0Af064BAC0878CD09a314040342A",
+      "marginAmount": "987654319999999999012",
+      "positionAmount": "999999999999999999",
+      "isBuy": false,
+      "makerBalance": {
+        "margin": "987654320000000000988",
+        "position": "999999999999999999",
+        "rawValue": "0x01000000000000358a7503391ffb03dc01000000000000000de0b6b3a763ffff"
+      },
+      "takerBalance": {
+        "margin": "2962962959999999999012",
+        "position": "-999999999999999999",
+        "rawValue": "0x01000000000000a09f5f09ab5ff0fc2400000000000000000de0b6b3a763ffff"
+      }
+    }
+  }
+]
