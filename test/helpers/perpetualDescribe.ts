@@ -66,7 +66,7 @@ export default function perpetualDescribe(
     // Runs before any after() calls made within the perpetualDescribe() call.
     after(async () => {
       await resetEVM(preInitSnapshotId);
-    })
+    });
 
     // Runs before any afterEach() calls made within the perpetualDescribe() call.
     afterEach(async function () {
