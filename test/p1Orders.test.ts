@@ -20,7 +20,7 @@ import {
 import {
   boolToBytes32,
 } from '../src/lib/BytesHelper';
-import { expect, expectBN, expectThrow } from './helpers/Expect';
+import { expect, expectBN, expectThrow, expectBaseValueEqual } from './helpers/Expect';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
@@ -271,11 +271,13 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         expect(filteredLogs[0].args.flags.isDecreaseOnly).to.equal(false);
         expect(filteredLogs[0].args.flags.isNegativeLimitFee).to.equal(false);
         expectBN(filteredLogs[0].args.fill.amount).to.equal(defaultOrder.amount);
-        expect(filteredLogs[0].args.fill.price.toString()).to.equal(
-          defaultOrder.limitPrice.toSolidity(),
+        expectBaseValueEqual(
+          filteredLogs[0].args.fill.price,
+          defaultOrder.limitPrice,
         );
-        expect(filteredLogs[0].args.fill.fee.toString()).to.equal(
-          defaultOrder.limitFee.toSolidity(),
+        expectBaseValueEqual(
+          filteredLogs[0].args.fill.fee,
+          defaultOrder.limitFee,
         );
         expect(filteredLogs[0].args.fill.isNegativeFee).to.equal(false);
       });
@@ -302,11 +304,13 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         expect(filteredLogs[0].args.flags.isDecreaseOnly).to.equal(false);
         expect(filteredLogs[0].args.flags.isNegativeLimitFee).to.equal(false);
         expectBN(filteredLogs[0].args.fill.amount).to.equal(defaultOrder.amount);
-        expect(filteredLogs[0].args.fill.price.toString()).to.equal(
-          defaultOrder.limitPrice.toSolidity(),
+        expectBaseValueEqual(
+          filteredLogs[0].args.fill.price,
+          defaultOrder.limitPrice,
         );
-        expect(filteredLogs[0].args.fill.fee.toString()).to.equal(
-          defaultOrder.limitFee.toSolidity(),
+        expectBaseValueEqual(
+          filteredLogs[0].args.fill.fee,
+          defaultOrder.limitFee,
         );
         expect(filteredLogs[0].args.fill.isNegativeFee).to.equal(false);
       });
@@ -594,7 +598,16 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         const fillPrice = defaultOrder.limitPrice.minus(5);
         const order = await getModifiedOrder({ triggerPrice });
         await ctx.perpetual.testing.oracle.setPrice(triggerPrice);
-        await fillOrder(order, { price: fillPrice });
+        const { txResult } = await fillOrder(order, { price: fillPrice });
+
+        // Check logs.
+        const logs = ctx.perpetual.logs.parseLogs(txResult);
+        const filteredLogs = _.filter(logs, { name: 'LogOrderFilled' });
+        expect(filteredLogs.length).to.equal(1);
+        expectBaseValueEqual(
+          filteredLogs[0].args.triggerPrice,
+          order.triggerPrice,
+        );
       });
 
       it('fills an ask with the oracle price at the trigger price', async () => {
