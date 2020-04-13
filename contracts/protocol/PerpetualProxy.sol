@@ -33,7 +33,7 @@ contract PerpetualProxy is
     AdminUpgradeabilityProxy
 {
     /**
-     * @notice The constructor of the proxy that sets the admin and logic.
+     * @dev The constructor of the proxy that sets the admin and logic.
      * @param logic The address of the contract that implements the underlying logic.
      * @param admin The address of the admin of the proxy.
      * @param data Any data to send immediately to the implementation contract.

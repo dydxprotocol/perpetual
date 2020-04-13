@@ -83,7 +83,7 @@ contract P1Admin is
     /**
      * @notice Sets a new price oracle contract.
      * @dev Can only be called by the Admin of PerpetualV1. Emits the LogSetOracle event.
-     * @param funder The address of the new price oracle contract.
+     * @param oracle The address of the new price oracle contract.
      */
     function setOracle(
         address oracle
@@ -123,7 +123,7 @@ contract P1Admin is
      * @notice Sets a new value for the minimum collateralization percentage.
      * @dev Can only be called by the Admin of PerpetualV1. The supplied value is a number with 18
      * decimal places of precision. Emits the LogSetMinCollateral event.
-     * @param The new value of the minimum acceptable collateralization percentage.
+     * @param minCollateral The new value of the minimum initial collateralization percentage.
      */
     function setMinCollateral(
         uint256 minCollateral

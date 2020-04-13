@@ -31,7 +31,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Orders
  * @author dYdX
  *
- * @notice Contract allowing trading between accounts using cryptographicall signed messages.
+ * @notice Contract allowing trading between accounts using cryptographically signed messages.
  */
 contract P1Orders is
     P1TraderConstants
@@ -184,7 +184,7 @@ contract P1Orders is
      * @param sender The address that called the trade() function on PerpetualV1.
      * @param maker The maker of the order.
      * @param taker The taker of the order.
-     * @param price The current price of the underlying asset.
+     * @param price The current oracle price of the underlying asset.
      * @param data A struct of type TradeData.
      * @return The assets to be traded and traderFlags that indicate that a trade occurred.
      */

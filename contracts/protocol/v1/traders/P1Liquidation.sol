@@ -83,7 +83,7 @@ contract P1Liquidation is
      * @param sender The address that called the trade() function on PerpetualV1.
      * @param maker The account to be liquidated.
      * @param taker The account of the liquidator.
-     * @param price The current price of the underlying asset.
+     * @param price The current oracle price of the underlying asset.
      * @param data A struct of type TradeData.
      * @return The assets to be traded and traderFlags that indicate that a liquidation occurred.
      */

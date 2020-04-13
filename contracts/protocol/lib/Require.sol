@@ -24,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * @title Require
  * @author dYdX
  *
- * @notice Stringifies parameters to pretty-print revert messages.
+ * @dev Stringifies parameters to pretty-print revert messages.
  */
 library Require {
 

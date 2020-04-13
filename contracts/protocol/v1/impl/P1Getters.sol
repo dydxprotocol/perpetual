@@ -142,8 +142,8 @@ contract P1Getters is
 
     /**
      * @notice Gets minimum collateralization ratio of the protocol.
-     * @dev The minimum collateral is returned as a number with a precision of 18 deecimal places.
-     * @return The minimum-acceptable collateralization ratio.
+     * @return The minimum-acceptable collateralization ratio, returned as a fixed-point number with
+     * 18 decimals of precision.
      */
     function getMinCollateral()
         external
@@ -168,7 +168,7 @@ contract P1Getters is
     // ============ Public Getters ============
 
     /**
-     * @norice Gets whether an address has permissions to operate an account.
+     * @notice Gets whether an address has permissions to operate an account.
      * @param account The account to query.
      * @param operator The address to query.
      * @return True if the operator has permission to operate the account.

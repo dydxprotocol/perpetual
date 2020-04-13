@@ -29,13 +29,10 @@ pragma experimental ABIEncoderV2;
 interface I_P1Funder {
 
     /**
-     * @notice Returns the signed funding percentage that has accrued according to the amount of
-     * time that has passed.
-     * @dev The funding percentage is a unitless rate with 18 decimals of precision.
-     * @param timeDelta The number of seeconds that has passed since the previous update.
-     * @return A boolean and an unsigned integer. The boolean is True if the funding rate is
-     * positive (False otherwise) and the unsigned integer is the absolute value of the funding
-     * rate.
+     * @notice Calculates the signed funding amount that has accumulated over a period of time.
+     * @param timeDelta Number of seconds over which to calculate the accumulated funding amount.
+     * @return True if the funding rate is positive, and false otherwise.
+     * @return Funding amount as a unitless rate, as a fixed-point number with 18 decimals.
      */
     function getFunding(
         uint256 timeDelta

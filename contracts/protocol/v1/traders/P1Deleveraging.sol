@@ -105,7 +105,7 @@ contract P1Deleveraging is
      * @param sender The address that called the trade() function on PerpetualV1.
      * @param maker The underwater account.
      * @param taker The offsetting account.
-     * @param price The current price of the underlying asset.
+     * @param price The current oracle price of the underlying asset.
      * @param data A struct of type TradeData.
      * @return The assets to be traded and traderFlags that indicate that a deleverage occurred.
      */
