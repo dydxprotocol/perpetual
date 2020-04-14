@@ -408,6 +408,14 @@ export interface ApiOrder {
   cancelReason: ApiOrderCancelReason;
 }
 
+export interface ApiBalance {
+  margin: BigNumber;
+  position: BigNumber;
+  indexValue: BigNumber;
+  indexTimestamp: BigNumber;
+  cachedMargin: BigNumber;
+}
+
 export interface ApiMarketMessage {
   createdAt: string;
   updatedAt: string;
@@ -422,12 +430,6 @@ export interface ApiAccount {
   owner: string;
   uuid: string;
   balances: {
-    Market: {
-      Margin: BigNumber;
-      position: BigNumber;
-      indexValue: BigNumber;
-      indexTimestamp: string;
-      cachedMargin: BigNumber;
-    };
+    Market: ApiBalance;
   };
 }
