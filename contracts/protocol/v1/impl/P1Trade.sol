@@ -203,13 +203,13 @@ contract P1Trade is
         pure
     {
         for (uint256 i = 0; i < accounts.length; i++) {
-            P1Types.Balance memory finalBalance = currentBalances[i];
-            (uint256 finalPositive, uint256 finalNegative) =
-                finalBalance.getPositiveAndNegativeValue(context.price);
+            P1Types.Balance memory currentBalance = currentBalances[i];
+            (uint256 currentPos, uint256 currentNeg) =
+                currentBalance.getPositiveAndNegativeValue(context.price);
 
             // See P1Settlement._isCollateralized().
             bool isCollateralized =
-                finalPositive.mul(BaseMath.base()) >= finalNegative.mul(context.minCollateral);
+                currentPos.mul(BaseMath.base()) >= currentNeg.mul(context.minCollateral);
 
             if (isCollateralized) {
                 continue;
@@ -217,48 +217,49 @@ contract P1Trade is
 
             address account = accounts[i];
             P1Types.Balance memory initialBalance = initialBalances[i];
-            (uint256 initialPositive, uint256 initialNegative) =
+            (uint256 initialPos, uint256 initialNeg) =
                 initialBalance.getPositiveAndNegativeValue(context.price);
 
             Require.that(
-                finalPositive != 0,
+                currentPos != 0,
                 "account is undercollateralized and has no positive value",
                 account
             );
             Require.that(
-                finalBalance.position <= initialBalance.position,
+                currentBalance.position <= initialBalance.position,
                 "account is undercollateralized and absolute position size increased",
                 account
             );
 
-            // Note that finalBalance.position can't be zero at this point since that would imply
-            // either finalPositive is zero or the account is well-collateralized.
+            // Note that currentBalance.position can't be zero at this point since that would imply
+            // either currentPos is zero or the account is well-collateralized.
 
             Require.that(
-                finalBalance.positionIsPositive == initialBalance.positionIsPositive,
+                currentBalance.positionIsPositive == initialBalance.positionIsPositive,
                 "account is undercollateralized and position changed signs",
                 account
             );
             Require.that(
-                initialNegative != 0,
+                initialNeg != 0,
                 "account is undercollateralized and was not previously",
                 account
             );
 
             // Note that at this point:
-            //   Initial margin/position must be one of -/-, 0/+, -/+, or +/-.
-            //   Final margin/position must now be either -/+ or +/-.
+            //   Absolute position size must have decreased and not changed signs.
+            //   Initial margin/position must be one of -/-, -/+, or +/-.
+            //   Current margin/position must now be either -/+ or +/-.
             //
-            // Which implies one of the following [intial] -> [final] configurations:
-            //        [-/-] -> [+/-]
-            //   [0/+, -/+] -> [-/+]
-            //        [+/-] -> [+/-]
+            // Which implies one of the following [intial] -> [current] configurations:
+            //   [-/-] -> [+/-]
+            //   [-/+] -> [-/+]
+            //   [+/-] -> [+/-]
 
             // Check that collateralization increased
             Require.that(
-                finalBalance.positionIsPositive
-                ? finalNegative.baseMul2(initialPositive) <= initialNegative.baseMul2(finalPositive)
-                : initialPositive.baseMul2(finalNegative) <= finalPositive.baseMul2(initialNegative),
+                currentBalance.positionIsPositive
+                ? currentNeg.baseDivMul(initialPos) <= initialNeg.baseDivMul(currentPos)
+                : initialPos.baseDivMul(currentNeg) <= currentPos.baseDivMul(initialNeg),
                 "account is undercollateralized and collateralization decreased",
                 account
             );

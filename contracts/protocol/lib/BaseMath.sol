@@ -63,7 +63,7 @@ library BaseMath {
      * @dev Multiplies a value by a base value (result rounded down). Intended as an alternaltive to
      * baseMul to prevent overflow when value is known to be divisible by BASE.
      */
-    function baseMul2(
+    function baseDivMul(
         uint256 value,
         uint256 basedValue
     )
