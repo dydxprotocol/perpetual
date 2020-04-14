@@ -217,6 +217,8 @@ contract P1Trade is
 
             address account = accounts[i];
             P1Types.Balance memory initialBalance = initialBalances[i];
+            (uint256 initialPositive, uint256 initialNegative) =
+                initialBalance.getPositiveAndNegativeValue(context.price);
 
             Require.that(
                 finalPositive != 0,
@@ -238,25 +240,25 @@ contract P1Trade is
                 account
             );
             Require.that(
-                !initialBalance.marginIsPositive || !initialBalance.positionIsPositive,
+                initialNegative != 0,
                 "account is undercollateralized and was not previously",
                 account
             );
 
             // Note that at this point:
-            //   Initial margin/position must be one of 0/+, -/+, or +/-.
+            //   Initial margin/position must be one of -/-, 0/+, -/+, or +/-.
             //   Final margin/position must now be either -/+ or +/-.
             //
             // Which implies one of the following [intial] -> [final] configurations:
+            //        [-/-] -> [+/-]
             //   [0/+, -/+] -> [-/+]
             //        [+/-] -> [+/-]
 
-            uint256 finalBalanceInitialMargin = finalBalance.position.mul(initialBalance.margin);
-            uint256 finalMarginInitialBalance = finalBalance.margin.mul(initialBalance.position);
-
+            // Check that collateralization increased
             Require.that(
-                (finalBalanceInitialMargin == finalMarginInitialBalance) ||
-                    (finalBalanceInitialMargin > finalMarginInitialBalance == finalBalance.positionIsPositive),
+                finalBalance.positionIsPositive
+                ? finalNegative.baseMul2(initialPositive) <= initialNegative.baseMul2(finalPositive)
+                : initialPositive.baseMul2(finalNegative) <= finalPositive.baseMul2(initialNegative),
                 "account is undercollateralized and collateralization decreased",
                 account
             );
