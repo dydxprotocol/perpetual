@@ -44,6 +44,7 @@ import p1MakerOracleJson from '../../build/contracts/P1MakerOracle.json';
 import p1OrdersJson from '../../build/contracts/P1Orders.json';
 import p1DeleveragingJson from '../../build/contracts/P1Deleveraging.json';
 import p1LiquidationJson from '../../build/contracts/P1Liquidation.json';
+import erc20Json from '../../build/contracts/ERC20.json';
 
 enum OUTCOMES {
   INITIAL = 0,
@@ -78,6 +79,7 @@ export class Contracts {
   public p1Orders: Contract;
   public p1Deleveraging: Contract;
   public p1Liquidation: Contract;
+  public erc20: Contract;
 
   constructor(
     provider: Provider,
@@ -103,6 +105,7 @@ export class Contracts {
     this.p1Orders = this.addContract(p1OrdersJson);
     this.p1Deleveraging = this.addContract(p1DeleveragingJson);
     this.p1Liquidation = this.addContract(p1LiquidationJson);
+    this.erc20 = this.addContract(erc20Json);
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);

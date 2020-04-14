@@ -31,86 +31,95 @@ import {
 
 export class Token {
   protected contracts: Contracts;
-  protected token: Contract;
+  private tokens: {[address: string]: Contract};
 
   constructor(
     contracts: Contracts,
-    token: Contract,
   ) {
     this.contracts = contracts;
-    this.token = token;
-  }
-
-  public get address(): string {
-    return this.token.options.address;
+    this.tokens = {};
   }
 
   public async getAllowance(
+    tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
+    const token = this.getToken(tokenAddress);
     const allowance: string = await this.contracts.call(
-      this.token.methods.allowance(ownerAddress, spenderAddress),
+      token.methods.allowance(ownerAddress, spenderAddress),
       options,
     );
     return new BigNumber(allowance);
   }
 
   public async getBalance(
+    tokenAddress: address,
     ownerAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
+    const token = this.getToken(tokenAddress);
     const balance: string = await this.contracts.call(
-      this.token.methods.balanceOf(ownerAddress),
+      token.methods.balanceOf(ownerAddress),
       options,
     );
     return new BigNumber(balance);
   }
 
   public async getTotalSupply(
+    tokenAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
+    const token = this.getToken(tokenAddress);
     const supply: string = await this.contracts.call(
-      this.token.methods.totalSupply(),
+      token.methods.totalSupply(),
       options,
     );
     return new BigNumber(supply);
   }
 
   public async getName(
+    tokenAddress: address,
     options?: CallOptions,
   ): Promise<string> {
+    const token = this.getToken(tokenAddress);
     return this.contracts.call(
-      this.token.methods.name(),
+      token.methods.name(),
       options,
     );
   }
 
   public async getSymbol(
+    tokenAddress: address,
     options?: CallOptions,
   ): Promise<string> {
+    const token = this.getToken(tokenAddress);
     return this.contracts.call(
-      this.token.methods.symbol(),
+      token.methods.symbol(),
       options,
     );
   }
 
   public async getDecimals(
+    tokenAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
+    const token = this.getToken(tokenAddress);
     const decimals: string = await this.contracts.call(
-      this.token.methods.decimals(),
+      token.methods.decimals(),
       options,
     );
     return new BigNumber(decimals);
   }
 
   public async getPerpetualAllowance(
+    tokenAddress: address,
     ownerAddress: address,
     options?: CallOptions,
   ): Promise<BigNumber> {
     return this.getAllowance(
+      tokenAddress,
       ownerAddress,
       this.contracts.perpetualV1.options.address,
       options,
@@ -118,13 +127,15 @@ export class Token {
   }
 
   public async setAllowance(
+    tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
     amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
+    const token = this.getToken(tokenAddress);
     return this.contracts.send(
-      this.token.methods.approve(
+      token.methods.approve(
         spenderAddress,
         new BigNumber(amount).toFixed(0),
       ),
@@ -133,11 +144,13 @@ export class Token {
   }
 
   public async setPerpetualAllowance(
+    tokenAddress: address,
     ownerAddress: address,
     amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
+      tokenAddress,
       ownerAddress,
       this.contracts.perpetualV1.options.address,
       amount,
@@ -146,11 +159,13 @@ export class Token {
   }
 
   public async setMaximumAllowance(
+    tokenAddress: address,
     ownerAddress: address,
     spenderAddress: address,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
+      tokenAddress,
       ownerAddress,
       spenderAddress,
       INTEGERS.ONES_255,
@@ -159,10 +174,12 @@ export class Token {
   }
 
   public async setMaximumPerpetualAllowance(
+    tokenAddress: address,
     ownerAddress: address,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
+      tokenAddress,
       ownerAddress,
       this.contracts.perpetualV1.options.address,
       INTEGERS.ONES_255,
@@ -171,10 +188,12 @@ export class Token {
   }
 
   public async unsetPerpetualAllowance(
+    tokenAddress: address,
     ownerAddress: address,
     options: SendOptions = {},
   ): Promise<TxResult> {
     return this.setAllowance(
+      tokenAddress,
       ownerAddress,
       this.contracts.perpetualV1.options.address,
       INTEGERS.ZERO,
@@ -183,13 +202,15 @@ export class Token {
   }
 
   public async transfer(
+    tokenAddress: address,
     fromAddress: address,
     toAddress: address,
     amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
+    const token = this.getToken(tokenAddress);
     return this.contracts.send(
-      this.token.methods.transfer(
+      token.methods.transfer(
         toAddress,
         new BigNumber(amount).toFixed(0),
       ),
@@ -198,19 +219,43 @@ export class Token {
   }
 
   public async transferFrom(
+    tokenAddress: address,
     fromAddress: address,
     toAddress: address,
     senderAddress: address,
     amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
+    const token = this.getToken(tokenAddress);
     return this.contracts.send(
-      this.token.methods.transferFrom(
+      token.methods.transferFrom(
         fromAddress,
         toAddress,
         new BigNumber(amount).toFixed(0),
       ),
       { ...options, from: senderAddress },
     );
+  }
+
+  // ============ Helper Functions ============
+
+  protected getToken(
+    tokenAddress: string,
+  ): Contract {
+    if (this.tokens[tokenAddress]) {
+      return this.tokens[tokenAddress];
+    }
+
+    const token: Contract = this.tokenContract();
+    const contract: Contract = token.clone();
+    contract.options.address = tokenAddress;
+
+    this.tokens[tokenAddress] = contract;
+
+    return contract;
+  }
+
+  protected tokenContract(): Contract {
+    return this.contracts.erc20;
   }
 }
