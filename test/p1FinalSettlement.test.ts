@@ -357,6 +357,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
    * Enable final settlement at a certain price.
    */
   async function enableSettlement(settlementPrice: Price): Promise<TxResult> {
+    await mineAvgBlock();
     await ctx.perpetual.testing.oracle.setPrice(settlementPrice);
     const txResult = ctx.perpetual.admin.enableFinalSettlement(
       settlementPrice,
