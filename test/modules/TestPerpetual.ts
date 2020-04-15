@@ -2,6 +2,7 @@ import {
   Networks,
   PerpetualOptions,
   Provider,
+  SendOptions,
 } from '../../src/lib/types';
 import { Contracts } from '../../src/modules/Contracts';
 import { Perpetual } from '../../src/Perpetual';
@@ -32,7 +33,13 @@ export class TestPerpetual extends Perpetual {
   protected getContracts(
     provider: Provider,
     networkId: number,
+    sendOptions?: SendOptions,
   ): Contracts {
-    return new TestContracts(provider, networkId, this.web3);
+    return new TestContracts(
+      provider,
+      networkId,
+      this.web3,
+      sendOptions,
+    );
   }
 }
