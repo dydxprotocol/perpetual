@@ -255,11 +255,16 @@ contract P1Trade is
             //   [-/+] -> [-/+]
             //   [+/-] -> [+/-]
 
-            // Check that collateralization increased
+            // Check that collateralization increased.
+            // In the case of [-/-] initial, initialPos == 0 so the following will pass. Otherwise:
+            // at this point, either initialNeg and currentNeg represent the margin values, or
+            // initialPos and currentPos do. Since the margin is multiplied by the base value in
+            // getPositiveAndNegativeValue(), it is safe to use baseDivMul() to divide the margin
+            // without any rounding. This is important to avoid the possibility of overflow.
             Require.that(
                 currentBalance.positionIsPositive
-                ? currentNeg.baseDivMul(initialPos) <= initialNeg.baseDivMul(currentPos)
-                : initialPos.baseDivMul(currentNeg) <= currentPos.baseDivMul(initialNeg),
+                    ? currentNeg.baseDivMul(initialPos) <= initialNeg.baseDivMul(currentPos)
+                    : initialPos.baseDivMul(currentNeg) <= currentPos.baseDivMul(initialNeg),
                 "account is undercollateralized and collateralization decreased",
                 account
             );
