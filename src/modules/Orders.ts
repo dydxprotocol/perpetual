@@ -149,19 +149,30 @@ export class Orders {
    *
    * Returns the ending collateralization ratio for the account, or BigNumber(Infinity) if the
    * account does not end with any negative balances.
+   *
+   * @param initialBalance  The initial margin and position balances of the maker account.
+   * @param oraclePrice     The price at which to calculate collateralization.
+   * @param orders          A sequence of orders, with the same maker, to be hypothetically filled.
+   * @param fillAmounts     The corresponding fill amount for each order, denominated in the token
+   *                        spent by the maker--quote currency when buying, and base when selling.
    */
   public getAccountCollateralizationAfterMakingOrders(
     initialBalance: Balance,
     oraclePrice: Price,
     orders: Order[],
-    fillAmounts: BigNumber[],
+    makerTokenFillAmounts: BigNumber[],
   ): BigNumber {
     const runningBalance: Balance = initialBalance.copy();
 
     // For each order, determine the effect on the balance by following the math in P1Orders.sol.
     for (let i = 0; i < orders.length; i += 1) {
       const order = orders[i];
-      const fillAmount = fillAmounts[i];
+      let positionFillAmount;
+      if (order.isBuy) {
+        positionFillAmount = makerTokenFillAmounts[i].dividedBy(order.limitPrice.value);
+      } else {
+        positionFillAmount = makerTokenFillAmounts[i];
+      }
 
       // Assume orders are filled at the limit price and limit fee.
       // Order fee is denoted as a percentage of execution price.
@@ -170,14 +181,14 @@ export class Orders {
         ? order.limitPrice.plus(fee.value)
         : order.limitPrice.minus(fee.value);
 
-      const marginAmount: BigNumber = fillAmount.times(marginPerPosition.value);
+      const marginAmount: BigNumber = positionFillAmount.times(marginPerPosition.value);
 
       if (order.isBuy) {
         runningBalance.margin = runningBalance.margin.minus(marginAmount);
-        runningBalance.position = runningBalance.position.plus(fillAmount);
+        runningBalance.position = runningBalance.position.plus(positionFillAmount);
       } else {
         runningBalance.margin = runningBalance.margin.plus(marginAmount);
-        runningBalance.position = runningBalance.position.minus(fillAmount);
+        runningBalance.position = runningBalance.position.minus(positionFillAmount);
       }
     }
 
