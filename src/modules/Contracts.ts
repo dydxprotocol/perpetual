@@ -108,7 +108,7 @@ export class Contracts {
     this.p1Orders = this.addContract(p1OrdersJson);
     this.p1Deleveraging = this.addContract(p1DeleveragingJson);
     this.p1Liquidation = this.addContract(p1LiquidationJson);
-    this.erc20 = this.addContract(erc20Json);
+    this.erc20 = this.addContract(erc20Json, true);
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
