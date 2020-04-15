@@ -35,7 +35,7 @@ library BaseMath {
     uint256 constant internal BASE = 10 ** 18;
 
     /**
-     * Getter since constants can't be gotten directly from libraries.
+     * @dev Getter since constants can't be gotten directly from libraries.
      */
     function base()
         internal
@@ -46,7 +46,7 @@ library BaseMath {
     }
 
     /**
-     * Multiplies a value by a base value (result rounded down)
+     * @dev Multiplies a value by a base value (result rounded down)
      */
     function baseMul(
         uint256 value,
@@ -60,7 +60,22 @@ library BaseMath {
     }
 
     /**
-     * Multiplies a value by a base value (result rounded up).
+     * @dev Multiplies a value by a base value (result rounded down). Intended as an alternaltive to
+     * baseMul to prevent overflow when value is known to be divisible by BASE.
+     */
+    function baseDivMul(
+        uint256 value,
+        uint256 basedValue
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return value.div(BASE).mul(basedValue);
+    }
+
+    /**
+     * @dev Multiplies a value by a base value (result rounded up).
      */
     function baseMulRoundUp(
         uint256 value,
