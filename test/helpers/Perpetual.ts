@@ -10,6 +10,7 @@ let accounts: address[];
 export const perpetual = new TestPerpetual(
   provider,
   Number(process.env.NETWORK_ID),
+  { sendOptions: { gas: 4000000 } },
 );
 
 export async function getPerpetual(

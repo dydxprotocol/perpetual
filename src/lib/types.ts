@@ -72,6 +72,19 @@ export const Networks = {
   KOVAN: 42,
 };
 
+// ============ Initialization Options ============
+
+export interface PerpetualOptions {
+  defaultAccount?: address;
+  sendOptions?: SendOptions;
+  apiOptions?: ApiOptions;
+}
+
+export interface ApiOptions {
+  endpoint?: string;
+  timeout?: number;
+}
+
 // ============ Interfaces ============
 
 export interface EthereumAccount {

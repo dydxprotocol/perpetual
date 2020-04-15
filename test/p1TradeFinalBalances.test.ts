@@ -9,9 +9,6 @@ import { INTEGERS } from '../src/lib/Constants';
 import { BigNumberable, Price, TxResult, address, TradeArg } from '../src/lib/types';
 import { TRADER_FLAG_RESULT_2 } from './modules/TestP1Trader';
 
-// Use a large gas value. Had “out of gas” errors with some expectFailure() calls.
-const TX_OPTIONS = { gas: 4000000 };
-
 const MIN_COLLATERAL = new BigNumber('1.1');
 
 let ERROR_NO_POSITIVE_VALUE = 'account is undercollateralized and has no positive value';
@@ -356,24 +353,18 @@ perpetualDescribe('P1Trade._verifyAccountsFinalBalances()', init, (ctx: ITestCon
     const marginDiff = new BigNumber(finalMargin).minus(margin);
     const positionDiff = new BigNumber(finalPosition).minus(position);
     await Promise.all([
-      ctx.perpetual.testing.trader.setTradeResult(
-        {
-          isBuy: marginDiff.isNegative(),
-          marginAmount: marginDiff.abs(),
-          positionAmount: INTEGERS.ZERO,
-          traderFlags: TRADER_FLAG_RESULT_2,
-        },
-        TX_OPTIONS,
-      ),
-      ctx.perpetual.testing.trader.setSecondTradeResult(
-        {
-          isBuy: positionDiff.isPositive(),
-          marginAmount: INTEGERS.ZERO,
-          positionAmount: positionDiff.abs(),
-          traderFlags: TRADER_FLAG_RESULT_2,
-        },
-        TX_OPTIONS,
-      ),
+      ctx.perpetual.testing.trader.setTradeResult({
+        isBuy: marginDiff.isNegative(),
+        marginAmount: marginDiff.abs(),
+        positionAmount: INTEGERS.ZERO,
+        traderFlags: TRADER_FLAG_RESULT_2,
+      }),
+      ctx.perpetual.testing.trader.setSecondTradeResult({
+        isBuy: positionDiff.isPositive(),
+        marginAmount: INTEGERS.ZERO,
+        positionAmount: positionDiff.abs(),
+        traderFlags: TRADER_FLAG_RESULT_2,
+      }),
     ]);
     const accounts = _.chain([maker, riskyAccount]).map(_.toLower).sort().sortedUniq().value();
     const args: TradeArg = {
@@ -382,6 +373,6 @@ perpetualDescribe('P1Trade._verifyAccountsFinalBalances()', init, (ctx: ITestCon
       trader: ctx.perpetual.testing.trader.address,
       data: '0x00',
     };
-    return ctx.perpetual.trade.trade(accounts, [args, args], TX_OPTIONS);
+    return ctx.perpetual.trade.trade(accounts, [args, args]);
   }
 });
