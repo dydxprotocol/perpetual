@@ -27,7 +27,7 @@ import { ERC20Detailed } from "@openzeppelin/contracts/token/ERC20/ERC20Detailed
  * @title Test_Token
  * @author dYdX
  *
- * ERC20 token for testing
+ * @notice ERC-20 token for testing
  */
 /* solium-disable-next-line camelcase */
 contract Test_Token is

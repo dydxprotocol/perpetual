@@ -35,7 +35,7 @@ import { P1Types } from "../protocol/v1/lib/P1Types.sol";
  * @title Test_Lib
  * @author dYdX
  *
- * Exposes library functions for testing.
+ * @notice Exposes library functions for testing.
  */
 /* solium-disable-next-line camelcase */
 contract Test_Lib is

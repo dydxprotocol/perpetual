@@ -26,7 +26,7 @@ import { I_P1Funder } from "../../protocol/v1/intf/I_P1Funder.sol";
  * @title Test_P1Funder
  * @author dYdX
  *
- * P1Funder for testing
+ * @notice I_P1Funder implementation for testing.
  */
 /* solium-disable-next-line camelcase */
 contract Test_P1Funder is

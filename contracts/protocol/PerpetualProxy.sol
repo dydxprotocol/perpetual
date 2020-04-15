@@ -34,9 +34,10 @@ contract PerpetualProxy is
 {
     /**
      * @dev The constructor of the proxy that sets the admin and logic.
-     * @param logic The address of the contract that implements the underlying logic.
-     * @param admin The address of the admin of the proxy.
-     * @param data Any data to send immediately to the implementation contract.
+     *
+     * @param  logic  The address of the contract that implements the underlying logic.
+     * @param  admin  The address of the admin of the proxy.
+     * @param  data   Any data to send immediately to the implementation contract.
      */
     constructor(
         address logic,
@@ -53,7 +54,7 @@ contract PerpetualProxy is
 
     /**
      * @dev Overrides the default functionality that prevents the admin from reaching the
-     * implementation contract.
+     *  implementation contract.
      */
     function _willFallback()
         internal

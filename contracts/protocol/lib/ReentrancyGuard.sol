@@ -24,7 +24,7 @@ pragma experimental ABIEncoderV2;
  * @title ReentrancyGuard
  * @author dYdX
  *
- * Updated ReentrancyGuard library designed to be used with Proxy Contracts.
+ * @dev Updated ReentrancyGuard library designed to be used with Proxy Contracts.
  */
 contract ReentrancyGuard {
     uint256 private constant NOT_ENTERED = 1;

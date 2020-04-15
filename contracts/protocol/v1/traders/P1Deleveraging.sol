@@ -102,12 +102,13 @@ contract P1Deleveraging is
      * other account with an offsetting position (a position of opposite sign). The sender must be
      * the owner account unless the account has been marked as underwater for a timelock period.
      * @dev Emits the LogDeleveraged event. May emit the LogUnmarkedForDeleveraging event.
-     * @param sender The address that called the trade() function on PerpetualV1.
-     * @param maker The underwater account.
-     * @param taker The offsetting account.
-     * @param price The current oracle price of the underlying asset.
-     * @param data A struct of type TradeData.
-     * @return The assets to be traded and traderFlags that indicate that a deleverage occurred.
+     *
+     * @param  sender  The address that called the trade() function on PerpetualV1.
+     * @param  maker   The underwater account.
+     * @param  taker   The offsetting account.
+     * @param  price   The current oracle price of the underlying asset.
+     * @param  data    A struct of type TradeData.
+     * @return         The assets to be traded and traderFlags that indicate that a deleverage occurred.
      */
     function trade(
         address sender,
@@ -183,9 +184,10 @@ contract P1Deleveraging is
 
     /**
      * @notice Mark an account as underwater. An account must be marked for a period of time before
-     * any non-admin is allowed to deleverage that account.
+     *  any non-admin is allowed to deleverage that account.
      * @dev Emits the LogMarkedForDeleveraging event.
-     * @param account The account to mark.
+     *
+     * @param  account  The account to mark.
      */
     function mark(
         address account
@@ -201,9 +203,10 @@ contract P1Deleveraging is
     }
 
     /**
-     * @notice Un-mark an account as underwater if it no longer is.
+     * @notice Un-mark an account which is no longer underwater.
      * @dev Emits the LogUnmarkedForDeleveraging event.
-     * @param account The account to unmark.
+     *
+     * @param  account  The account to unmark.
      */
     function unmark(
         address account

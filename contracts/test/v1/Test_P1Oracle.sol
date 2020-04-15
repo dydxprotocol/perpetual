@@ -26,7 +26,7 @@ import { I_P1Oracle } from "../../protocol/v1/intf/I_P1Oracle.sol";
  * @title Test_P1Oracle
  * @author dYdX
  *
- * P1Oracle for testing
+ * @notice I_P1Oracle implementation for testing.
  */
 /* solium-disable-next-line camelcase */
 contract Test_P1Oracle is

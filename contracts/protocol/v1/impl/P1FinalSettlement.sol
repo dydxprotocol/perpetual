@@ -33,7 +33,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1FinalSettlement
  * @author dYdX
  *
- * @notice Contract for withdrawing during final settlement.
+ * @notice Functions regulating the smart contract's behavior during final settlement.
  */
 contract P1FinalSettlement is
     P1Settlement
@@ -76,7 +76,7 @@ contract P1FinalSettlement is
 
     /**
      * @notice Withdraw the number of margin tokens equal to the value of the account at the time
-     * that final settlement occurred.
+     *  that final settlement occurred.
      * @dev Emits the LogAccountSettled and LogWithdrawFinalSettlement events.
      */
     function withdrawFinalSettlement()
