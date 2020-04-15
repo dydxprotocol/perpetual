@@ -1,5 +1,6 @@
 import {
   Networks,
+  PerpetualOptions,
   Provider,
 } from '../../src/lib/types';
 import { Contracts } from '../../src/modules/Contracts';
@@ -13,9 +14,10 @@ export class TestPerpetual extends Perpetual {
 
   constructor(
     provider: Provider,
-    networkId: number = Networks.MAINNET,
+    networkId: number,
+    options: PerpetualOptions = {},
   ) {
-    super(provider, networkId);
+    super(provider, networkId, options);
     this.testing = new Testing(provider, this.contracts);
   }
 

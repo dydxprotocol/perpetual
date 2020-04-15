@@ -33,6 +33,7 @@ import {
   ConfirmationType,
   Provider,
   SendOptions,
+  TxOptions,
   TxResult,
 } from '../lib/types';
 
@@ -85,6 +86,7 @@ export class Contracts {
     provider: Provider,
     networkId: number,
     web3: Web3,
+    sendOptions: SendOptions = {},
   ) {
     this.web3 = web3;
     this.defaultOptions = {
@@ -95,6 +97,7 @@ export class Contracts {
       confirmations: 0,
       confirmationType: ConfirmationType.Confirmed,
       gasMultiplier: 1.5,
+      ...sendOptions,
     };
 
     // Contracts
@@ -171,13 +174,14 @@ export class Contracts {
     method: ContractSendMethod,
     specificOptions: SendOptions = {},
   ): Promise<any> {
-    const txOptions = {
+    const sendOptions: SendOptions = {
       ...this.defaultOptions,
       ...specificOptions,
     };
-    const result = await this._send(method, txOptions);
-    if (txOptions.confirmationType === ConfirmationType.Confirmed ||
-        txOptions.confirmationType === ConfirmationType.Both) {
+
+    const result = await this._send(method, sendOptions);
+    if (sendOptions.confirmationType === ConfirmationType.Confirmed ||
+        sendOptions.confirmationType === ConfirmationType.Both) {
 
       // Count gas used.
       const contract: Contract = (method as any)._parent;
@@ -219,17 +223,25 @@ export class Contracts {
 
   private async _send( // tslint:disable-line:function-name
     method: ContractSendMethod,
-    txOptions: SendOptions = {},
+    sendOptions: SendOptions = {},
   ): Promise<any> {
-    if (!Object.values(ConfirmationType).includes(txOptions.confirmationType)) {
-      throw new Error(`Invalid confirmation type: ${txOptions.confirmationType}`);
+    const {
+      confirmations,
+      confirmationType,
+      gasMultiplier,
+      ...remainingOptions
+    } = sendOptions;
+    const txOptions = remainingOptions as TxOptions;
+
+    if (!Object.values(ConfirmationType).includes(confirmationType)) {
+      throw new Error(`Invalid confirmation type: ${confirmationType}`);
     }
 
-    if (txOptions.confirmationType === ConfirmationType.Simulate || !txOptions.gas) {
+    if (confirmationType === ConfirmationType.Simulate || !txOptions.gas) {
       const gasEstimate = await this.estimateGas(method, txOptions);
-      txOptions.gas = Math.floor(gasEstimate * txOptions.gasMultiplier);
+      txOptions.gas = Math.floor(gasEstimate * gasMultiplier);
 
-      if (txOptions.confirmationType === ConfirmationType.Simulate) {
+      if (confirmationType === ConfirmationType.Simulate) {
         return {
           gasEstimate,
           gas: txOptions.gas,
@@ -246,10 +258,10 @@ export class Contracts {
     let hashPromise: Promise<string>;
     let confirmationPromise: Promise<TransactionReceipt>;
 
-    if (
-      txOptions.confirmationType === ConfirmationType.Hash
-      || txOptions.confirmationType === ConfirmationType.Both
-    ) {
+    if ([
+      ConfirmationType.Hash,
+      ConfirmationType.Both,
+    ].includes(confirmationType)) {
       hashPromise = new Promise(
         (resolve, reject) => {
           promi.on('error', (error: Error) => {
@@ -264,7 +276,7 @@ export class Contracts {
             if (hashOutcome === OUTCOMES.INITIAL) {
               hashOutcome = OUTCOMES.RESOLVED;
               resolve(txHash);
-              if (txOptions.confirmationType !== ConfirmationType.Both) {
+              if (confirmationType !== ConfirmationType.Both) {
                 (promi as any).off();
               }
             }
@@ -274,17 +286,17 @@ export class Contracts {
       transactionHash = await hashPromise;
     }
 
-    if (
-      txOptions.confirmationType === ConfirmationType.Confirmed
-      || txOptions.confirmationType === ConfirmationType.Both
-    ) {
+    if ([
+      ConfirmationType.Confirmed,
+      ConfirmationType.Both,
+    ].includes(confirmationType)) {
       confirmationPromise = new Promise(
         (resolve, reject) => {
           promi.on('error', (error: Error) => {
             if (
               confirmationOutcome === OUTCOMES.INITIAL
               && (
-                txOptions.confirmationType === ConfirmationType.Confirmed
+                confirmationType === ConfirmationType.Confirmed
                 || hashOutcome === OUTCOMES.RESOLVED
               )
             ) {
@@ -294,9 +306,9 @@ export class Contracts {
             }
           });
 
-          if (txOptions.confirmations) {
+          if (confirmations) {
             promi.on('confirmation', (confNumber: number, receipt: TransactionReceipt) => {
-              if (confNumber >= txOptions.confirmations) {
+              if (confNumber >= confirmations) {
                 if (confirmationOutcome === OUTCOMES.INITIAL) {
                   confirmationOutcome = OUTCOMES.RESOLVED;
                   resolve(receipt);
@@ -315,11 +327,11 @@ export class Contracts {
       );
     }
 
-    if (txOptions.confirmationType === ConfirmationType.Hash) {
+    if (confirmationType === ConfirmationType.Hash) {
       return { transactionHash };
     }
 
-    if (txOptions.confirmationType === ConfirmationType.Confirmed) {
+    if (confirmationType === ConfirmationType.Confirmed) {
       return confirmationPromise;
     }
 

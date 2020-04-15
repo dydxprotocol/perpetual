@@ -21,6 +21,8 @@ import {
   address,
   Networks,
   Provider,
+  PerpetualOptions,
+  SendOptions,
 } from './lib/types';
 import { Contracts } from './modules/Contracts';
 import { Logs } from './modules/Logs';
@@ -37,6 +39,7 @@ import { Operator } from './modules/Operator';
 import { Orders } from './modules/Orders';
 import { Token } from './modules/Token';
 import { Trade } from './modules/Trade';
+import { Api } from './modules/Api';
 
 export class Perpetual {
   public web3: Web3;
@@ -55,13 +58,15 @@ export class Perpetual {
   public orders: Orders;
   public token: Token;
   public trade: Trade;
+  public api: Api;
 
   constructor(
     provider: Provider,
     networkId: number = Networks.MAINNET,
+    options: PerpetualOptions = {},
   ) {
     this.web3 = new Web3(provider);
-    this.contracts = this.getContracts(provider, networkId);
+    this.contracts = this.getContracts(provider, networkId, options.sendOptions);
     this.proxy = new Proxy(this.contracts);
     this.admin = new Admin(this.contracts);
     this.deleveraging = new Deleveraging(this.contracts);
@@ -76,6 +81,7 @@ export class Perpetual {
     this.orders = new Orders(this.contracts, this.web3, networkId);
     this.token = new Token(this.contracts);
     this.trade = new Trade(this.contracts, this.orders);
+    this.api = new Api(this.orders, options.apiOptions);
   }
 
   public setProvider(
@@ -89,8 +95,14 @@ export class Perpetual {
   protected getContracts(
     provider: Provider,
     networkId: number,
+    sendOptions?: SendOptions,
   ): Contracts {
-    return new Contracts(provider, networkId, this.web3);
+    return new Contracts(
+      provider,
+      networkId,
+      this.web3,
+      sendOptions,
+    );
   }
 
   public setDefaultAccount(

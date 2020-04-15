@@ -13,6 +13,7 @@ import {
   ApiSide,
   ApiMarketMessage,
   ApiAccount,
+  ApiOptions,
 } from '../lib/types';
 import { Orders } from './Orders';
 
@@ -27,12 +28,11 @@ export class Api {
 
   constructor(
     perpetualOrders: Orders,
-    endpoint: string = DEFAULT_API_ENDPOINT,
-    timeout: number = DEFAULT_API_TIMEOUT,
+    apiOptions: ApiOptions = {},
   ) {
-    this.endpoint = endpoint;
+    this.endpoint = apiOptions.endpoint || DEFAULT_API_ENDPOINT;
+    this.timeout = apiOptions.timeout || DEFAULT_API_TIMEOUT;
     this.perpetualOrders = perpetualOrders;
-    this.timeout = timeout;
   }
 
   public async placePerpetualOrder({
