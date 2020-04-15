@@ -107,6 +107,23 @@ function getOracleAdjustment(network) {
   throw new Error('Cannot find oracle adjustment');
 }
 
+function getTokenAddress(network) {
+  if (isMainnet(network)) {
+    return '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'; // USDC
+  }
+  if (isKovan(network)) {
+    return '0x0000000000000000000000000000000000000000'; // null
+  }
+  throw new Error('Cannot find token address');
+}
+
+function getMinCollateralization(network) {
+  if (isMainnet(network) || isKovan(network)) {
+    return '107500000000000000'; // 107.5%
+  }
+  throw new Error('Cannot find minimum collateralization');
+}
+
 module.exports = {
   getChainId,
   isDevNetwork,
@@ -114,4 +131,6 @@ module.exports = {
   getMakerPriceOracleAddress,
   getDeployerAddress,
   getOracleAdjustment,
+  getTokenAddress,
+  getMinCollateralization,
 };

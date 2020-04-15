@@ -22,6 +22,8 @@ const {
   getMakerPriceOracleAddress,
   getDeployerAddress,
   getOracleAdjustment,
+  getTokenAddress,
+  getMinCollateralization,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -30,7 +32,7 @@ const {
 const PerpetualProxy = artifacts.require('PerpetualProxy');
 const PerpetualV1 = artifacts.require('PerpetualV1');
 
-// Oracles
+// Funding Oracles
 const P1FundingOracle = artifacts.require('P1FundingOracle');
 
 // Traders
@@ -60,6 +62,7 @@ const migration = async (deployer, network, accounts) => {
 
   await deployOracles(deployer, network);
   await deployTraders(deployer, network);
+  await initializeIfLive(deployer, network);
 };
 
 module.exports = migration;
@@ -131,5 +134,17 @@ async function deployTraders(deployer, network) {
   ]);
   if (isDevNetwork(network)) {
     await perpetual.setGlobalOperator(TestP1Trader.address, true);
+  }
+}
+
+async function initializeIfLive(deployer, network) {
+  if (!isDevNetwork(network)) {
+    const perpetual = await PerpetualV1.at(PerpetualProxy.address);
+    await perpetual.initializeV1(
+      getTokenAddress(network),
+      P1MakerOracle.address,
+      P1FundingOracle.address,
+      getMinCollateralization(network),
+    );
   }
 }
