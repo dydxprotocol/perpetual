@@ -41,7 +41,7 @@ library SignedMath {
     // ============ Functions ============
 
     /**
-     * Returns a new signed integer equal to a signed integer plus an unsigned integer.
+     * @dev Returns a new signed integer equal to a signed integer plus an unsigned integer.
      */
     function add(
         Int memory sint,
@@ -70,7 +70,7 @@ library SignedMath {
     }
 
     /**
-     * Returns a new signed integer equal to a signed integer minus an unsigned integer.
+     * @dev Returns a new signed integer equal to a signed integer minus an unsigned integer.
      */
     function sub(
         Int memory sint,
@@ -99,7 +99,7 @@ library SignedMath {
     }
 
     /**
-     * Returns true if signed integer a is greater than signed integer b, and false otherwise.
+     * @dev Returns true if signed integer `a` is greater than signed integer `b`, false otherwise.
      */
     function gt(
         Int memory a,
@@ -126,7 +126,7 @@ library SignedMath {
     }
 
     /**
-     * Returns the minimum between signed integers a and b.
+     * @dev Returns the minimum of signed integers `a` and `b`.
      */
     function min(
         Int memory a,
@@ -140,7 +140,7 @@ library SignedMath {
     }
 
     /**
-     * Returns the maximum between signed integers a and b.
+     * @dev Returns the maximum of signed integers `a` and `b`.
      */
     function max(
         Int memory a,

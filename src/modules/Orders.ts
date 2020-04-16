@@ -150,11 +150,11 @@ export class Orders {
    * Returns the ending collateralization ratio for the account, or BigNumber(Infinity) if the
    * account does not end with any negative balances.
    *
-   * @param initialBalance  The initial margin and position balances of the maker account.
-   * @param oraclePrice     The price at which to calculate collateralization.
-   * @param orders          A sequence of orders, with the same maker, to be hypothetically filled.
-   * @param fillAmounts     The corresponding fill amount for each order, denominated in the token
-   *                        spent by the maker--quote currency when buying, and base when selling.
+   * @param  initialBalance  The initial margin and position balances of the maker account.
+   * @param  oraclePrice     The price at which to calculate collateralization.
+   * @param  orders          A sequence of orders, with the same maker, to be hypothetically filled.
+   * @param  fillAmounts     The corresponding fill amount for each order, denominated in the token
+   *                         spent by the maker--quote currency when buying, and base when selling.
    */
   public getAccountCollateralizationAfterMakingOrders(
     initialBalance: Balance,

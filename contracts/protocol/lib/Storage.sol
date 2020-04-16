@@ -29,7 +29,7 @@ pragma experimental ABIEncoderV2;
 library Storage {
 
     /**
-     * SLOADs and returns the data in the slot.
+     * @dev Performs an SLOAD and returns the data in the slot.
      */
     function load(
         bytes32 slot
@@ -47,7 +47,7 @@ library Storage {
     }
 
     /**
-     * SSTOREs the value to the slot.
+     * @dev Performs an SSTORE to save the value to the slot.
      */
     function store(
         bytes32 slot,

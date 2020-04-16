@@ -47,7 +47,7 @@ library P1BalanceMath {
     // ============ Functions ============
 
     /**
-     * Create a copy of the balance struct
+     * @dev Create a copy of the balance struct.
      */
     function copy(
         P1Types.Balance memory balance
@@ -65,7 +65,7 @@ library P1BalanceMath {
     }
 
     /**
-     * In-place add amount to balance.margin
+     * @dev In-place add amount to balance.margin.
      */
     function addToMargin(
         P1Types.Balance memory balance,
@@ -80,7 +80,7 @@ library P1BalanceMath {
     }
 
     /**
-     * In-place subtract amount from balance.margin
+     * @dev In-place subtract amount from balance.margin.
      */
     function subFromMargin(
         P1Types.Balance memory balance,
@@ -95,7 +95,7 @@ library P1BalanceMath {
     }
 
     /**
-     * In-place add amount to balance.position
+     * @dev In-place add amount to balance.position.
      */
     function addToPosition(
         P1Types.Balance memory balance,
@@ -110,7 +110,7 @@ library P1BalanceMath {
     }
 
     /**
-     * In-place subtract amount from balance.position
+     * @dev In-place subtract amount from balance.position.
      */
     function subFromPosition(
         P1Types.Balance memory balance,
@@ -125,9 +125,10 @@ library P1BalanceMath {
     }
 
     /**
-     * Returns the positive and negative values of the margin and position together, given a price.
+     * @dev Returns the positive and negative values of the margin and position together, given a
+     *  price, which is used as a conversion rate between the two currencies.
      *
-     * No rounding occurs here--the returned values are "base values" with extra precision.
+     *  No rounding occurs here--the returned values are "base values" with extra precision.
      */
     function getPositiveAndNegativeValue(
         P1Types.Balance memory balance,
@@ -159,7 +160,7 @@ library P1BalanceMath {
     }
 
     /**
-     * Returns a compressed bytes32 representation of the balance for logging.
+     * @dev Returns a compressed bytes32 representation of the balance for logging.
      */
     function toBytes32(
         P1Types.Balance memory balance
@@ -179,7 +180,7 @@ library P1BalanceMath {
     // ============ Helper Functions ============
 
     /**
-     * Returns a SignedMath.Int version of the margin in balance.
+     * @dev Returns a SignedMath.Int version of the margin in balance.
      */
     function getMargin(
         P1Types.Balance memory balance
@@ -195,7 +196,7 @@ library P1BalanceMath {
     }
 
     /**
-     * Returns a SignedMath.Int version of the position in balance.
+     * @dev Returns a SignedMath.Int version of the position in balance.
      */
     function getPosition(
         P1Types.Balance memory balance
@@ -211,7 +212,7 @@ library P1BalanceMath {
     }
 
     /**
-     * In-place overwrites the signed margin values in balance.
+     * @dev In-place modify the signed margin value of a balance.
      */
     function setMargin(
         P1Types.Balance memory balance,
@@ -225,7 +226,7 @@ library P1BalanceMath {
     }
 
     /**
-     * In-place overwrites the signed position values in balance.
+     * @dev In-place modify the signed position value of a balance.
      */
     function setPosition(
         P1Types.Balance memory balance,

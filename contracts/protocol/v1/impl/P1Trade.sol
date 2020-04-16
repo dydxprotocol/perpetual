@@ -32,7 +32,9 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1Trade
  * @author dYdX
  *
- * @notice Contract for trading between two accounts.
+ * @notice Contract for settling trades between two accounts. A "trade" in this context may refer
+ *  to any approved transfer of balances, as determined by the smart contracts implementing the
+ *  I_P1Trader interface and approved as global operators on the PerpetualV1 contract.
  */
 contract P1Trade is
     P1FinalSettlement
@@ -65,11 +67,12 @@ contract P1Trade is
     // ============ Functions ============
 
     /**
-     * @notice Submits one or many trades between any number of accounts
-     * @dev Emits the LogIndex event, the LogAccountSettled event for each account in accounts, and
-     * the LogTrade event for each trade in trades.
-     * @param accounts The sorted list of accounts that are involved in trades.
-     * @param trades The list of trades to execute in-order.
+     * @notice Submits one or more trades between any number of accounts.
+     * @dev Emits the LogIndex event, one LogAccountSettled event for each account in `accounts`,
+     *  and the LogTrade event for each trade in `trades`.
+     *
+     * @param  accounts  The sorted list of accounts that are involved in trades.
+     * @param  trades    The list of trades to execute in-order.
      */
     function trade(
         address[] memory accounts,
@@ -157,8 +160,8 @@ contract P1Trade is
     }
 
     /**
-     * Verify that the accounts array has at least one address and that the accounts are unique.
-     * It verifies uniqueness by requiring that the accounts are sorted.
+     * @dev Verify that `accounts` contains at least one address and that the contents are unique.
+     *  We verify uniqueness by requiring that the array is sorted.
      */
     function _verifyAccounts(
         address[] memory accounts

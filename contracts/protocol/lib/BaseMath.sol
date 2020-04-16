@@ -35,7 +35,7 @@ library BaseMath {
     uint256 constant internal BASE = 10 ** 18;
 
     /**
-     * @dev Getter since constants can't be gotten directly from libraries.
+     * @dev Getter function since constants can't be read directly from libraries.
      */
     function base()
         internal
@@ -46,48 +46,49 @@ library BaseMath {
     }
 
     /**
-     * @dev Multiplies a value by a base value (result rounded down)
+     * @dev Multiplies a value by a base value (result is rounded down).
      */
     function baseMul(
         uint256 value,
-        uint256 basedValue
+        uint256 baseValue
     )
         internal
         pure
         returns (uint256)
     {
-        return value.mul(basedValue).div(BASE);
+        return value.mul(baseValue).div(BASE);
     }
 
     /**
-     * @dev Multiplies a value by a base value (result rounded down). Intended as an alternaltive to
-     * baseMul to prevent overflow when value is known to be divisible by BASE.
+     * @dev Multiplies a value by a base value (result is rounded down).
+     *  Intended as an alternaltive to baseMul to prevent overflow, when `value` is known
+     *  to be divisible by `BASE`.
      */
     function baseDivMul(
         uint256 value,
-        uint256 basedValue
+        uint256 baseValue
     )
         internal
         pure
         returns (uint256)
     {
-        return value.div(BASE).mul(basedValue);
+        return value.div(BASE).mul(baseValue);
     }
 
     /**
-     * @dev Multiplies a value by a base value (result rounded up).
+     * @dev Multiplies a value by a base value (result is rounded up).
      */
     function baseMulRoundUp(
         uint256 value,
-        uint256 basedValue
+        uint256 baseValue
     )
         internal
         pure
         returns (uint256)
     {
-        if (value == 0 || basedValue == 0) {
+        if (value == 0 || baseValue == 0) {
             return 0;
         }
-        return value.mul(basedValue).sub(1).div(BASE).add(1);
+        return value.mul(baseValue).sub(1).div(BASE).add(1);
     }
 }

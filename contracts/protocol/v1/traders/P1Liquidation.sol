@@ -78,14 +78,15 @@ contract P1Liquidation is
 
     /**
      * @notice Allows an account below the minimum collateralization to be liquidated by another
-     * account. This allows the account to be partially or fully subsumed by the liquidator.
+     *  account. This allows the account to be partially or fully subsumed by the liquidator.
      * @dev Emits the LogLiquidated event.
-     * @param sender The address that called the trade() function on PerpetualV1.
-     * @param maker The account to be liquidated.
-     * @param taker The account of the liquidator.
-     * @param price The current oracle price of the underlying asset.
-     * @param data A struct of type TradeData.
-     * @return The assets to be traded and traderFlags that indicate that a liquidation occurred.
+     *
+     * @param  sender  The address that called the trade() function on PerpetualV1.
+     * @param  maker   The account to be liquidated.
+     * @param  taker   The account of the liquidator.
+     * @param  price   The current oracle price of the underlying asset.
+     * @param  data    A struct of type TradeData.
+     * @return         The amounts to be traded, and flags indicating that a liquidation occurred.
      */
     function trade(
         address sender,
@@ -127,7 +128,10 @@ contract P1Liquidation is
         // Ensure the collateralization of the maker does not decrease.
         uint256 marginAmount;
         if (tradeData.isBuy) {
-            marginAmount = uint256(makerBalance.margin).getFractionRoundUp(amount, makerBalance.position);
+            marginAmount = uint256(makerBalance.margin).getFractionRoundUp(
+                amount,
+                makerBalance.position
+            );
         } else {
             marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
         }

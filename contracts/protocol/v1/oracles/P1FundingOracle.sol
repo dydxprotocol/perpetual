@@ -50,20 +50,20 @@ contract P1FundingOracle is
     // ============ Constants ============
 
     uint256 private constant FLAG_IS_POSITIVE = 1 << 128;
+    uint128 constant internal BASE = 10 ** 18;
 
     /**
-     * Bounding params constraining updates to the funding rate.
+     * @notice Bounding params constraining updates to the funding rate.
      *
-     * Like the funding rate, these are per-second rates, fixed-point with 18 decimals.
-     * We calculate the per-second rates from the market specifications, which uses 8-hour rates:
-     *   - The max absolute funding rate is 0.75% (8-hour rate).
-     *   - The max change in a single update is 0.75% (8-hour rate).
-     *   - The max change over a 55-minute period is 0.75% (8-hour rate).
+     *  Like the funding rate, these are per-second rates, fixed-point with 18 decimals.
+     *  We calculate the per-second rates from the market specifications, which uses 8-hour rates:
+     *  - The max absolute funding rate is 0.75% (8-hour rate).
+     *  - The max change in a single update is 0.75% (8-hour rate).
+     *  - The max change over a 55-minute period is 0.75% (8-hour rate).
      *
-     * This means the fastest the funding rate can go from zero to its min or max allowed value
-     * (or vice versa) is in 55 minutes.
+     *  This means the fastest the funding rate can go from zero to its min or max allowed value
+     *  (or vice versa) is in 55 minutes.
      */
-    uint128 constant internal BASE = 10 ** 18;
     uint128 public constant MAX_ABS_VALUE = BASE * 75 / 10000 / (8 hours);
     uint128 public constant MAX_ABS_DIFF_PER_UPDATE = MAX_ABS_VALUE;
     uint128 public constant MAX_ABS_DIFF_PER_SECOND = MAX_ABS_VALUE / (55 minutes);
@@ -96,9 +96,11 @@ contract P1FundingOracle is
 
     /**
      * @notice Calculates the signed funding amount that has accumulated over a period of time.
-     * @param timeDelta Number of seconds over which to calculate the accumulated funding amount.
-     * @return True if the funding rate is positive, and false otherwise.
-     * @return Funding amount as a unitless rate, as a fixed-point number with 18 decimals.
+     *
+     * @param  timeDelta  Number of seconds over which to calculate the accumulated funding amount.
+     * @return            True if the funding rate is positive, and false otherwise.
+     * @return            The funding amount as a unitless rate, represented as a fixed-point number
+     *                    with 18 decimals.
      */
     function getFunding(
         uint256 timeDelta
@@ -118,8 +120,9 @@ contract P1FundingOracle is
      * @notice Set the funding rate.
      * @dev Can only be called by the owner of this contract. Emits the LogFundingRateUpdated event.
      * The rate is denoted in units per second, as a fixed-point number with 18 decimals.
-     * @param newRate The intended new funding rate. Is bounded by the global constant bounds.
-     * @return The new funding rate with a timestamp of the update.
+     *
+     * @param  newRate  The intended new funding rate. Is bounded by the global constant bounds.
+     * @return          The new funding rate with a timestamp of the update.
      */
     function setFundingRate(
         SignedMath.Int calldata newRate
