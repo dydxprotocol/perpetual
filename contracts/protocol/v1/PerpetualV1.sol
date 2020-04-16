@@ -53,7 +53,7 @@ contract PerpetualV1 is
 
     /**
      * @dev Once-only initializer function that replaces the constructor since this contract is
-     * proxied. Uses a non-colliding storage slot to store if this version has been initialized yet.
+     *  proxied. Uses a non-colliding storage slot to store if this version has been initialized yet.
      * @dev Can only be called once and can only be called by the admin of this contract.
      *
      * @param  token          The address of the token to use for margin-deposits.

@@ -27,7 +27,7 @@ import { P1Types } from "../../protocol/v1/lib/P1Types.sol";
  * @title Test_P1Trader
  * @author dYdX
  *
- * P1Trader for testing
+ * @notice I_P1Trader implementation for testing.
  */
 /* solium-disable-next-line camelcase */
 contract Test_P1Trader is
