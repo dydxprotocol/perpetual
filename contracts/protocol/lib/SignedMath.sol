@@ -99,7 +99,7 @@ library SignedMath {
     }
 
     /**
-     * @dev Returns true if signed integer `a` is greater than signed integer `b` and false otherwise.
+     * @dev Returns true if signed integer `a` is greater than signed integer `b`, false otherwise.
      */
     function gt(
         Int memory a,

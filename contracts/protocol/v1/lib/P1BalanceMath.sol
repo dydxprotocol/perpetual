@@ -125,8 +125,10 @@ library P1BalanceMath {
     }
 
     /**
-     * @dev Returns the positive and negative values of the margin and position together, given a price.
-     *  Note that no rounding occurs here--the returned values are "base values" with extra precision.
+     * @dev Returns the positive and negative values of the margin and position together, given a
+     *  price, which is used as a conversion rate between the two currencies.
+     *
+     *  No rounding occurs here--the returned values are "base values" with extra precision.
      */
     function getPositiveAndNegativeValue(
         P1Types.Balance memory balance,

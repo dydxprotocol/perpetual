@@ -33,7 +33,8 @@ interface I_P1Funder {
      *
      * @param  timeDelta  Number of seconds over which to calculate the accumulated funding amount.
      * @return            True if the funding rate is positive, and false otherwise.
-     * @return            Funding amount as a unitless rate, as a fixed-point number with 18 decimals.
+     * @return            The funding amount as a unitless rate, represented as a fixed-point number
+     *                    with 18 decimals.
      */
     function getFunding(
         uint256 timeDelta

@@ -86,7 +86,7 @@ contract P1Liquidation is
      * @param  taker   The account of the liquidator.
      * @param  price   The current oracle price of the underlying asset.
      * @param  data    A struct of type TradeData.
-     * @return         The assets to be traded and traderFlags that indicate that a liquidation occurred.
+     * @return         The amounts to be traded, and flags indicating that a liquidation occurred.
      */
     function trade(
         address sender,
@@ -128,7 +128,10 @@ contract P1Liquidation is
         // Ensure the collateralization of the maker does not decrease.
         uint256 marginAmount;
         if (tradeData.isBuy) {
-            marginAmount = uint256(makerBalance.margin).getFractionRoundUp(amount, makerBalance.position);
+            marginAmount = uint256(makerBalance.margin).getFractionRoundUp(
+                amount,
+                makerBalance.position
+            );
         } else {
             marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
         }

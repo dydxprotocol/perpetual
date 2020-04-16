@@ -181,7 +181,8 @@ contract P1Getters is
      *
      * @param  account   The account to query.
      * @param  operator  The address to query.
-     * @return           True if the operator has permission to operate the account, false otherwise.
+     * @return           True if the operator has permission to operate the account,
+     *                   and false otherwise.
      */
     function hasAccountPermissions(
         address account,
