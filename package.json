@@ -21,7 +21,7 @@
     "lint:ts": "tslint --project . -t verbose 'src/**/*.ts' 'test/**/*.ts'",
     "lint:js": "eslint --ext .js --ignore-path .gitignore migrations/**/*.js",
     "lint:sol": "solium -d contracts/",
-    "lint:dydx": "python util/lintcontracts.py",
+    "lint:dydx": "python util/lintcontracts.py && scripts/check_licenses.sh",
     "docker_node": "ganache-cli -i 1313 -d -k=istanbul -p 8545 -h 0.0.0.0 --db=/home/.ganache",
     "deploy": "truffle migrate --network=$NETWORK --reset && npm run save_deployed_addresses",
     "deploy_kovan": "NETWORK=kovan npm run deploy",
