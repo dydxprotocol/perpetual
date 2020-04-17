@@ -476,7 +476,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fails for bad signature', async () => {
         const order = {
           ...defaultSignedOrder,
-          typedSignature: `0xff${defaultSignedOrder.typedSignature.substr(4)}`,
+          typedSignature: `0xffff${defaultSignedOrder.typedSignature.substr(6)}`,
         };
         await expectThrow(
           fillOrder(order),
