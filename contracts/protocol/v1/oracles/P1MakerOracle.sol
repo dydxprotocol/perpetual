@@ -19,6 +19,7 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
 import { I_MakerOracle } from "../../../external/maker/I_MakerOracle.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
@@ -31,31 +32,30 @@ import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
  * @notice P1Oracle that reads the price from a Maker V2 Oracle.
  */
 contract P1MakerOracle is
+    Ownable,
     I_P1Oracle
 {
     using BaseMath for uint256;
 
+    // ============ Events ============
+
+    event LogRouteSet(
+        address indexed sender,
+        address oracle
+    );
+
+    event LogAdjustmentSet(
+        address indexed oracle,
+        uint256 adjustment
+    );
+
     // ============ Storage ============
 
-    address public _ORACLE_ADDRESS_;
+    // @dev Maps from the sender to the oracle address to use.
+    mapping(address => address) public _ROUTER_;
 
-    address public _PERPETUAL_V1_;
-
-    uint256 public _ADJUSTMENT_;
-
-    // ============ Constructor ============
-
-    constructor(
-        address perpetualV1,
-        address oracleAddress,
-        uint256 adjustment
-    )
-        public
-    {
-        _PERPETUAL_V1_ = perpetualV1;
-        _ORACLE_ADDRESS_ = oracleAddress;
-        _ADJUSTMENT_ = adjustment;
-    }
+    // @dev The amount to adjust the price by. Is as a fixed-point number with 18 decimal places.
+    mapping(address => uint256) public _ADJUSTMENTS_;
 
     // ============ Public Functions ============
 
@@ -69,11 +69,67 @@ contract P1MakerOracle is
         view
         returns (uint256)
     {
+        // get the oracle address to read from
+        address oracle = _ROUTER_[msg.sender];
+
+        // revert if no oracle found
         require(
-            msg.sender == _PERPETUAL_V1_,
-            "msg.sender must be PerpetualV1"
+            oracle != address(0),
+            "Sender not authorized to get price"
         );
-        uint256 rawPrice = uint256(I_MakerOracle(_ORACLE_ADDRESS_).read());
-        return rawPrice.baseMul(_ADJUSTMENT_);
+
+        // get adjustment or default to 1
+        uint256 adjustment = _ADJUSTMENTS_[oracle];
+        if (adjustment == 0) {
+            adjustment = BaseMath.base();
+        }
+
+        // get the adjusted price
+        uint256 rawPrice = uint256(I_MakerOracle(oracle).read());
+        uint256 result = rawPrice.baseMul(adjustment);
+
+        // revert if invalid price
+        require(
+            result != 0,
+            "Oracle would return zero price"
+        );
+
+        return result;
+    }
+
+    // ============ Admin Functions ============
+
+    /**
+     * @dev Allows the owner to set a route for a particular sender.
+     *
+     * @param  sender The sender to set the route for.
+     * @param  oracle The oracle to route the sender to.
+     */
+    function setRoute(
+        address sender,
+        address oracle
+    )
+        external
+        onlyOwner
+    {
+        _ROUTER_[sender] = oracle;
+        emit LogRouteSet(sender, oracle);
+    }
+
+    /**
+     * @dev Allows the owner to set an adjustment to an oracle source.
+     *
+     * @param  oracle     The oracle to apply the adjustment to.
+     * @param  adjustment The adjustment to set when reading from the oracle.
+     */
+    function setAdjustment(
+        address oracle,
+        uint256 adjustment
+    )
+        external
+        onlyOwner
+    {
+        _ADJUSTMENTS_[oracle] = adjustment;
+        emit LogAdjustmentSet(oracle, adjustment);
     }
 }
