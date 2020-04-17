@@ -16,20 +16,28 @@
 
 */
 
+import { Contract } from 'web3-eth-contract';
 import { Contracts } from '../modules/Contracts';
 import {
+  address,
+  BaseValue,
   Price,
   CallOptions,
+  SendOptions,
 } from '../lib/types';
 
 export class PriceOracle {
   private contracts: Contracts;
+  private oracles: {[address: string]: Contract};
 
   constructor(
     contracts: Contracts,
   ) {
     this.contracts = contracts;
+    this.oracles = {};
   }
+
+  // ============ Getter Functions ============
 
   public get address(): string {
     return this.contracts.p1MakerOracle.options.address;
@@ -42,10 +50,85 @@ export class PriceOracle {
       from: this.contracts.perpetualProxy.options.address,
       ...options,
     };
+    const oracle = await this.getCurrentOracleContract(options);
     const price = await this.contracts.call(
-      this.contracts.p1MakerOracle.methods.getPrice(),
+      oracle.methods.getPrice(),
       combinedOptions,
     );
     return Price.fromSolidity(price);
+  }
+
+  public async getRoute(
+    sender: address,
+    options: SendOptions = {},
+  ): Promise<address> {
+    const oracle = await this.getCurrentOracleContract(options);
+    return this.contracts.call(
+      oracle.methods._ROUTER_(sender),
+      options,
+    );
+  }
+
+  public async getOracleAdjustment(
+    oracleAddress: address,
+    options: SendOptions = {},
+  ): Promise<BaseValue> {
+    const oracle = await this.getCurrentOracleContract(options);
+    const result = await this.contracts.call(
+      oracle.methods._ADJUSTMENTS_(oracleAddress),
+      options,
+    );
+    return BaseValue.fromSolidity(result);
+  }
+
+  // ============ Admin Functions ============
+
+  public async setRoute(
+    sender: address,
+    oracle: address,
+    options: SendOptions = {},
+  ): Promise<void> {
+    return this.contracts.send(
+      this.contracts.p1MakerOracle.methods.setRoute(sender, oracle),
+      options,
+    );
+  }
+
+  public async setAdjustment(
+    oracle: address,
+    adjustment: BaseValue,
+    options: SendOptions = {},
+  ): Promise<void> {
+    return this.contracts.send(
+      this.contracts.p1MakerOracle.methods.setAdjustment(oracle, adjustment.value.toFixed()),
+      options,
+    );
+  }
+
+  // ============ Helper Functions ============
+
+  private async getCurrentOracleContract(
+    options: SendOptions = {},
+  ): Promise<Contract> {
+    const oracleAddress = await this.contracts.call(
+      this.contracts.perpetualV1.methods.getOracleContract(),
+      options,
+    );
+    return this.getOracle(oracleAddress);
+  }
+
+  private getOracle(
+    oracleAddress: string,
+  ): Contract {
+    if (this.oracles[oracleAddress]) {
+      return this.oracles[oracleAddress];
+    }
+
+    const contract: Contract = this.contracts.p1MakerOracle.clone();
+    contract.options.address = oracleAddress;
+
+    this.oracles[oracleAddress] = contract;
+
+    return contract;
   }
 }

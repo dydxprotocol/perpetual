@@ -40,12 +40,12 @@ contract P1MakerOracle is
     // ============ Events ============
 
     event LogRouteSet(
-        address sender,
+        address indexed sender,
         address oracle
     );
 
     event LogAdjustmentSet(
-        address oracle,
+        address indexed oracle,
         uint256 adjustment
     );
 
@@ -56,12 +56,6 @@ contract P1MakerOracle is
 
     // @dev The amount to adjust the price by. Is as a fixed-point number with 18 decimal places.
     mapping(address => uint256) public _ADJUSTMENTS_;
-
-    // ============ Constructor ============
-
-    constructor()
-        public
-    {}
 
     // ============ Public Functions ============
 
@@ -97,6 +91,12 @@ contract P1MakerOracle is
 
     // ============ Admin Functions ============
 
+    /**
+     * @dev Allows the owner to set a route for a particular sender.
+     *
+     * @param  sender The sender to set the route for.
+     * @param  oracle The oracle to route the sender to.
+     */
     function setRoute(
         address sender,
         address oracle
@@ -108,6 +108,12 @@ contract P1MakerOracle is
         emit LogRouteSet(sender, oracle);
     }
 
+    /**
+     * @dev Allows the owner to set an adjustment to an oracle source.
+     *
+     * @param  oracle     The oracle to apply the adjustment to.
+     * @param  adjustment The adjustment to set when reading from the oracle.
+     */
     function setAdjustment(
         address oracle,
         uint256 adjustment
