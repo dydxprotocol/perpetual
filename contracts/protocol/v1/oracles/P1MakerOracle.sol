@@ -84,9 +84,17 @@ contract P1MakerOracle is
             adjustment = BaseMath.base();
         }
 
-        // read and return the adjusted price
+        // get the adjusted price
         uint256 rawPrice = uint256(I_MakerOracle(oracle).read());
-        return rawPrice.baseMul(adjustment);
+        uint256 result = rawPrice.baseMul(adjustment);
+
+        // revert if invalid price
+        require(
+            result != 0,
+            "Oracle would return zero price"
+        );
+
+        return result;
     }
 
     // ============ Admin Functions ============

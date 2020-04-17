@@ -60,22 +60,20 @@ export class PriceOracle {
 
   public async getRoute(
     sender: address,
-    options: SendOptions = {},
+    options: CallOptions = {},
   ): Promise<address> {
-    const oracle = await this.getCurrentOracleContract(options);
     return this.contracts.call(
-      oracle.methods._ROUTER_(sender),
+      this.contracts.p1MakerOracle.methods._ROUTER_(sender),
       options,
     );
   }
 
   public async getOracleAdjustment(
     oracleAddress: address,
-    options: SendOptions = {},
+    options: CallOptions = {},
   ): Promise<BaseValue> {
-    const oracle = await this.getCurrentOracleContract(options);
     const result = await this.contracts.call(
-      oracle.methods._ADJUSTMENTS_(oracleAddress),
+      this.contracts.p1MakerOracle.methods._ADJUSTMENTS_(oracleAddress),
       options,
     );
     return BaseValue.fromSolidity(result);
@@ -100,7 +98,7 @@ export class PriceOracle {
     options: SendOptions = {},
   ): Promise<void> {
     return this.contracts.send(
-      this.contracts.p1MakerOracle.methods.setAdjustment(oracle, adjustment.value.toFixed()),
+      this.contracts.p1MakerOracle.methods.setAdjustment(oracle, adjustment.toSolidity()),
       options,
     );
   }
@@ -108,7 +106,7 @@ export class PriceOracle {
   // ============ Helper Functions ============
 
   private async getCurrentOracleContract(
-    options: SendOptions = {},
+    options: CallOptions = {},
   ): Promise<Contract> {
     const oracleAddress = await this.contracts.call(
       this.contracts.perpetualV1.methods.getOracleContract(),
@@ -126,9 +124,7 @@ export class PriceOracle {
 
     const contract: Contract = this.contracts.p1MakerOracle.clone();
     contract.options.address = oracleAddress;
-
     this.oracles[oracleAddress] = contract;
-
     return contract;
   }
 }
