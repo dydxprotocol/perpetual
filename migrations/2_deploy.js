@@ -95,16 +95,20 @@ async function deployProtocol(deployer, network, accounts) {
 
 async function deployOracles(deployer, network) {
   await Promise.all([
-    deployer.deploy(
-      P1FundingOracle,
-    ),
-    deployer.deploy(
-      P1MakerOracle,
-      PerpetualProxy.address,
-      getMakerPriceOracleAddress(network, TestMakerOracle),
-      getOracleAdjustment(network),
-    ),
+    deployer.deploy(P1FundingOracle),
+    deployer.deploy(P1MakerOracle),
   ]);
+
+  const oracle = await P1MakerOracle.deployed();
+  const makerOracle = getMakerPriceOracleAddress(network, TestMakerOracle);
+  await oracle.setRoute(
+    PerpetualProxy.address,
+    makerOracle,
+  );
+  await oracle.setAdjustment(
+    makerOracle,
+    getOracleAdjustment(network),
+  );
 }
 
 async function deployTraders(deployer, network) {
