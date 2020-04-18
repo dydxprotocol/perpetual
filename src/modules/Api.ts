@@ -217,7 +217,7 @@ export class Api {
     return response.data;
   }
 
-  public async getMarketsV2():
+  public async getMarkets():
     Promise<{ markets: { [market: string]: ApiMarketMessage } }> {
     const response = await axios({
       url: `${this.endpoint}/v1/perpetual-markets`,
