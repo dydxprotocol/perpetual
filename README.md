@@ -18,9 +18,9 @@
   </a>
 </div>
 
-> Ethereum Smart Contracts and TypeScript library used for the dYdX Perpetual Contracts. Currently used by [trade.dydx.exchange](https://trade.dydx.exchange)
+> Ethereum Smart Contracts and TypeScript client library for the dYdX Perpetual Contracts Protocol. Currently used by [trade.dydx.exchange](https://trade.dydx.exchange).
 
-**See also the [Protocol Overview](https://docs.google.com/document/d/1ceMNUTN1FmK6fYmtWz1qB6QGgSAIx6WpevODRmmV28k), [Market Specifications](https://docs.google.com/document/d/1tx84Ucfd5hYmhPicFgUJSbUvFT8cWayqt9p1QrgtKRU/edit#heading=h.4oenrhi9fvxe), and [docs.dydx.exchange](https://docs.dydx.exchange).**
+**For additional documentation, see the [Protocol Overview](https://docs.google.com/document/d/1ceMNUTN1FmK6fYmtWz1qB6QGgSAIx6WpevODRmmV28k), [BTC–USDC Market Specification](https://docs.google.com/document/d/1tx84Ucfd5hYmhPicFgUJSbUvFT8cWayqt9p1QrgtKRU), and [docs.dydx.exchange](https://docs.dydx.exchange).**
 
 ## Table of Contents
 
@@ -30,12 +30,11 @@
  - [Security](#security)
  - [Development](#development)
  - [Maintainers](#maintainers)
- - [Contributing](#contributing)
  - [License](#license)
 
 ## Documentation
 
-Please see the [Protocol Overview](https://docs.google.com/document/d/1ceMNUTN1FmK6fYmtWz1qB6QGgSAIx6WpevODRmmV28k).
+A description of the protocol can be found in the [Protocol Overview](https://docs.google.com/document/d/1ceMNUTN1FmK6fYmtWz1qB6QGgSAIx6WpevODRmmV28k). For more info on applications of the protocol, including examples, you may refer to the [BTC–USDC Market Specification](https://docs.google.com/document/d/1tx84Ucfd5hYmhPicFgUJSbUvFT8cWayqt9p1QrgtKRU) which provides details on a specific market using the protocol.
 Additional documentation about dYdX is available at [docs.dydx.exchange](https://docs.dydx.exchange).
 
 ## Install
