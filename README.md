@@ -2,13 +2,13 @@
 
 <div align="center">
   <a href="https://circleci.com/gh/dydxprotocol/workflows/perpetual/tree/master" style="text-decoration:none;">
-    <img src="https://img.shields.io/circleci/project/github/dydxprotocol/perpetual.svg" alt='CI' />
+    <img src="https://img.shields.io/circleci/project/github/dydxprotocol/perpetual.svg" alt='CI Status' />
   </a>
   <a href='https://www.npmjs.com/package/@dydxprotocol/perpetual' style="text-decoration:none;">
     <img src='https://img.shields.io/npm/v/@dydxprotocol/perpetual.svg' alt='NPM' />
   </a>
   <a href='https://coveralls.io/github/dydxprotocol/perpetual' style="text-decoration:none;">
-    <img src='https://coveralls.io/repos/github/dydxprotocol/perpetual/badge.svg?t=toKMwT' alt='Coverage Status' />
+    <img src='https://coveralls.io/repos/github/dydxprotocol/perpetual/badge.svg?t=cPGDk7' alt='Coverage Status' />
   </a>
   <a href='https://github.com/dydxprotocol/perpetual/blob/master/LICENSE' style="text-decoration:none;">
     <img src='https://img.shields.io/github/license/dydxprotocol/protocol.svg?longCache=true' alt='License' />
