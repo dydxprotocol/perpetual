@@ -11,7 +11,8 @@
     "README.md"
   ],
   "scripts": {
-    "test": "npm run deploy_test && truffle test",
+    "test": "npm run deploy_test && npm run test_only",
+    "test_only": "truffle test",
     "clean_contract_json": "ts-node ./scripts/CleanBuild.ts",
     "coverage": "NETWORK_ID=1002 RPC_NODE_URI=http://0.0.0.0:8555 COVERAGE=true truffle run coverage --network coverage",
     "compile": "truffle compile",
