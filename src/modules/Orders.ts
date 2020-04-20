@@ -541,7 +541,7 @@ export class Orders {
         CancelOrder: EIP712_CANCEL_ORDER_STRUCT,
       },
       domain: this.getDomainData(),
-      primaryType: 'CancelOrder',
+      primaryType: 'CancelLimitOrder',
       message: {
         action: 'Cancel Orders',
         orderHashes: [orderHash],
