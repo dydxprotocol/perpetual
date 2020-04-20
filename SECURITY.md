@@ -2,7 +2,7 @@
 
 ## Independent Audits
 
-The protocol was independently audited by
+The smart contracts were audited independently by
 [Zeppelin Solutions](https://zeppelin.solutions/) at commit [`c5e2b0e`](https://github.com/dydxprotocol/perpetual/tree/c5e2b0e58aaf532d2c8b1f658d1df2f6a3385318/contracts), excluding [`P1Orders.sol`](contracts/protocol/v1/P1Orders.sol).
 
 **[Zeppelin Solutions Audit Report](https://blog.openzeppelin.com/dydx-perpetual-audit/)**
