@@ -62,7 +62,7 @@ const EIP712_CANCEL_ORDER_STRUCT = [
 ];
 
 const EIP712_CANCEL_ORDER_STRUCT_STRING =
-  'CancelOrder(' +
+  'CancelLimitOrder(' +
   'string action,' +
   'bytes32[] orderHashes' +
   ')';
