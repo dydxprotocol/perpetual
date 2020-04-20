@@ -538,7 +538,7 @@ export class Orders {
     const data = {
       types: {
         EIP712Domain: EIP712_DOMAIN_STRUCT,
-        CancelOrder: EIP712_CANCEL_ORDER_STRUCT,
+        CancelLimitOrder: EIP712_CANCEL_ORDER_STRUCT,
       },
       domain: this.getDomainData(),
       primaryType: 'CancelLimitOrder',

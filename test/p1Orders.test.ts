@@ -102,13 +102,19 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     it('Signs an order cancelation', async () => {
       const typedSignature = await ctx.perpetual.orders.signCancelOrder(
         defaultOrder,
-        SigningMethod.Hash,
+        SigningMethod.TypedData,
       );
       const validSignature = ctx.perpetual.orders.cancelOrderHasValidSignature(
         defaultOrder,
         typedSignature,
       );
       expect(validSignature).to.be.true;
+
+      const hashSignature = await ctx.perpetual.orders.signCancelOrder(
+        defaultOrder,
+        SigningMethod.Hash,
+      );
+      expect(hashSignature).to.equal(typedSignature);
     });
 
     it('Recognizes invalid signatures', () => {
