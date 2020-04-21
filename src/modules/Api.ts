@@ -14,6 +14,7 @@ import {
   ApiMarketMessage,
   ApiAccount,
   ApiOptions,
+  ApiOrderOnOrderbook,
 } from '../lib/types';
 import { Orders } from './Orders';
 
@@ -234,6 +235,20 @@ export class Api {
   }): Promise<ApiAccount> {
     const response = await axios({
       url: `${this.endpoint}/v1/perpetual-accounts/${accountOwner}`,
+      method: 'get',
+      timeout: this.timeout,
+    });
+
+    return response.data;
+  }
+
+  public async getOrderbook({
+    market,
+  }: {
+    market: ApiMarketName,
+  }): Promise<{ bids: ApiOrderOnOrderbook[], asks: ApiOrderOnOrderbook[] }> {
+    const response = await axios({
+      url: `${this.endpoint}/v1/orderbook/${market}`,
       method: 'get',
       timeout: this.timeout,
     });

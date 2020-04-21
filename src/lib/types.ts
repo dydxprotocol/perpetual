@@ -421,6 +421,13 @@ export interface ApiOrder {
   cancelReason: ApiOrderCancelReason;
 }
 
+export interface ApiOrderOnOrderbook {
+  id: string;
+  uuid: string;
+  amount: string;
+  price: string;
+}
+
 export interface ApiBalance {
   margin: BigNumber;
   position: BigNumber;
