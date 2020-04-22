@@ -19,6 +19,7 @@
 import Web3 from 'web3';
 import {
   address,
+  EthereumAccount,
   Networks,
   Provider,
   PerpetualOptions,
@@ -92,6 +93,38 @@ export class Perpetual {
     this.contracts.setProvider(provider, networkId);
   }
 
+  public setDefaultAccount(
+    account: address,
+  ): void {
+    this.web3.eth.defaultAccount = account;
+    this.contracts.setDefaultAccount(account);
+  }
+
+  public getDefaultAccount(): address {
+    return this.web3.eth.defaultAccount;
+  }
+
+  public loadAccount(
+    account: EthereumAccount,
+  ): void {
+    const newAccount = this.web3.eth.accounts.wallet.add(
+      account.privateKey,
+    );
+
+    if (
+      !newAccount
+      || (
+        account.address
+        && account.address.toLowerCase() !== newAccount.address.toLowerCase()
+      )
+    ) {
+      throw new Error(`Loaded account address mismatch.
+        Expected ${account.address}, got ${newAccount ? newAccount.address : null}`);
+    }
+  }
+
+  // ============ Helper Functions ============
+
   protected getContracts(
     provider: Provider,
     networkId: number,
@@ -103,12 +136,5 @@ export class Perpetual {
       this.web3,
       sendOptions,
     );
-  }
-
-  public setDefaultAccount(
-    account: address,
-  ): void {
-    this.web3.eth.defaultAccount = account;
-    this.contracts.setDefaultAccount(account);
   }
 }
