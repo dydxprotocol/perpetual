@@ -20,7 +20,7 @@
 
 > Ethereum Smart Contracts and TypeScript client library for the dYdX Perpetual Contracts Protocol. Currently used by [trade.dydx.exchange](https://trade.dydx.exchange).
 
-**For additional documentation, see the [Protocol Overview](https://docs.google.com/document/d/1ceMNUTN1FmK6fYmtWz1qB6QGgSAIx6WpevODRmmV28k), [BTC–USDC Market Specification](https://docs.google.com/document/d/1tx84Ucfd5hYmhPicFgUJSbUvFT8cWayqt9p1QrgtKRU), and [docs.dydx.exchange](https://docs.dydx.exchange).**
+**Full Documentation at [docs.dydx.exchange](https://docs.dydx.exchange).**
 
 ## Table of Contents
 
@@ -34,8 +34,9 @@
 
 ## Documentation
 
-A description of the protocol can be found in the [Protocol Overview](https://docs.google.com/document/d/1ceMNUTN1FmK6fYmtWz1qB6QGgSAIx6WpevODRmmV28k). For more info on applications of the protocol, including examples, you may refer to the [BTC–USDC Market Specification](https://docs.google.com/document/d/1tx84Ucfd5hYmhPicFgUJSbUvFT8cWayqt9p1QrgtKRU) which provides details on a specific market using the protocol.
-Additional documentation about dYdX is available at [docs.dydx.exchange](https://docs.dydx.exchange).
+Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.exchange):
+* [Protocol Overview](https://docs.dydx.exchange/#/perpetual-protocol)
+* [Perpetual Guide and Contract Specification](https://docs.dydx.exchange/#/perpetual-guide)
 
 ## Install
 
