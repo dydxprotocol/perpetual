@@ -69,11 +69,8 @@ export class Api {
     cancelId?: string,
     cancelAmountOnRevert?: boolean,
   }): Promise<{ order: ApiOrder }> {
-    if (!Object.values(ApiMarketName).includes(market)) {
-      throw new Error(`market: ${market} is invalid`);
-    }
-
     const order: SignedOrder = await this.createPerpetualOrder({
+      market,
       side,
       amount,
       price,
@@ -99,6 +96,7 @@ export class Api {
    * Creates but does not place a signed perpetualOrder
    */
   async createPerpetualOrder({
+    market,
     side,
     amount,
     price,
@@ -108,6 +106,7 @@ export class Api {
     postOnly,
     limitFee,
   }: {
+    market: ApiMarketName,
     side: ApiSide,
     amount: BigNumberable,
     price: BigNumberable,
@@ -117,6 +116,9 @@ export class Api {
     postOnly: boolean,
     limitFee?: BigNumberable,
   }): Promise<SignedOrder> {
+    if (!Object.values(ApiMarketName).includes(market)) {
+      throw new Error(`market: ${market} is invalid`);
+    }
     if (!Object.values(ApiSide).includes(side)) {
       throw new Error(`side: ${side} is invalid`);
     }
@@ -193,7 +195,7 @@ export class Api {
     return response.data;
   }
 
-  public async cancelOrderV2({
+  public async cancelOrder({
     orderId,
     makerAccountOwner,
   }: {

@@ -78,6 +78,7 @@ export interface PerpetualOptions {
   defaultAccount?: address;
   sendOptions?: SendOptions;
   apiOptions?: ApiOptions;
+  accounts?: EthereumAccount[];
 }
 
 export interface ApiOptions {
