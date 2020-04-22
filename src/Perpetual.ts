@@ -83,6 +83,10 @@ export class Perpetual {
     this.token = new Token(this.contracts);
     this.trade = new Trade(this.contracts, this.orders);
     this.api = new Api(this.orders, options.apiOptions);
+
+    if (options.accounts) {
+      options.accounts.forEach(a => this.loadAccount(a));
+    }
   }
 
   public setProvider(
