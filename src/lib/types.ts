@@ -430,19 +430,20 @@ export interface ApiOrderOnOrderbook {
 }
 
 export interface ApiBalance {
-  margin: BigNumber;
-  position: BigNumber;
-  indexValue: BigNumber;
-  indexTimestamp: BigNumber;
-  cachedMargin: BigNumber;
+  margin: string;
+  position: string;
+  indexValue: string;
+  indexTimestamp: string;
+  pendingMargin: string;
+  pendingPosition: string;
 }
 
 export interface ApiMarketMessage {
   createdAt: string;
   updatedAt: string;
   market: ApiMarketName;
-  oraclePrice: BigNumber;
-  fundingRate: BigNumber;
+  oraclePrice: string;
+  fundingRate: string;
   globalIndexValue: string;
   globalIndexTimeStamp: string;
 }
@@ -451,6 +452,6 @@ export interface ApiAccount {
   owner: string;
   uuid: string;
   balances: {
-    Market: ApiBalance;
+    [market: string]: ApiBalance,
   };
 }
