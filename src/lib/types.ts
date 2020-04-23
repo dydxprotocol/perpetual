@@ -452,6 +452,6 @@ export interface ApiAccount {
   owner: string;
   uuid: string;
   balances: {
-    [market: string]: ApiBalance
+    [market: string]: ApiBalance,
   };
 }
