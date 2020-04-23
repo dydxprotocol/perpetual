@@ -197,14 +197,14 @@ export class Api {
 
   public async cancelOrder({
     orderId,
-    makerAccountOwner,
+    maker,
   }: {
     orderId: string,
-    makerAccountOwner: address,
+    maker: address,
   }): Promise<{ order: ApiOrder }> {
     const signature = await this.perpetualOrders.signCancelOrderByHash(
       orderId,
-      makerAccountOwner,
+      maker,
       SigningMethod.Hash,
     );
 
