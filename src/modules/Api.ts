@@ -167,9 +167,9 @@ export class Api {
   }: {
     order: SignedOrder,
     market: ApiMarketName,
-    fillOrKill: boolean,
-    postOnly: boolean,
-    cancelId: string,
+    fillOrKill?: boolean,
+    postOnly?: boolean,
+    cancelId?: string,
     clientId?: string,
     cancelAmountOnRevert?: boolean,
   }): Promise<{ order: ApiOrder }> {
