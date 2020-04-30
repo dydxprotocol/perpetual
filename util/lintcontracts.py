@@ -128,7 +128,7 @@ def lintFunctionComments(dir, filepath):
             col = 0
             if ('param ' in lstripped and len(words) >= 4):
                 col = line.find(' '+words[3]) + 1
-            if ('@returns' in lstripped):
+            if ('@return' in lstripped):
                 col = line.find(words[2])
             if (col > 0):
                 if (argColumn == 0):

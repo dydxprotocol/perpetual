@@ -48,7 +48,7 @@ contract Test_P1Trader is
         bytes32 traderFlags
     )
         external
-        returns(P1Types.TradeResult memory)
+        returns (P1Types.TradeResult memory)
     {
         if (traderFlags == TRADER_FLAG_RESULT_2) {
             return _TRADE_RESULT_2_;

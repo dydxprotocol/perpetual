@@ -24,6 +24,7 @@ import {
   BaseValue,
   CallOptions,
   Index,
+  Price,
 } from '../lib/types';
 import { Contract } from 'web3-eth-contract';
 
@@ -62,6 +63,34 @@ export class Getters {
     // Return the current balance with interest applied.
     const netMargin = balance.margin.plus(roundedInterest);
     return new Balance(netMargin, balance.position);
+  }
+
+  public async getNetAccountCollateralization(
+    account: address,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const [
+      balance,
+      price,
+    ] = await Promise.all([
+      this.getNetAccountBalance(account, options),
+      this.getOraclePrice(options),
+    ]);
+    return balance.getCollateralization(price);
+  }
+
+  public async getNetAccountIsLiquidatable(
+    account: address,
+    options?: CallOptions,
+  ): Promise<boolean> {
+    const [
+      collateralization,
+      minCollateralization,
+    ] = await Promise.all([
+      this.getNetAccountCollateralization(account, options),
+      this.getMinCollateral(options),
+    ]);
+    return collateralization.lt(minCollateralization.value);
   }
 
   // ============ Account Getters ============
@@ -197,6 +226,19 @@ export class Getters {
       this.perpetual.methods.getFinalSettlementEnabled(),
       options,
     );
+  }
+
+  public async getOraclePrice(
+    options?: CallOptions,
+  ): Promise<Price> {
+    const result = await this.contracts.call(
+      this.perpetual.methods.getOraclePrice(),
+      {
+        from: this.contracts.p1Liquidation.options.address,
+        ...options,
+      },
+    );
+    return Price.fromSolidity(result);
   }
 
   // ============ Helper Functions ============

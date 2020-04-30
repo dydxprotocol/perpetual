@@ -52,5 +52,5 @@ interface I_P1Trader {
         bytes32 traderFlags
     )
         external
-        returns(P1Types.TradeResult memory);
+        returns (P1Types.TradeResult memory);
 }
