@@ -1,6 +1,6 @@
 {
   "name": "@dydxprotocol/perpetual",
-  "version": "0.1.14",
+  "version": "0.1.15",
   "description": "Ethereum Smart Contracts and TypeScript library used for the dYdX Perpetual Contracts",
   "main": "dist/src/index.js",
   "types": "dist/src/index.d.ts",
