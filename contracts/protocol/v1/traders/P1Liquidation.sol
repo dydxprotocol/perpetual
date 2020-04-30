@@ -107,8 +107,8 @@ contract P1Liquidation is
         );
 
         require(
-            P1Getters(perpetual).hasAccountPermissions(taker, sender),
-            "sender does not have permissions for the taker (i.e. liquidator)"
+            P1Getters(perpetual).getIsGlobalOperator(sender),
+            "Sender is not a global operator"
         );
 
         TradeData memory tradeData = abi.decode(data, (TradeData));
