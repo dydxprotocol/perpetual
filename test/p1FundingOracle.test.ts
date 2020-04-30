@@ -92,7 +92,6 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
 
       it('cannot exceed the max value', async () => {
         // Set to max value, while obeying the per-update speed limit.
-        console.log('FUNDING_RATE_MAX_ABS_VALUE', FUNDING_RATE_MAX_ABS_VALUE.value.toString());
         await setFundingRate(FUNDING_RATE_MAX_ABS_VALUE);
 
         // Try to set above max value.

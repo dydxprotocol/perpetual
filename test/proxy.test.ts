@@ -1,7 +1,7 @@
 import { expect, expectThrow } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
-import { address } from '../src/lib/types';
-import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
+import { address, BaseValue } from '../src/lib/types';
+import { ADDRESSES } from '../src/lib/Constants';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 
 perpetualDescribe('Proxy', initializePerpetual, (ctx: ITestContext) => {
@@ -15,7 +15,7 @@ perpetualDescribe('Proxy', initializePerpetual, (ctx: ITestContext) => {
           ADDRESSES.ZERO,
           ADDRESSES.ZERO,
           ADDRESSES.ZERO,
-          INTEGERS.ZERO,
+          new BaseValue(0),
           { from: ctx.accounts[0] },
         ),
       );

@@ -86,7 +86,7 @@ export async function expectPositions(
 
   if (sumToZero) {
     const accountSumPosition = actualPositions.reduce((a, b) => a.plus(b), INTEGERS.ZERO);
-    expectBN(accountSumPosition).eq(INTEGERS.ZERO);
+    expectBN(accountSumPosition, 'sum of positions is not zero').eq(INTEGERS.ZERO);
   }
 }
 
@@ -163,7 +163,7 @@ function getBalanceEvents(
   }
 
   const logs = ctx.perpetual.logs.parseLogs(txResult)
-    .filter((log: any) => ['LogTrade', 'LogWithdaw', 'LogDeposit'].includes(log.name));
+    .filter((log: any) => ['LogTrade', 'LogWithdraw', 'LogDeposit'].includes(log.name));
 
   const result = [];
   for (const i in accounts) {

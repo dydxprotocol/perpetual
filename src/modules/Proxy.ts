@@ -16,10 +16,10 @@
 
 */
 
-import BigNumber from 'bignumber.js';
 import { Contracts } from './Contracts';
 import {
   address,
+  BaseValue,
   CallOptions,
   SendOptions,
 } from '../lib/types';
@@ -66,7 +66,7 @@ export class Proxy {
     token: address,
     oracle: address,
     funder: address,
-    minCollateral: BigNumber,
+    minCollateral: BaseValue,
     options?: SendOptions,
   ): Promise<any> {
     return this.contracts.send(
@@ -74,7 +74,7 @@ export class Proxy {
         token,
         oracle,
         funder,
-        minCollateral.toFixed(),
+        minCollateral.toSolidity(),
       ),
       options,
     );

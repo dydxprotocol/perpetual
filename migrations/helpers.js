@@ -119,7 +119,7 @@ function getTokenAddress(network) {
 
 function getMinCollateralization(network) {
   if (isMainnet(network) || isKovan(network)) {
-    return '107500000000000000'; // 107.5%
+    return '1075000000000000000'; // 107.5%
   }
   throw new Error('Cannot find minimum collateralization');
 }
