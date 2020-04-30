@@ -173,7 +173,6 @@ contract Test_Lib is
 
     // ============ SignedMath.sol ============
 
-
     function add(
         SignedMath.Int calldata sint,
         uint256 value
@@ -194,6 +193,28 @@ contract Test_Lib is
         returns (SignedMath.Int memory)
     {
         return SignedMath.sub(sint, value);
+    }
+
+    function signedAdd(
+        SignedMath.Int calldata augend,
+        SignedMath.Int calldata addend
+    )
+        external
+        pure
+        returns (SignedMath.Int memory)
+    {
+        return SignedMath.signedAdd(augend, addend);
+    }
+
+    function signedSub(
+        SignedMath.Int calldata minuend,
+        SignedMath.Int calldata subtrahend
+    )
+        external
+        pure
+        returns (SignedMath.Int memory)
+    {
+        return SignedMath.signedSub(minuend, subtrahend);
     }
 
     // ============ Storage.sol ============

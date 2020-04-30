@@ -227,6 +227,36 @@ export class TestLib {
     return bnFromSoliditySignedInt(result);
   }
 
+  public async signedAdd(
+    augend: BigNumberable,
+    addend: BigNumberable,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: SignedIntStruct = await this.contracts.call(
+      this.contracts.testLib.methods.signedAdd(
+        bnToSoliditySignedInt(augend),
+        bnToSoliditySignedInt(addend),
+      ),
+      options,
+    );
+    return bnFromSoliditySignedInt(result);
+  }
+
+  public async signedSub(
+    minuend: BigNumberable,
+    subtrahend: BigNumberable,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: SignedIntStruct = await this.contracts.call(
+      this.contracts.testLib.methods.signedSub(
+        bnToSoliditySignedInt(minuend),
+        bnToSoliditySignedInt(subtrahend),
+      ),
+      options,
+    );
+    return bnFromSoliditySignedInt(result);
+  }
+
   // ============ Storage.sol ============
 
   public async load(

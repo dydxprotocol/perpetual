@@ -99,6 +99,38 @@ library SignedMath {
     }
 
     /**
+     * @dev Returns a new signed integer equal to a signed integer plus another signed integer.
+     */
+    function signedAdd(
+        Int memory augend,
+        Int memory addend
+    )
+        internal
+        pure
+        returns (Int memory)
+    {
+        return addend.isPositive
+            ? add(augend, addend.value)
+            : sub(augend, addend.value);
+    }
+
+    /**
+     * @dev Returns a new signed integer equal to a signed integer minus another signed integer.
+     */
+    function signedSub(
+        Int memory minuend,
+        Int memory subtrahend
+    )
+        internal
+        pure
+        returns (Int memory)
+    {
+        return subtrahend.isPositive
+            ? sub(minuend, subtrahend.value)
+            : add(minuend, subtrahend.value);
+    }
+
+    /**
      * @dev Returns true if signed integer `a` is greater than signed integer `b`, false otherwise.
      */
     function gt(
