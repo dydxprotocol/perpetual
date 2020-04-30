@@ -45,6 +45,7 @@ export class Api {
       taker,
       expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
       limitFee,
+      salt,
     },
     market,
     fillOrKill,
@@ -61,6 +62,7 @@ export class Api {
       taker: address,
       expiration: BigNumberable,
       limitFee?: BigNumberable,
+      salt?: BigNumberable,
     },
     market: ApiMarketName,
     fillOrKill?: boolean,
@@ -79,6 +81,7 @@ export class Api {
       expiration,
       postOnly,
       limitFee,
+      salt,
     });
 
     return this.submitPerpetualOrder({
@@ -105,6 +108,7 @@ export class Api {
     expiration,
     postOnly,
     limitFee,
+    salt,
   }: {
     market: ApiMarketName,
     side: ApiSide,
@@ -115,6 +119,7 @@ export class Api {
     expiration: BigNumberable,
     postOnly: boolean,
     limitFee?: BigNumberable,
+    salt?: BigNumberable,
   }): Promise<SignedOrder> {
     if (!Object.values(ApiMarketName).includes(market)) {
       throw new Error(`market: ${market} is invalid`);
@@ -139,7 +144,7 @@ export class Api {
       limitPrice: new Price(price),
       triggerPrice: new Price('0'),
       expiration: realExpiration,
-      salt: generatePseudoRandom256BitNumber(),
+      salt: salt ? new BigNumber(salt) : generatePseudoRandom256BitNumber(),
     };
 
     const typedSignature: string = await this.perpetualOrders.signOrder(
