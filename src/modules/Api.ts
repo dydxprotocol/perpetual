@@ -226,7 +226,7 @@ export class Api {
   }
 
   public async getMarkets():
-    Promise<{ markets: { [market: string]: ApiMarketMessage } }> {
+    Promise<{ markets: ApiMarketMessage[] }> {
     const response = await axios({
       url: `${this.endpoint}/v1/perpetual-markets`,
       method: 'get',
