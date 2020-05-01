@@ -24,6 +24,8 @@ const {
   getOracleAdjustment,
   getTokenAddress,
   getMinCollateralization,
+  getInsuranceFundAddress,
+  getInsuranceFee,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -43,6 +45,9 @@ const P1Liquidation = artifacts.require('P1Liquidation');
 // Price Oracles
 const P1MakerOracle = artifacts.require('P1MakerOracle');
 
+// Proxies
+const P1LiquidatorProxy = artifacts.require('P1LiquidatorProxy');
+
 // Test Contracts
 const TestLib = artifacts.require('Test_Lib');
 const TestP1Funder = artifacts.require('Test_P1Funder');
@@ -55,14 +60,11 @@ const TestMakerOracle = artifacts.require('Test_MakerOracle');
 // ============ Main Migration ============
 
 const migration = async (deployer, network, accounts) => {
-  await Promise.all([
-    deployTestContracts(deployer, network),
-    deployProtocol(deployer, network, accounts),
-  ]);
-
+  await deployTestContracts(deployer, network);
+  await deployProtocol(deployer, network, accounts);
   await deployOracles(deployer, network);
+  await initializePerpetual(deployer, network);
   await deployTraders(deployer, network);
-  await initializeIfLive(deployer, network);
 };
 
 module.exports = migration;
@@ -128,6 +130,18 @@ async function deployTraders(deployer, network) {
       PerpetualProxy.address,
     ),
   ]);
+  await deployer.deploy(
+    P1LiquidatorProxy,
+    PerpetualProxy.address,
+    P1Liquidation.address,
+    getInsuranceFundAddress(network),
+    getInsuranceFee(network),
+  );
+
+  // initialize liquidatorProxy on non-testnet
+  if (!isDevNetwork(network)) {
+    await P1LiquidatorProxy.approveMaximumOnPerpetual();
+  }
 
   // set global operators
   const perpetual = await PerpetualV1.at(PerpetualProxy.address);
@@ -135,15 +149,16 @@ async function deployTraders(deployer, network) {
     perpetual.setGlobalOperator(P1Orders.address, true),
     perpetual.setGlobalOperator(P1Deleveraging.address, true),
     perpetual.setGlobalOperator(P1Liquidation.address, true),
+    perpetual.setGlobalOperator(P1LiquidatorProxy.address, true),
   ]);
   if (isDevNetwork(network)) {
     await perpetual.setGlobalOperator(TestP1Trader.address, true);
   }
 }
 
-async function initializeIfLive(deployer, network) {
+async function initializePerpetual(deployer, network) {
+  const perpetual = await PerpetualV1.at(PerpetualProxy.address);
   if (!isDevNetwork(network)) {
-    const perpetual = await PerpetualV1.at(PerpetualProxy.address);
     await perpetual.initializeV1(
       getTokenAddress(network),
       P1MakerOracle.address,

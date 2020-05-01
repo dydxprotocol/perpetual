@@ -25,6 +25,7 @@ import {
   CallOptions,
   Index,
   Price,
+  PosAndNegValues,
 } from '../lib/types';
 import { Contract } from 'web3-eth-contract';
 
@@ -63,6 +64,20 @@ export class Getters {
     // Return the current balance with interest applied.
     const netMargin = balance.margin.plus(roundedInterest);
     return new Balance(netMargin, balance.position);
+  }
+
+  public async getNetAccountValues(
+    account: address,
+    options?: CallOptions,
+  ): Promise<PosAndNegValues> {
+    const [
+      balance,
+      price,
+    ] = await Promise.all([
+      this.getNetAccountBalance(account, options),
+      this.getOraclePrice(options),
+    ]);
+    return balance.getPositiveAndNegativeValues(price);
   }
 
   public async getNetAccountCollateralization(

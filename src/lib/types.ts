@@ -130,6 +130,11 @@ export interface CallOptions extends TxOptions {
   blockNumber?: number;
 }
 
+export interface PosAndNegValues {
+  positiveValue: BigNumber;
+  negativeValue: BigNumber;
+}
+
 // ============ Solidity Interfaces ============
 
 export interface SignedIntStruct {
@@ -248,32 +253,43 @@ export class Balance {
   }
 
   /**
-   * Get the collateralization ratio of the balance, given an oracle price.
-   *
-   * Returns BigNumber(Infinity) if there are no negative balances.
+   * Get the positive and negative values (in terms of margin-token) of the balance,
+   * given an oracle price.
    */
-  public getCollateralization(price: Price): BigNumber {
+  public getPositiveAndNegativeValues(price: Price): PosAndNegValues {
     let positiveValue = new BigNumber(0);
     let negativeValue = new BigNumber(0);
 
+    const marginValue = this.margin.abs();
     if (this.margin.isPositive()) {
-      positiveValue = this.margin;
+      positiveValue = marginValue;
     } else {
-      negativeValue = this.margin;
+      negativeValue = marginValue;
     }
 
-    const positionValue = this.position.times(price.value);
+    const positionValue = this.position.times(price.value).abs();
     if (this.position.isPositive()) {
       positiveValue = positiveValue.plus(positionValue);
     } else {
       negativeValue = negativeValue.plus(positionValue);
     }
 
-    if (negativeValue.isZero()) {
+    return { positiveValue, negativeValue };
+  }
+
+  /**
+   * Get the collateralization ratio of the balance, given an oracle price.
+   *
+   * Returns BigNumber(Infinity) if there are no negative balances.
+   */
+  public getCollateralization(price: Price): BigNumber {
+    const values = this.getPositiveAndNegativeValues(price);
+
+    if (values.negativeValue.isZero()) {
       return new BigNumber(Infinity);
     }
 
-    return positiveValue.div(negativeValue.abs());
+    return values.positiveValue.div(values.negativeValue);
   }
 }
 

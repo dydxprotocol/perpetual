@@ -28,6 +28,7 @@ let admin: address;
 let long: address;
 let short: address;
 let thirdParty: address;
+let globalOperator: address;
 
 async function init(ctx: ITestContext): Promise<void> {
   await initializePerpetual(ctx);
@@ -35,6 +36,7 @@ async function init(ctx: ITestContext): Promise<void> {
   long = ctx.accounts[1];
   short = ctx.accounts[2];
   thirdParty = ctx.accounts[3];
+  globalOperator = ctx.accounts[4];
 
   // Set up initial balances:
   // +---------+--------+----------+-------------------+
@@ -45,6 +47,7 @@ async function init(ctx: ITestContext): Promise<void> {
   // +---------+--------+----------+-------------------+
   await Promise.all([
     ctx.perpetual.testing.oracle.setPrice(initialPrice),
+    ctx.perpetual.admin.setGlobalOperator(globalOperator, true, { from: admin }),
     mintAndDeposit(ctx, long, new BigNumber(500)),
     mintAndDeposit(ctx, short, new BigNumber(500)),
   ]);
@@ -340,7 +343,10 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
     });
 
     it('Succeeds liquidating after an order has executed in the same tx', async () => {
-      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+      await Promise.all([
+        ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice),
+        ctx.perpetual.admin.setGlobalOperator(short, true, { from: admin }),
+      ]);
 
       const defaultOrder: Order = {
         isBuy: true,
@@ -371,42 +377,17 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
         .commit({ from: short });
     });
 
-    describe('sent by a third party', () => {
-      beforeEach(async () => {
-        await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
-        ctx.perpetual.contracts.resetGasUsed();
-      });
-
-      it('Succeeds liquidating if the sender is a global operator', async () => {
-        await ctx.perpetual.admin.setGlobalOperator(thirdParty, true, { from: admin });
-        const txResult = await liquidate(long, short, positionSize, { sender: thirdParty });
-        await expectBalances(
-          ctx,
-          txResult,
-          [long, short],
-          [new BigNumber(0), new BigNumber(1000)],
-          [new BigNumber(0), new BigNumber(0)],
-        );
-      });
-
-      it('Succeeds liquidating if the sender is a local operator', async () => {
-        await ctx.perpetual.operator.setLocalOperator(thirdParty, true, { from: short });
-        const txResult = await liquidate(long, short, positionSize, { sender: thirdParty });
-        await expectBalances(
-          ctx,
-          txResult,
-          [long, short],
-          [new BigNumber(0), new BigNumber(1000)],
-          [new BigNumber(0), new BigNumber(0)],
-        );
-      });
-
-      it('Cannot liquidate if the sender is not the taker or an authorized operator', async () => {
-        await expectThrow(
-          liquidate(long, short, positionSize, { sender: thirdParty }),
-          'sender does not have permissions for the taker (i.e. liquidator)',
-        );
-      });
+    it('Cannot liquidate if the sender is not a global operator', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+      const error = 'Sender is not a global operator';
+      await expectThrow(
+        liquidate(long, short, positionSize, { sender: thirdParty }),
+        error,
+      );
+      await expectThrow(
+        liquidate(long, short, positionSize, { sender: admin }),
+        error,
+      );
     });
   });
 
@@ -428,6 +409,6 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
     return ctx.perpetual.trade
       .initiate()
       .liquidate(maker, taker, amount, isBuy, !!args.allOrNothing)
-      .commit({ from: args.sender || taker });
+      .commit({ from: args.sender || globalOperator });
   }
 });

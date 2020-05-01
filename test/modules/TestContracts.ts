@@ -14,6 +14,7 @@ const p1MakerOracleJson = require(`${jsonFolder}P1MakerOracle.json`);
 const p1OrdersJson = require(`${jsonFolder}P1Orders.json`);
 const p1DeleveragingJson = require(`${jsonFolder}P1Deleveraging.json`);
 const p1LiquidationJson = require(`${jsonFolder}P1Liquidation.json`);
+const p1LiquidatorProxyJson = require(`${jsonFolder}P1LiquidatorProxy.json`);
 const testLibJson = require(`${jsonFolder}Test_Lib.json`);
 const testP1FunderJson = require(`${jsonFolder}Test_P1Funder.json`);
 const testP1MonolithJson = require(`${jsonFolder}Test_P1Monolith.json`);
@@ -50,6 +51,7 @@ export class TestContracts extends Contracts {
     this.p1Orders = this.addContract(p1OrdersJson);
     this.p1Deleveraging = this.addContract(p1DeleveragingJson);
     this.p1Liquidation = this.addContract(p1LiquidationJson);
+    this.p1LiquidatorProxy = this.addContract(p1LiquidatorProxyJson);
 
     // Test contracts
     this.testLib = this.addContract(testLibJson, true);
