@@ -85,11 +85,11 @@ export class LiquidatorProxy {
 
   // ============ State-Changing Functions ============
 
-  public async initialize(
+  public async approveMaximumOnPerpetual(
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
-      this.proxy.methods.initialize(),
+      this.proxy.methods.approveMaximumOnPerpetual(),
       options,
     );
   }

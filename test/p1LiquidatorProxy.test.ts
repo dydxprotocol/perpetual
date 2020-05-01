@@ -71,7 +71,7 @@ async function init(ctx: ITestContext): Promise<void> {
   await Promise.all([
     ctx.perpetual.testing.oracle.setPrice(initialPrice),
     ctx.perpetual.liquidatorProxy.setInsuranceFund(insuranceFund, { from: admin }),
-    ctx.perpetual.liquidatorProxy.initialize(),
+    ctx.perpetual.liquidatorProxy.approveMaximumOnPerpetual(),
     mintAndDeposit(ctx, long, new BigNumber(5000)),
     mintAndDeposit(ctx, short, new BigNumber(5000)),
     mintAndDeposit(ctx, smallLong, new BigNumber(5000)),

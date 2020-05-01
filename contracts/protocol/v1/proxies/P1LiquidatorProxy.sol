@@ -106,7 +106,7 @@ contract P1LiquidatorProxy is
      * @notice Sets the maximum allowance on the perpetual contract. Must be called at least once.
      * @dev Cannot be run in the constructor due to technical restrictions in Solidity.
      */
-    function initialize()
+    function approveMaximumOnPerpetual()
         external
     {
         address perpetual = _PERPETUAL_V1_;
