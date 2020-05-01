@@ -22,6 +22,7 @@ import { Contract } from 'web3-eth-contract';
 import { Contracts } from './Contracts';
 import {
   BigNumberable,
+  BaseValue,
   TxResult,
   CallOptions,
   SendOptions,
@@ -53,6 +54,16 @@ export class LiquidatorProxy {
       this.proxy.methods._INSURANCE_FUND_(),
       options,
     );
+  }
+
+  public async getInsuranceFee(
+    options?: CallOptions,
+  ): Promise<BaseValue> {
+    const result = await this.contracts.call(
+      this.proxy.methods._INSURANCE_FEE_(),
+      options,
+    );
+    return BaseValue.fromSolidity(result);
   }
 
   public async getLiquidateReturnValues(
@@ -107,6 +118,16 @@ export class LiquidatorProxy {
   ): Promise<TxResult> {
     return this.contracts.send(
       this.proxy.methods.setInsuranceFund(insuranceFund),
+      options,
+    );
+  }
+
+  public async setInsuranceFee(
+    insuranceFee: BaseValue,
+    options?: SendOptions,
+  ): Promise<TxResult> {
+    return this.contracts.send(
+      this.proxy.methods.setInsuranceFee(insuranceFee.toSolidity()),
       options,
     );
   }

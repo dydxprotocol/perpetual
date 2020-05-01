@@ -137,15 +137,12 @@ function getInsuranceFundAddress(network) {
   throw new Error('Cannot find insurance fund address');
 }
 
-function getInsuranceFundFee(network) {
-  if (isMainnet(network)) {
-    return '10000000000000000'; // 1%
-  }
-  if (isKovan(network)) {
-    return '10000000000000000'; // 1%
+function getInsuranceFee(network) {
+  if (isMainnet(network) || isKovan(network)) {
+    return '100000000000000000'; // 10%
   }
   if (isDevNetwork(network)) {
-    return '10000000000000000'; // 1%
+    return '100000000000000000'; // 10%
   }
   throw new Error('Cannot find insurance fund fee');
 }
@@ -160,5 +157,5 @@ module.exports = {
   getTokenAddress,
   getMinCollateralization,
   getInsuranceFundAddress,
-  getInsuranceFundFee,
+  getInsuranceFee,
 };

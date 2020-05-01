@@ -19,6 +19,7 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -40,6 +41,7 @@ contract P1LiquidatorProxy is
     Ownable
 {
     using BaseMath for uint256;
+    using SafeMath for uint256;
     using SignedMath for SignedMath.Int;
     using P1BalanceMath for P1Types.Balance;
     using SafeERC20 for IERC20;
@@ -58,6 +60,10 @@ contract P1LiquidatorProxy is
         address insuranceFund
     );
 
+    event LogInsuranceFeeSet(
+        uint256 insuranceFee
+    );
+
     // ============ Immutable Storage ============
 
     // Address of the perpetual contract.
@@ -66,11 +72,11 @@ contract P1LiquidatorProxy is
     // Address of the P1Liquidation contract.
     address public _LIQUIDATION_;
 
-    // Percentage of liquidated debts that go to the insurance fund after liquidation.
-    // This number is represented as a fixed-point number with 18 decimals.
-    uint256 public _FEE_PERCENTAGE_;
-
     // ============ Mutable Storage ============
+
+    // Amount of liquidated debts that go to the insurance fund after liquidation.
+    // This number is represented as a fixed-point number with 18 decimals.
+    uint256 public _INSURANCE_FEE_;
 
     // Address of the insurance fund.
     address public _INSURANCE_FUND_;
@@ -81,16 +87,17 @@ contract P1LiquidatorProxy is
         address perpetualV1,
         address liquidator,
         address insuranceFund,
-        uint256 feePercentage
+        uint256 insuranceFee
     )
         public
     {
         _PERPETUAL_V1_ = perpetualV1;
         _LIQUIDATION_ = liquidator;
         _INSURANCE_FUND_ = insuranceFund;
-        _FEE_PERCENTAGE_ = feePercentage;
+        _INSURANCE_FEE_ = insuranceFee;
 
         emit LogInsuranceFundSet(insuranceFund);
+        emit LogInsuranceFeeSet(insuranceFee);
     }
 
     // ============ External Functions ============
@@ -194,6 +201,25 @@ contract P1LiquidatorProxy is
         emit LogInsuranceFundSet(insuranceFund);
     }
 
+    /**
+     * @dev Allows the owner to set the insurance fee. Emits the LogInsuranceFeeSet event.
+     *
+     * @param  insuranceFee  The new fee as a fixed-point number with 18 decimal places. Max of 1.
+     */
+    function setInsuranceFee(
+        uint256 insuranceFee
+    )
+        external
+        onlyOwner
+    {
+        require(
+            insuranceFee <= BaseMath.base().div(2),
+            "insuranceFee cannot be greater than 50%"
+        );
+        _INSURANCE_FEE_ = insuranceFee;
+        emit LogInsuranceFeeSet(insuranceFee);
+    }
+
     // ============ Helper Functions ============
 
     /**
@@ -270,19 +296,25 @@ contract P1LiquidatorProxy is
         view
         returns (uint256, uint256)
     {
-        // Get the amount liquidated.
-        uint256 liqAmount = currentBalance.getPosition().signedSub(
-            initialBalance.getPosition()
-        ).value;
+        // Get the change in the balances of the liquidator.
+        SignedMath.Int memory positionAmount =
+            currentBalance.getPosition().signedSub(initialBalance.getPosition());
+        SignedMath.Int memory marginAmount =
+            currentBalance.getMargin().signedSub(initialBalance.getMargin());
 
-        // Get the value of debt liquidated.
-        uint256 debtAmountInMargin = isBuy
-            ? currentBalance.getMargin().signedSub(initialBalance.getMargin()).value
-            : liqAmount.baseMul(perpetual.getOraclePrice());
+        // Calculate the value (in marign-token) of the change in position balance.
+        uint256 price = perpetual.getOraclePrice();
+        uint256 positionValue = positionAmount.value.baseMul(price);
 
-        // Calculate the fee (in margin tokens) based on the value of the debt liquidated.
-        uint256 feeAmount = debtAmountInMargin.baseMul(_FEE_PERCENTAGE_);
+        // Get the positive and negative value (in margin-token) taken by the liquidator.
+        uint256 posValue = isBuy ? positionValue : marginAmount.value;
+        uint256 negValue = isBuy ? marginAmount.value : positionValue;
 
-        return (liqAmount, feeAmount);
+        // Calculate the fee amount based on the liquidation value.
+        uint256 feeAmount = posValue > negValue
+            ? posValue.sub(negValue).baseMul(_INSURANCE_FEE_)
+            : 0;
+
+        return (positionAmount.value, feeAmount);
     }
 }

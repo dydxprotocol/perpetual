@@ -25,7 +25,7 @@ const {
   getTokenAddress,
   getMinCollateralization,
   getInsuranceFundAddress,
-  getInsuranceFundFee,
+  getInsuranceFee,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -135,7 +135,7 @@ async function deployTraders(deployer, network) {
     PerpetualProxy.address,
     P1Liquidation.address,
     getInsuranceFundAddress(network),
-    getInsuranceFundFee(network),
+    getInsuranceFee(network),
   );
 
   // initialize liquidatorProxy on non-testnet

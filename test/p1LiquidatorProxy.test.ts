@@ -5,9 +5,10 @@ import initializePerpetual from './helpers/initializePerpetual';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy } from './helpers/trade';
-import { expect, expectBN, expectThrow } from './helpers/Expect';
+import { expect, expectBN, expectBaseValueEqual, expectThrow } from './helpers/Expect';
 import {
   BigNumberable,
+  BaseValue,
   Price,
   TxResult,
   address,
@@ -115,11 +116,54 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
       const newInsuranceFund = await ctx.perpetual.liquidatorProxy.getInsuranceFund();
       expect(newInsuranceFund).to.equal(rando);
     });
+
+    it('Fails for non-owner', async () => {
+      await expectThrow(
+        ctx.perpetual.liquidatorProxy.setInsuranceFund(
+          rando,
+          { from: rando },
+        ),
+        'Ownable: caller is not the owner',
+      );
+    });
+  });
+
+  describe('setInsuranceFee()', () => {
+    const newFee = new BaseValue(0.5);
+
+    it('Succeeds', async () => {
+      await ctx.perpetual.liquidatorProxy.setInsuranceFee(
+        newFee,
+        { from: admin },
+      );
+      const newInsuranceFee = await ctx.perpetual.liquidatorProxy.getInsuranceFee();
+      expectBaseValueEqual(newInsuranceFee, newFee);
+    });
+
+    it('Fails to set above 50%', async () => {
+      await expectThrow(
+        ctx.perpetual.liquidatorProxy.setInsuranceFee(
+          new BaseValue(0.51),
+          { from: admin },
+        ),
+        'insuranceFee cannot be greater than 50%',
+      );
+    });
+
+    it('Fails for non-owner', async () => {
+      await expectThrow(
+        ctx.perpetual.liquidatorProxy.setInsuranceFee(
+          newFee,
+          { from: rando },
+        ),
+        'Ownable: caller is not the owner',
+      );
+    });
   });
 
   describe('liquidate()', () => {
     it('Succeeds partially liquidating a long position', async () => {
-      const feeAmount = 25;
+      const feeAmount = 10;
 
       await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
       const txResult = await liquidate({
@@ -131,7 +175,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
       await expectFinalBalances(
         txResult,
         [long, neutral],
-        [-2500, 17475],
+        [-2500, 17500 - feeAmount],
         [halfPosition, halfPosition],
         feeAmount,
       );
@@ -145,7 +189,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
     });
 
     it('Succeeds partially liquidating a short position', async () => {
-      const feeAmount = 70;
+      const feeAmount = 50;
 
       await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
       const txResult = await liquidate({
@@ -157,7 +201,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
       await expectFinalBalances(
         txResult,
         [short, neutral],
-        [7500, 27430],
+        [7500, 27500 - feeAmount],
         [halfPosition.negated(), halfPosition.negated()],
         feeAmount,
       );
@@ -171,7 +215,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
     });
 
     it('Succeeds fully liquidating an undercollateralized long position', async () => {
-      const feeAmount = 50;
+      const feeAmount = 20;
 
       await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
       const txResult = await liquidate({
@@ -183,7 +227,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
       await expectFinalBalances(
         txResult,
         [long, neutral],
-        [0, 14950],
+        [0, 15000 - feeAmount],
         [0, positionSize],
         feeAmount,
       );
@@ -197,7 +241,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
     });
 
     it('Succeeds fully liquidating an undercollateralized short position', async () => {
-      const feeAmount = 140;
+      const feeAmount = 100;
 
       await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
       const txResult = await liquidate({
@@ -209,7 +253,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
       await expectFinalBalances(
         txResult,
         [short, neutral],
-        [0, 34860],
+        [0, 35000 - feeAmount],
         [0, positionSize.negated()],
         feeAmount,
       );
@@ -223,7 +267,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
     });
 
     it('Succeeds fully liquidating a long position using a high maxPositionSize', async () => {
-      const feeAmount = 50;
+      const feeAmount = 20;
 
       await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
       const txResult = await liquidate({
@@ -235,7 +279,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
       await expectFinalBalances(
         txResult,
         [long, neutral],
-        [0, 14950],
+        [0, 15000 - feeAmount],
         [0, positionSize],
         feeAmount,
       );
@@ -249,7 +293,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
     });
 
     it('Succeeds fully liquidating a short position using a high maxPositionSize', async () => {
-      const feeAmount = 140;
+      const feeAmount = 100;
 
       await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
       const txResult = await liquidate({
@@ -261,7 +305,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
       await expectFinalBalances(
         txResult,
         [short, neutral],
-        [0, 34860],
+        [0, 35000 - feeAmount],
         [0, positionSize.negated()],
         feeAmount,
       );
@@ -275,7 +319,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
     });
 
     it('Succeeds partially liquidating an underwater long position', async () => {
-      const feeAmount = 25;
+      const feeAmount = 0;
 
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
       const txResult = await liquidate({
@@ -287,7 +331,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
       await expectFinalBalances(
         txResult,
         [long, neutral],
-        [-2500, 17475],
+        [-2500, 17500 - feeAmount],
         [halfPosition, halfPosition],
         feeAmount,
       );
@@ -301,7 +345,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
     });
 
     it('Succeeds partially liquidating an underwater short position', async () => {
-      const feeAmount = 80;
+      const feeAmount = 0;
 
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
       const txResult = await liquidate({
@@ -313,7 +357,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
       await expectFinalBalances(
         txResult,
         [short, neutral],
-        [7500, 27420],
+        [7500, 27500 - feeAmount],
         [halfPosition.negated(), halfPosition.negated()],
         feeAmount,
       );
@@ -486,7 +530,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
       await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
       expect(await ctx.perpetual.getters.getNetAccountIsLiquidatable(insuranceFund)).to.be.true;
 
-      const feeAmount = 50;
+      const feeAmount = 20;
       const txResult = await liquidate({
         liquidatee: long,
         liquidator: neutral,
@@ -496,7 +540,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
       await expectFinalBalances(
         txResult,
         [long, neutral, insuranceFund],
-        [0, 14950, -19950],
+        [0, 15000 - feeAmount, -20000 + feeAmount],
         [0, positionSize, positionSize.times(4)],
       );
       expectLogs(txResult, {
