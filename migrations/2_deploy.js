@@ -140,7 +140,7 @@ async function deployTraders(deployer, network) {
 
   // initialize liquidatorProxy on non-testnet
   if (!isDevNetwork(network)) {
-    await P1LiquidatorProxy.setAllowance();
+    await P1LiquidatorProxy.initialize();
   }
 
   // set global operators

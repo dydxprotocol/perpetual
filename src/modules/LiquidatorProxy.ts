@@ -66,7 +66,7 @@ export class LiquidatorProxy {
     return BaseValue.fromSolidity(result);
   }
 
-  public async getLiquidateReturnValues(
+  public async getLiquidateReturnValue(
     liquidatee: address,
     isBuy: boolean,
     maxPosition: BigNumberable,
@@ -85,11 +85,11 @@ export class LiquidatorProxy {
 
   // ============ State-Changing Functions ============
 
-  public async setAllowance(
+  public async initialize(
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
-      this.proxy.methods.setAllowance(),
+      this.proxy.methods.initialize(),
       options,
     );
   }

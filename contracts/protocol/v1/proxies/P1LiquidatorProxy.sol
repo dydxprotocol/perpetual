@@ -74,12 +74,12 @@ contract P1LiquidatorProxy is
 
     // ============ Mutable Storage ============
 
-    // Amount of liquidated debts that go to the insurance fund after liquidation.
-    // This number is represented as a fixed-point number with 18 decimals.
-    uint256 public _INSURANCE_FEE_;
-
     // Address of the insurance fund.
     address public _INSURANCE_FUND_;
+
+    // Proportion of liquidation profits that is directed to the insurance fund.
+    // This number is represented as a fixed-point number with 18 decimals.
+    uint256 public _INSURANCE_FEE_;
 
     // ============ Constructor ============
 
@@ -106,7 +106,7 @@ contract P1LiquidatorProxy is
      * @notice Sets the maximum allowance on the perpetual contract. Must be called at least once.
      * @dev Cannot be run in the constructor due to technical restrictions in Solidity.
      */
-    function setAllowance()
+    function initialize()
         external
     {
         address perpetual = _PERPETUAL_V1_;
@@ -122,6 +122,7 @@ contract P1LiquidatorProxy is
     /**
      * @notice Allows an account below the minimum collateralization to be liquidated by another
      *  account. This allows the account to be partially or fully subsumed by the liquidator.
+     *  A proportion of all liquidation profits is directed to the insurance fund.
      * @dev Emits the LogLiquidatorProxyUsed event.
      *
      * @param  liquidatee   The account to liquidate.
@@ -139,7 +140,7 @@ contract P1LiquidatorProxy is
     {
         I_PerpetualV1 perpetual = I_PerpetualV1(_PERPETUAL_V1_);
 
-        // Get the balances of the sender.
+        // Settle the sender's account and get balances.
         perpetual.deposit(msg.sender, 0);
         P1Types.Balance memory initialBalance = perpetual.getAccountBalance(msg.sender);
 
@@ -163,14 +164,15 @@ contract P1LiquidatorProxy is
         // Get the liquidated amount and fee amount.
         (uint256 liqAmount, uint256 feeAmount) = _getLiquidatedAndFeeAmount(
             perpetual,
-            isBuy,
             initialBalance,
             currentBalance
         );
 
         // Transfer fee from sender to insurance fund.
-        perpetual.withdraw(msg.sender, address(this), feeAmount);
-        perpetual.deposit(_INSURANCE_FUND_, feeAmount);
+        if (feeAmount > 0) {
+            perpetual.withdraw(msg.sender, address(this), feeAmount);
+            perpetual.deposit(_INSURANCE_FUND_, feeAmount);
+        }
 
         // Log the result.
         emit LogLiquidatorProxyUsed(
@@ -204,7 +206,7 @@ contract P1LiquidatorProxy is
     /**
      * @dev Allows the owner to set the insurance fee. Emits the LogInsuranceFeeSet event.
      *
-     * @param  insuranceFee  The new fee as a fixed-point number with 18 decimal places. Max of 1.
+     * @param  insuranceFee  The new fee as a fixed-point number with 18 decimal places. Max of 50%.
      */
     function setInsuranceFee(
         uint256 insuranceFee
@@ -255,7 +257,7 @@ contract P1LiquidatorProxy is
     )
         private
     {
-        // Create accounts.
+        // Create accounts. Base protocol requires accounts to be sorted.
         bool takerFirst = address(msg.sender) < liquidatee;
         address[] memory accounts = new address[](2);
         uint256 takerIndex = takerFirst ? 0 : 1;
@@ -288,7 +290,6 @@ contract P1LiquidatorProxy is
      */
     function _getLiquidatedAndFeeAmount(
         I_PerpetualV1 perpetual,
-        bool isBuy,
         P1Types.Balance memory initialBalance,
         P1Types.Balance memory currentBalance
     )
@@ -296,25 +297,26 @@ contract P1LiquidatorProxy is
         view
         returns (uint256, uint256)
     {
-        // Get the change in the balances of the liquidator.
-        SignedMath.Int memory positionAmount =
+        // Get the change in the position and margin of the liquidator.
+        SignedMath.Int memory deltaPosition =
             currentBalance.getPosition().signedSub(initialBalance.getPosition());
-        SignedMath.Int memory marginAmount =
+        SignedMath.Int memory deltaMargin =
             currentBalance.getMargin().signedSub(initialBalance.getMargin());
 
-        // Calculate the value (in marign-token) of the change in position balance.
+        // Get the change in the balances of the liquidator.
+        P1Types.Balance memory deltaBalance;
+        deltaBalance.setPosition(deltaPosition);
+        deltaBalance.setMargin(deltaMargin);
+
+        // Get the positive and negative value taken by the liquidator.
         uint256 price = perpetual.getOraclePrice();
-        uint256 positionValue = positionAmount.value.baseMul(price);
+        (uint256 posValue, uint256 negValue) = deltaBalance.getPositiveAndNegativeValue(price);
 
-        // Get the positive and negative value (in margin-token) taken by the liquidator.
-        uint256 posValue = isBuy ? positionValue : marginAmount.value;
-        uint256 negValue = isBuy ? marginAmount.value : positionValue;
-
-        // Calculate the fee amount based on the liquidation value.
+        // Calculate the fee amount based on the liquidation profit.
         uint256 feeAmount = posValue > negValue
-            ? posValue.sub(negValue).baseMul(_INSURANCE_FEE_)
+            ? posValue.sub(negValue).baseMul(_INSURANCE_FEE_).div(BaseMath.base())
             : 0;
 
-        return (positionAmount.value, feeAmount);
+        return (deltaPosition.value, feeAmount);
     }
 }
