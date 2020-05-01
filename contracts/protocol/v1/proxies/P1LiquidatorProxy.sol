@@ -240,7 +240,7 @@ contract P1LiquidatorProxy is
 
         require(
             result.isPositive == isBuy && result.value > 0,
-            "Cannot liquidate past maxPosition"
+            "Cannot liquidate if it would put sender past the specified maxPosition"
         );
 
         return result;

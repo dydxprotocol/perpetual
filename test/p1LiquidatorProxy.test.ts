@@ -21,6 +21,7 @@ const shortUndercollateralizedPrice = new Price(140);
 const shortUnderwaterPrice = new Price(160);
 const positionSize = new BigNumber(100);
 const halfPosition = positionSize.div(2);
+const ERROR_MAX_POSITION = 'Cannot liquidate if it would put sender past the specified maxPosition';
 
 let admin: address;
 let long: address;
@@ -378,7 +379,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: true,
           maxPosition: -50,
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
     });
 
@@ -390,7 +391,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: false,
           maxPosition: 50,
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
     });
 
@@ -402,7 +403,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: true,
           maxPosition: positionSize.negated(),
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
       await expectThrow(
         liquidate({
@@ -411,7 +412,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: true,
           maxPosition: 0,
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
       await expectThrow(
         liquidate({
@@ -420,7 +421,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: true,
           maxPosition: halfPosition,
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
     });
 
@@ -432,7 +433,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: false,
           maxPosition: positionSize,
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
       await expectThrow(
         liquidate({
@@ -441,7 +442,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: false,
           maxPosition: 0,
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
       await expectThrow(
         liquidate({
@@ -450,7 +451,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: false,
           maxPosition: halfPosition.negated(),
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
     });
 
@@ -462,7 +463,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: true,
           maxPosition: positionSize.negated().minus(1),
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
       await expectThrow(
         liquidate({
@@ -471,7 +472,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: true,
           maxPosition: -1,
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
       await expectThrow(
         liquidate({
@@ -480,7 +481,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: true,
           maxPosition: halfPosition.minus(1),
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
     });
 
@@ -492,7 +493,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: false,
           maxPosition: positionSize.plus(1),
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
       await expectThrow(
         liquidate({
@@ -501,7 +502,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: false,
           maxPosition: 1,
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
       await expectThrow(
         liquidate({
@@ -510,7 +511,7 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
           isBuy: false,
           maxPosition: halfPosition.negated().plus(1),
         }),
-        'Cannot liquidate past maxPosition',
+        ERROR_MAX_POSITION,
       );
     });
 
