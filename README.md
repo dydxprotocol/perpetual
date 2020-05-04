@@ -49,11 +49,12 @@ Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.excha
 |Contract Name|Description|Address|
 |---|---|---|
 |[`PerpetualProxy`](contracts/protocol/PerpetualProxy.sol)|Proxy contract and entrypoint for the core protocol|[0x07aBe965500A49370D331eCD613c7AC47dD6e547](https://etherscan.io/address/0x07aBe965500A49370D331eCD613c7AC47dD6e547)|
-|[`PerpetualV1`](contracts/protocol/v1/PerpetualV1.sol)|Upgradeable logic contract for the core protocol|[0x364508A5cA0538d8119D3BF40A284635686C98c4](https://etherscan.io/address/0x364508A5cA0538d8119D3BF40A284635686C98c4)|
+|[`PerpetualV1`](contracts/protocol/v1/PerpetualV1.sol)|Upgradeable logic contract for the core protocol|[0xE883b3efdaE637fC599b467478a23199778F2cCf](https://etherscan.io/address/0xE883b3efdaE637fC599b467478a23199778F2cCf)|
 |[`P1FundingOracle`](contracts/protocol/v1/oracles/P1FundingOracle.sol)|Funding rate oracle|[0x4525D2B71f7f018c9EBddFcD336852A85404e75B](https://etherscan.io/address/0x4525D2B71f7f018c9EBddFcD336852A85404e75B)|
 |[`P1MakerOracle`](contracts/protocol/v1/oracles/P1MakerOracle.sol)|Price oracle|[0x538038E526517680735568f9C5342c6E68bbDA12](https://etherscan.io/address/0x538038E526517680735568f9C5342c6E68bbDA12)|
 |[`P1Orders`](contracts/protocol/v1/traders/P1Orders.sol)|Trader contract for limit and stop-limit orders|[0x3ea6F88eC8F7b24Bb3Ad206fa80124210e8e28F3](https://etherscan.io/address/0x3ea6F88eC8F7b24Bb3Ad206fa80124210e8e28F3)|
-|[`P1Liquidation`](contracts/protocol/v1/traders/P1Liquidation.sol)|Trader contract for liquidations|[0x1F8b4f89a5b8CA0BAa0eDbd0d928DD68B3357280](https://etherscan.io/address/0x1F8b4f89a5b8CA0BAa0eDbd0d928DD68B3357280)|
+|[`P1Liquidation`](contracts/protocol/v1/traders/P1Liquidation.sol)|Trader contract for liquidations|[0x18Ba3F12f9d3699dE7D451cA97ED55Cd33DD0f80](https://etherscan.io/address/0x18Ba3F12f9d3699dE7D451cA97ED55Cd33DD0f80)|
+|[`P1LiquidationProxy`](contracts/protocol/v1/traders/P1Liquidation.sol)|Proxy contract for doing liquidations that contribute to an insurance fund|[0x51C72bEfAe54D365A9D0C08C486aee4F99285e08](https://etherscan.io/address/0x51C72bEfAe54D365A9D0C08C486aee4F99285e08)|
 |[`P1Deleveraging`](contracts/protocol/v1/traders/P1Deleveraging.sol)|Trader contract for deleveraging|[0x9C6C96727d1Cf2F183a8ef77E274621F26D728f8](https://etherscan.io/address/0x9C6C96727d1Cf2F183a8ef77E274621F26D728f8)|
 
 ## Security
