@@ -16,6 +16,7 @@ import {
   TxResult,
 } from '../lib/types';
 import { ORDER_FLAGS } from '../lib/Constants';
+import { addressesAreEqual } from '../lib/BytesHelper';
 
 type IContractsByAddress = { [address: string]: Contract };
 
@@ -91,14 +92,18 @@ export class Logs {
   }
 
   private parseLog(log: Log): any {
-    let address = log.address.toLowerCase();
+    const logAddress = log.address.toLowerCase();
 
-    if (address === this.contracts.perpetualProxy.options.address) {
-      address = this.contracts.perpetualV1.options.address;
+    // Check if the logs are coming from the proxy ABI.
+    if (addressesAreEqual(logAddress, this.contracts.perpetualProxy.options.address)) {
+      const parsedLog = this.parseLogWithContract(this.contracts.perpetualProxy, log);
+      if (parsedLog) {
+        return parsedLog;
+      }
     }
 
-    if (address in this.contractsByAddress) {
-      return this.parseLogWithContract(this.contractsByAddress[address], log);
+    if (logAddress in this.contractsByAddress) {
+      return this.parseLogWithContract(this.contractsByAddress[logAddress], log);
     }
 
     return null;
@@ -114,7 +119,7 @@ export class Logs {
     );
 
     if (!eventJson) {
-      throw new Error('Event type not found');
+      return null;
     }
 
     const eventArgs = this.web3.eth.abi.decodeLog(
