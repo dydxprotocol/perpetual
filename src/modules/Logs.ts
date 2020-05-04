@@ -94,9 +94,9 @@ export class Logs {
   private parseLog(log: Log): any {
     const logAddress = log.address.toLowerCase();
 
-    // Check if the logs are coming from the implementation contract.
+    // Check if the logs are coming from the proxy ABI.
     if (addressesAreEqual(logAddress, this.contracts.perpetualProxy.options.address)) {
-      const parsedLog = this.parseLogWithContract(this.contracts.perpetualV1, log);
+      const parsedLog = this.parseLogWithContract(this.contracts.perpetualProxy, log);
       if (parsedLog) {
         return parsedLog;
       }

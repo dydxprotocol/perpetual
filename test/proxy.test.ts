@@ -59,10 +59,15 @@ perpetualDescribe('Proxy', init, (ctx: ITestContext) => {
 
   describe('upgradeTo()', () => {
     it('succeeds', async () => {
-      const txResult = await ctx.perpetual.proxy.upgradeTo(rando, { from: admin });
+      const expectedImplementation = ctx.perpetual.contracts.perpetualV1.options.address;
 
-      const newImplementation = await ctx.perpetual.proxy.getImplementation();
-      expect(newImplementation).to.equal(rando);
+      const txResult = await ctx.perpetual.proxy.upgradeTo(
+        expectedImplementation,
+        { from: admin },
+      );
+
+      const actualImplementation = await ctx.perpetual.proxy.getImplementation({ from: admin });
+      expect(actualImplementation).to.equal(expectedImplementation);
 
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       expect(logs.length).to.equal(1);
@@ -71,8 +76,10 @@ perpetualDescribe('Proxy', init, (ctx: ITestContext) => {
 
     it('fails for non-admin', async () => {
       await expectThrow(
-        ctx.perpetual.proxy.upgradeTo(rando, { from: rando }),
-        'TEST',
+        ctx.perpetual.proxy.upgradeTo(
+          ctx.perpetual.contracts.perpetualV1.options.address,
+          { from: rando },
+        ),
       );
     });
   });
