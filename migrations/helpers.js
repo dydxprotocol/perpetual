@@ -139,7 +139,7 @@ function getInsuranceFundAddress(network) {
 
 function getInsuranceFee(network) {
   if (isMainnet(network) || isKovan(network)) {
-    return '100000000000000000'; // 10%
+    return '200000000000000000'; // 20%
   }
   if (isDevNetwork(network)) {
     return '100000000000000000'; // 10%
