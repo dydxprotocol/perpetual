@@ -140,7 +140,8 @@ async function deployTraders(deployer, network) {
 
   // initialize liquidatorProxy on non-testnet
   if (!isDevNetwork(network)) {
-    await P1LiquidatorProxy.approveMaximumOnPerpetual();
+    const liquidatorProxy = await P1LiquidatorProxy.deployed();
+    await liquidatorProxy.approveMaximumOnPerpetual();
   }
 
   // set global operators
