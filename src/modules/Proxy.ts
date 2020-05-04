@@ -51,7 +51,7 @@ export class Proxy {
     );
   }
 
-  public async implementation(
+  public async getImplementation(
     options?: CallOptions,
   ): Promise<address> {
     return this.contracts.call(
