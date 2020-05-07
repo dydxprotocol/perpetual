@@ -24,6 +24,8 @@ const TUPLE_MAP = {
   'struct P1Orders.Fill': ['amount', 'price', 'fee', 'isNegativeFee'],
 };
 
+const OLD_LIQUIDATION_ADDRESS = '0x1F8b4f89a5b8CA0BAa0eDbd0d928DD68B3357280';
+
 export class Logs {
   private contracts: Contracts;
   private _contractsByAddress?: IContractsByAddress;
@@ -97,6 +99,14 @@ export class Logs {
     // Check if the logs are coming from the proxy ABI.
     if (addressesAreEqual(logAddress, this.contracts.perpetualProxy.options.address)) {
       const parsedLog = this.parseLogWithContract(this.contracts.perpetualProxy, log);
+      if (parsedLog) {
+        return parsedLog;
+      }
+    }
+
+    // Check if the logs are coming from the proxy ABI.
+    if (addressesAreEqual(logAddress, OLD_LIQUIDATION_ADDRESS)) {
+      const parsedLog = this.parseLogWithContract(this.contracts.p1Liquidation, log);
       if (parsedLog) {
         return parsedLog;
       }
