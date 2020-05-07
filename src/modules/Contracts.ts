@@ -165,6 +165,9 @@ export class Contracts {
   ): Promise<any> {
     const {
       blockNumber,
+      confirmations,
+      confirmationType,
+      gasMultiplier,
       ...otherOptions
     } = {
       ...this.defaultOptions,
