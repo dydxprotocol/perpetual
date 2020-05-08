@@ -27,7 +27,7 @@ def lintImports(dir, filepath):
                 postLines.append(line)
 
     # remove unused import lines
-    ogImportLines = copy.deepcopy(importLines);
+    ogImportLines = copy.deepcopy(importLines)
     importLines = [x for x in importLines if any(x[2] in line for line in postLines)]
 
     # remove duplicate import lines
@@ -160,7 +160,6 @@ def lintFunctionComments(dir, filepath):
 
 def main():
     files = []
-    start_dir = os.getcwd()
     pattern = "*.sol"
 
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
