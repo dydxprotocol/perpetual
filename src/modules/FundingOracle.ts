@@ -28,6 +28,7 @@ import {
   FundingRateStruct,
   SendOptions,
   TxResult,
+  address,
 } from '../lib/types';
 
 export class FundingOracle {
@@ -42,6 +43,8 @@ export class FundingOracle {
   public get address(): string {
     return this.contracts.p1FundingOracle.options.address;
   }
+
+  // ============ Getters ============
 
   public async getBounds(
     options?: CallOptions,
@@ -64,16 +67,32 @@ export class FundingOracle {
   }
 
   public async getFunding(
-    timestamp: BigNumberable,
+    timeDelta: BigNumberable,
     options?: CallOptions,
   ): Promise<BaseValue> {
     const [isPositive, funding]: [boolean, string] = await this.contracts.call(
       this.contracts.p1FundingOracle.methods.getFunding(
-        new BigNumber(timestamp).toFixed(0),
+        new BigNumber(timeDelta).toFixed(0),
       ),
       options,
     );
     return BaseValue.fromSolidity(funding, isPositive);
+  }
+
+  public async getFundingRate(
+    options?: CallOptions,
+  ): Promise<FundingRate> {
+    const oneSecondFunding = await this.getFunding(1, options);
+    return new FundingRate(oneSecondFunding.value);
+  }
+
+  public async getFundingRateProvider(
+    options?: CallOptions,
+  ): Promise<address> {
+    return this.contracts.call(
+      this.contracts.p1FundingOracle.methods._FUNDING_RATE_PROVIDER_(),
+      options,
+    );
   }
 
   /**
@@ -92,6 +111,13 @@ export class FundingOracle {
     return FundingRate.fromSolidity(result.value, result.isPositive);
   }
 
+  // ============ Admin Functions ============
+
+  /**
+   * Set the funding rate.
+   *
+   * Must be called by the funding rate provider.
+   */
   public async setFundingRate(
     fundingRate: FundingRate,
     options?: SendOptions,
@@ -99,6 +125,23 @@ export class FundingOracle {
     return this.contracts.send(
       this.contracts.p1FundingOracle.methods.setFundingRate(
         fundingRate.toSoliditySignedInt(),
+      ),
+      options,
+    );
+  }
+
+  /**
+   * Set the funding rate provider.
+   *
+   * Must be called by the contract owner.
+   */
+  public async setFundingRateProvider(
+    fundingRateProvider: address,
+    options?: SendOptions,
+  ): Promise<TxResult> {
+    return this.contracts.send(
+      this.contracts.p1FundingOracle.methods.setFundingRateProvider(
+        fundingRateProvider,
       ),
       options,
     );

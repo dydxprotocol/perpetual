@@ -14,6 +14,7 @@ import {
 import { fastForward } from './helpers/EVM';
 import {
   expect,
+  expectAddressesEqual,
   expectBaseValueEqual,
   expectBaseValueNotEqual,
   expectThrow,
@@ -25,10 +26,14 @@ const minUnit = INTEGERS.ONE.shiftedBy(-18);
 const oraclePrice = new Price(100);
 
 let admin: address;
+let fundingRateProvider: address;
+let rando: address;
 
 async function init(ctx: ITestContext): Promise<void> {
   await initializePerpetual(ctx);
   admin = ctx.accounts[0];
+  fundingRateProvider = ctx.accounts[1];
+  rando = ctx.accounts[2];
   await ctx.perpetual.testing.oracle.setPrice(oraclePrice);
 }
 
@@ -44,6 +49,67 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
     });
   });
 
+  describe('setFundingRateProvider', () => {
+
+    it('sets the funding rate provider', async () => {
+      // Check that provider can't set the rate at first.
+      await expectThrow(
+        ctx.perpetual.fundingOracle.setFundingRate(new FundingRate('1e-10')),
+        'The funding rate can only be set by the funding rate provider',
+      );
+
+      // Set the provider.
+      const txResult = await ctx.perpetual.fundingOracle.setFundingRateProvider(
+        fundingRateProvider,
+        { from: admin },
+      );
+
+      // Check that the provider can set the rate after.
+      await ctx.perpetual.fundingOracle.setFundingRate(new FundingRate('1e-10'));
+
+      // Check getter.
+      const providerAfter = await ctx.perpetual.fundingOracle.getFundingRateProvider();
+      expect(providerAfter).to.equal(fundingRateProvider);
+
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      expect(logs.length).to.equal(1);
+      const log = logs[0];
+      expect(log.name).to.equal('LogFundingRateProviderSet');
+      expectAddressesEqual(log.args.fundingRateProvider, fundingRateProvider);
+
+      // Set another provider.
+      await ctx.perpetual.fundingOracle.setFundingRateProvider(
+        rando,
+        { from: admin },
+      );
+
+      // Check that the provider can set the rate after.
+      await ctx.perpetual.fundingOracle.setFundingRate(new FundingRate('1e-10'), { from: rando });
+    });
+
+    it('fails if the caller is not the admin', async () => {
+      // Call from a random address.
+      await expectThrow(
+        ctx.perpetual.fundingOracle.setFundingRateProvider(fundingRateProvider, { from: rando }),
+        'Ownable: caller is not the owner',
+      );
+
+      // Set the provider as admin, and then call from the provider address.
+      await ctx.perpetual.fundingOracle.setFundingRateProvider(
+        fundingRateProvider,
+        { from: admin },
+      );
+      await expectThrow(
+        ctx.perpetual.fundingOracle.setFundingRateProvider(
+          fundingRateProvider,
+          { from: fundingRateProvider },
+        ),
+        'Ownable: caller is not the owner',
+      );
+    });
+  });
+
   describe('getFunding()', () => {
 
     it('initially returns zero', async () => {
@@ -51,19 +117,28 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
     });
 
     it('gets funding as a function of time elapsed', async () => {
-      // Funding is represented as an annual rate.
-      await ctx.perpetual.fundingOracle.setFundingRate(
-        new FundingRate('1e-10'),
+      // Set a funding rate.
+      await ctx.perpetual.fundingOracle.setFundingRateProvider(
+        fundingRateProvider,
         { from: admin },
       );
+      await ctx.perpetual.fundingOracle.setFundingRate(new FundingRate('1e-10'));
 
-      await expectFunding(1000, '1e-7');
-      await expectFunding(10000, '1e-6');
-      await expectFunding(100000, '1e-5');
+      // Check funding amount for different time periods.
+      await expectFunding(1230, '1.23e-7');
+      await expectFunding(12300, '1.23e-6');
+      await expectFunding(123000, '1.23e-5');
     });
   });
 
   describe('setFundingRate()', () => {
+
+    beforeEach(async () => {
+      await ctx.perpetual.fundingOracle.setFundingRateProvider(
+        fundingRateProvider,
+        { from: admin },
+      );
+    });
 
     it('sets a positive funding rate', async () => {
       await setFundingRate(new FundingRate('1e-10'));
@@ -81,10 +156,14 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
       await setFundingRate(new FundingRate(0));
     });
 
-    it('fails if not called by the contract owner', async () => {
+    it('fails if not called by the funding rate provider', async () => {
       await expectThrow(
-        ctx.perpetual.fundingOracle.setFundingRate(new FundingRate('1e-10')),
-        'Ownable: caller is not the owner',
+        ctx.perpetual.fundingOracle.setFundingRate(new FundingRate('1e-10'), { from: rando }),
+        'The funding rate can only be set by the funding rate provider',
+      );
+      await expectThrow(
+        ctx.perpetual.fundingOracle.setFundingRate(new FundingRate('1e-10'), { from: admin }),
+        'The funding rate can only be set by the funding rate provider',
       );
     });
 
@@ -95,7 +174,10 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
         await setFundingRate(FUNDING_RATE_MAX_ABS_VALUE);
 
         // Try to set above max value.
-        await setFundingRate(FUNDING_RATE_MAX_ABS_VALUE.plus(minUnit), FUNDING_RATE_MAX_ABS_VALUE);
+        await setFundingRate(
+          FUNDING_RATE_MAX_ABS_VALUE.plus(minUnit),
+          { expectedRate: FUNDING_RATE_MAX_ABS_VALUE },
+        );
       });
 
       it('cannot exceed the min value', async () => {
@@ -105,7 +187,10 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
         await setFundingRate(minFundingRate);
 
         // Try to set below min value.
-        await setFundingRate(minFundingRate.minus(minUnit), minFundingRate);
+        await setFundingRate(
+          minFundingRate.minus(minUnit),
+          { expectedRate: minFundingRate },
+        );
       });
 
       it('cannot increase faster than the per update limit', async () => {
@@ -115,11 +200,11 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
         // Incrase by the max-update amount, twice.
         await setFundingRate(
           FUNDING_RATE_MAX_ABS_VALUE,
-          new FundingRate(0),
+          { expectedRate: new FundingRate(0) },
         );
         await setFundingRate(
           FUNDING_RATE_MAX_ABS_VALUE,
-          FUNDING_RATE_MAX_ABS_VALUE,
+          { expectedRate: FUNDING_RATE_MAX_ABS_VALUE },
         );
       });
 
@@ -130,11 +215,11 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
         // Decrease by the max-update amount, twice.
         await setFundingRate(
           FUNDING_RATE_MAX_ABS_VALUE.negated(),
-          new FundingRate(0),
+          { expectedRate: new FundingRate(0) },
         );
         await setFundingRate(
           FUNDING_RATE_MAX_ABS_VALUE.negated(),
-          FUNDING_RATE_MAX_ABS_VALUE.negated(),
+          { expectedRate: FUNDING_RATE_MAX_ABS_VALUE.negated() },
         );
       });
 
@@ -152,10 +237,7 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
         await fastForward(quarterHour - 15);
 
         // Expect the bounded rate to be slightly lower than the requested rate.
-        const boundedRate = await ctx.perpetual.fundingOracle.getBoundedFundingRate(
-          targetRate,
-          { from: admin },
-        );
+        const boundedRate = await getBoundedFundingRate(targetRate);
         expectBaseValueNotEqual(boundedRate, targetRate);
 
         // Error should be at most (15 seconds) / (15 minutes) = 1 / 60.
@@ -179,10 +261,7 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
         await fastForward(quarterHour - 15);
 
         // Expect the bounded rate to be slightly greater than the requested rate.
-        const boundedRate = await ctx.perpetual.fundingOracle.getBoundedFundingRate(
-          targetRate,
-          { from: admin },
-        );
+        const boundedRate = await getBoundedFundingRate(targetRate);
         expectBaseValueNotEqual(boundedRate, targetRate);
 
         // Error should be at most (15 seconds) / (15 minutes) = 1 / 60.
@@ -203,24 +282,42 @@ perpetualDescribe('P1FundingOracle', init, (ctx: ITestContext) => {
   }
 
   /**
+   * Get the bounded funding rate as the funding rate provider.
+   */
+  async function getBoundedFundingRate(fundingRate: FundingRate): Promise<FundingRate> {
+    return ctx.perpetual.fundingOracle.getBoundedFundingRate(
+      fundingRate,
+      { from: fundingRateProvider },
+    );
+  }
+
+  /**
    * Set the funding rate and verify the emitted logs.
    */
   async function setFundingRate(
     fundingRate: FundingRate,
-    expectedRate: FundingRate = fundingRate,
+    options: {
+      from?: address,
+      expectedRate?: FundingRate,
+    } = {},
   ): Promise<void> {
     // Elapse enough time so that the speed limit does not take effect.
     await fastForward(INTEGERS.ONE_HOUR_IN_SECONDS.toNumber());
 
     // Verify the return value is as expected.
-    const simulatedResult = await ctx.perpetual.fundingOracle.getBoundedFundingRate(
-      fundingRate,
-      { from: admin },
-    );
+    const simulatedResult = await getBoundedFundingRate(fundingRate);
+    const expectedRate = options.expectedRate || fundingRate;
     expectBaseValueEqual(simulatedResult, expectedRate, 'simulated result');
 
     // Set the funding rate.
-    const txResult = await ctx.perpetual.fundingOracle.setFundingRate(fundingRate, { from: admin });
+    const txResult = await ctx.perpetual.fundingOracle.setFundingRate(
+      fundingRate,
+      { from: options.from || fundingRateProvider },
+    );
+
+    // Check the actual rate as returned by getFunding().
+    const actualRate = await ctx.perpetual.fundingOracle.getFundingRate();
+    expectBaseValueEqual(actualRate, expectedRate, 'actual rate');
 
     // Check logs.
     const logs = ctx.perpetual.logs.parseLogs(txResult);

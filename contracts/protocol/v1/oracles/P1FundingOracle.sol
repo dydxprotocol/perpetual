@@ -74,22 +74,35 @@ contract P1FundingOracle is
         bytes32 fundingRate
     );
 
+    event LogFundingRateProviderSet(
+        address fundingRateProvider
+    );
+
     // ============ Mutable Storage ============
 
     // The funding rate is denoted in units per second, as a fixed-point number with 18 decimals.
     P1Types.Index private _FUNDING_RATE_;
 
-    // ============ Functions ============
+    // Address which has the ability to update the funding rate.
+    address public _FUNDING_RATE_PROVIDER_;
 
-    constructor()
+    // ============ Constructor ============
+
+    constructor(
+        address fundingRateProvider
+    )
         public
     {
-        _FUNDING_RATE_ = P1Types.Index({
+        P1Types.Index memory fundingRate = P1Types.Index({
             timestamp: block.timestamp.toUint32(),
             isPositive: true,
             value: 0
         });
-        emit LogFundingRateUpdated(_FUNDING_RATE_.toBytes32());
+        _FUNDING_RATE_ = fundingRate;
+        _FUNDING_RATE_PROVIDER_ = fundingRateProvider;
+
+        emit LogFundingRateUpdated(fundingRate.toBytes32());
+        emit LogFundingRateProviderSet(fundingRateProvider);
     }
 
     // ============ External Functions ============
@@ -117,9 +130,8 @@ contract P1FundingOracle is
     }
 
     /**
-     * @notice Set the funding rate.
-     * @dev Can only be called by the owner of this contract. Emits the LogFundingRateUpdated event.
-     * The rate is denoted in units per second, as a fixed-point number with 18 decimals.
+     * @notice Set the funding rate, denoted in units per second, fixed-point with 18 decimals.
+     * @dev Can only be called by the funding rate provider. Emits the LogFundingRateUpdated event.
      *
      * @param  newRate  The intended new funding rate. Is bounded by the global constant bounds.
      * @return          The new funding rate with a timestamp of the update.
@@ -128,9 +140,13 @@ contract P1FundingOracle is
         SignedMath.Int calldata newRate
     )
         external
-        onlyOwner
         returns (P1Types.Index memory)
     {
+        require(
+            msg.sender == _FUNDING_RATE_PROVIDER_,
+            "The funding rate can only be set by the funding rate provider"
+        );
+
         SignedMath.Int memory boundedNewRate = _boundRate(newRate);
         P1Types.Index memory boundedNewRateWithTimestamp = P1Types.Index({
             timestamp: block.timestamp.toUint32(),
@@ -138,8 +154,26 @@ contract P1FundingOracle is
             value: boundedNewRate.value.toUint128()
         });
         _FUNDING_RATE_ = boundedNewRateWithTimestamp;
+
         emit LogFundingRateUpdated(boundedNewRateWithTimestamp.toBytes32());
+
         return boundedNewRateWithTimestamp;
+    }
+
+    /**
+     * @notice Set the funding rate provider. Can only be called by the admin.
+     * @dev Emits the LogFundingRateProviderSet event.
+     *
+     * @param  newProvider  The new provider, who will have the ability to set the funding rate.
+     */
+    function setFundingRateProvider(
+        address newProvider
+    )
+        external
+        onlyOwner
+    {
+        _FUNDING_RATE_PROVIDER_ = newProvider;
+        emit LogFundingRateProviderSet(newProvider);
     }
 
     // ============ Helper Functions ============

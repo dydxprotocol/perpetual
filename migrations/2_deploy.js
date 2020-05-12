@@ -26,6 +26,7 @@ const {
   getMinCollateralization,
   getInsuranceFundAddress,
   getInsuranceFee,
+  getFundingRateProviderAddress,
 } = require('./helpers');
 
 // ============ Contracts ============
@@ -97,7 +98,10 @@ async function deployProtocol(deployer, network, accounts) {
 
 async function deployOracles(deployer, network) {
   await Promise.all([
-    deployer.deploy(P1FundingOracle),
+    deployer.deploy(
+      P1FundingOracle,
+      getFundingRateProviderAddress(network),
+    ),
     deployer.deploy(P1MakerOracle),
   ]);
 

@@ -28,6 +28,7 @@ const longInitialMargin = new BigNumber('-200.5e18');
 const shortInitialMargin = new BigNumber('3200.5e18');
 
 let admin: address;
+let fundingRateProvider: address;
 let long: address;
 let short: address;
 let neutral: address;
@@ -36,9 +37,10 @@ async function init(ctx: ITestContext): Promise<void> {
   await initializePerpetual(ctx, { funder: ctx.perpetual.fundingOracle.address });
 
   admin = ctx.accounts[0];
-  long = ctx.accounts[1];
-  short = ctx.accounts[2];
-  neutral = ctx.accounts[3];
+  fundingRateProvider = ctx.accounts[1];
+  long = ctx.accounts[2];
+  short = ctx.accounts[3];
+  neutral = ctx.accounts[4];
 
   // Set up initial balances:
   // +-----------+-----------+-----------+-------------------+
@@ -55,6 +57,10 @@ async function init(ctx: ITestContext): Promise<void> {
     mintAndDeposit(ctx, neutral, '3000e18'),
   ]);
 
+  await ctx.perpetual.fundingOracle.setFundingRateProvider(
+    fundingRateProvider,
+    { from: admin },
+  );
   // Trade at a price of 117.12.
   await buy(ctx, long, short, positionSize, '1200.5e18');
 }
@@ -109,7 +115,10 @@ perpetualDescribe('Integration testing', init, (ctx: ITestContext) => {
 
     // Fast forward and update the rate in multiple steps so that the diff-per-update and
     // diff-per-second limits do not take effect.
-    await ctx.perpetual.fundingOracle.setFundingRate(new FundingRate(0), { from: admin });
+    await ctx.perpetual.fundingOracle.setFundingRate(
+      new FundingRate(0),
+      { from: fundingRateProvider },
+    );
     await fastForward(INTEGERS.ONE_HOUR_IN_SECONDS.toNumber());
 
     // Settle the accounts and get checkpoint balances.
@@ -170,12 +179,15 @@ perpetualDescribe('Integration testing', init, (ctx: ITestContext) => {
     // Verify the return value is as expected.
     const simulatedResult = await ctx.perpetual.fundingOracle.getBoundedFundingRate(
       fundingRate,
-      { from: admin },
+      { from: fundingRateProvider },
     );
     expectBaseValueEqual(simulatedResult, fundingRate, 'simulated result');
 
     // Set the funding rate.
-    const txResult = await ctx.perpetual.fundingOracle.setFundingRate(fundingRate, { from: admin });
+    const txResult = await ctx.perpetual.fundingOracle.setFundingRate(
+      fundingRate,
+      { from: fundingRateProvider },
+    );
 
     // Check logs.
     const fundingRateUpdatedLog = ctx.perpetual.logs.parseLogs(txResult)[0];

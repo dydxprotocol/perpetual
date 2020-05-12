@@ -27,7 +27,7 @@ def lintImports(dir, filepath):
                 postLines.append(line)
 
     # remove unused import lines
-    ogImportLines = copy.deepcopy(importLines);
+    ogImportLines = copy.deepcopy(importLines)
     importLines = [x for x in importLines if any(x[2] in line for line in postLines)]
 
     # remove duplicate import lines
@@ -57,10 +57,10 @@ def lintImports(dir, filepath):
                 output.writelines(postLines)
         else:
             print("\nin file '" + niceFilePath +"':\n")
-            print "".join([" ".join(x) for x in ogImportLines])
+            print("".join([" ".join(x) for x in ogImportLines]))
             print("\t>>> SHOULD BE >>>\n")
-            print "".join([" ".join(x) for x in sortedImportLines])
-            print ""
+            print("".join([" ".join(x) for x in sortedImportLines]))
+            print()
         return False
     return True
 
@@ -77,19 +77,19 @@ def lintCommentHeader(dir, filepath, solidityVersion):
 
     everythingOkay = True
     if titleLine not in allLines:
-        print "No title (or incorrect title) line in " + fileName
+        print("No title (or incorrect title) line in " + fileName)
         everythingOkay = False
     if authorLine not in allLines:
-        print "No author (or incorrect author) line in " + fileName
+        print("No author (or incorrect author) line in " + fileName)
         everythingOkay = False
     if blankLine not in allLines:
-        print "Unlikely to be a proper file-level comment in " + fileName
+        print("Unlikely to be a proper file-level comment in " + fileName)
         everythingOkay = False
     if solidityLine not in allLines:
-        print "Unlikely to be using solidity version " + solidityVersion + " in " + fileName
+        print("Unlikely to be using solidity version " + solidityVersion + " in " + fileName)
         everythingOkay = False
     if abiEncoderLine not in allLines:
-        print "Must use ABIEncoderV2 in " + fileName
+        print("Must use ABIEncoderV2 in " + fileName)
         everythingOkay = False
 
     return everythingOkay
@@ -111,10 +111,10 @@ def lintFunctionComments(dir, filepath):
         # check for extra statements
         if ('param ' in lstripped and 'param  ' not in lstripped):
             everythingOkay = False
-            print "Param has only one space" + errorSuffix
+            print("Param has only one space" + errorSuffix)
         if ('param   ' in lstripped):
             everythingOkay = False
-            print "Param has more than two spaces" + errorSuffix
+            print("Param has more than two spaces" + errorSuffix)
 
         # start block comment
         if (not inBlockComment and lstripped.startswith('/**')):
@@ -136,7 +136,7 @@ def lintFunctionComments(dir, filepath):
                 else:
                     if (col != argColumn):
                         everythingOkay = False
-                        print "Params not aligned to column " + str(argColumn + 1) + errorSuffix
+                        print("Params not aligned to column " + str(argColumn + 1) + errorSuffix)
 
         # blank comment line
         if (inBlockComment and lstripped.rstrip() == '*'):
@@ -148,7 +148,7 @@ def lintFunctionComments(dir, filepath):
                 if (not alreadyComplained):
                     alreadyComplained = True
                     everythingOkay = False
-                    print "No blank line before param list in function comment" + errorSuffix
+                    print("No blank line before param list in function comment" + errorSuffix)
 
         # end block comment
         if (inBlockComment and line.rstrip().endswith('*/')):
@@ -160,7 +160,6 @@ def lintFunctionComments(dir, filepath):
 
 def main():
     files = []
-    start_dir = os.getcwd()
     pattern = "*.sol"
 
     dir_path = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
@@ -181,7 +180,7 @@ def main():
         everythingOkay &= lintCommentHeader(dir_path, file, "0.5.16")
 
     if everythingOkay:
-        print "No contract linting issues found."
+        print("No contract linting issues found.")
 
     sys.exit(0 if everythingOkay else 1)
 
