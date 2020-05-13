@@ -28,6 +28,8 @@ pragma experimental ABIEncoderV2;
  */
 interface I_MakerOracle {
 
+    // ============ Getter Functions ============
+
     // Returns the current value (e.g. BTC/USD * 10**20) as a bytes32.
     function peek()
         external
@@ -39,4 +41,28 @@ interface I_MakerOracle {
         external
         view
         returns (bytes32);
+
+    // Returns the number of signers per poke.
+    function bar()
+        external
+        view
+        returns (uint256);
+
+    // Returns the timetamp of the last update.
+    function age()
+        external
+        view
+        returns (uint32);
+
+    // ============ State-Changing Functions ============
+
+    // Updates the value of the oracle
+    function poke(
+        uint256[] calldata val_,
+        uint256[] calldata age_,
+        uint8[] calldata v,
+        bytes32[] calldata r,
+        bytes32[] calldata s
+    )
+        external;
 }

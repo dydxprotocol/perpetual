@@ -32,6 +32,7 @@ import { Admin } from './modules/Admin';
 import { FinalSettlement } from './modules/FinalSettlement';
 import { FundingOracle } from './modules/FundingOracle';
 import { PriceOracle } from './modules/PriceOracle';
+import { Relayer } from './modules/Relayer';
 import { Deleveraging } from './modules/Deleveraging';
 import { Liquidation } from './modules/Liquidation';
 import { LiquidatorProxy } from './modules/LiquidatorProxy';
@@ -51,6 +52,7 @@ export class Perpetual {
   public finalSettlement: FinalSettlement;
   public fundingOracle: FundingOracle;
   public priceOracle: PriceOracle;
+  public relayer: Relayer;
   public deleveraging: Deleveraging;
   public liquidation: Liquidation;
   public liquidatorProxy: LiquidatorProxy;
@@ -75,6 +77,7 @@ export class Perpetual {
     this.finalSettlement = new FinalSettlement(this.contracts);
     this.fundingOracle = new FundingOracle(this.contracts);
     this.priceOracle = new PriceOracle(this.contracts);
+    this.relayer = new Relayer(this.contracts);
     this.deleveraging = new Deleveraging(this.contracts);
     this.liquidation = new Liquidation(this.contracts);
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);

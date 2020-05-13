@@ -202,6 +202,12 @@ export interface SignedOrder extends Order {
   typedSignature: string;
 }
 
+export interface MakerOracleMessage {
+  price: Price;
+  timestamp: BigNumber;
+  signature: string;
+}
+
 // ============ Helper Functions ============
 
 export function bnToSoliditySignedInt(value: BigNumberable): SignedIntStruct {
