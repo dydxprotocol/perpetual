@@ -103,7 +103,7 @@ export function fixRawSignature(
 ): string {
   const { v, r, s } = signatureToVRS(signature);
 
-  let trueV = v;
+  let trueV: string;
   switch (v) {
     case '00':
       trueV = '1b';

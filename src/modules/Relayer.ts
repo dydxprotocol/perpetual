@@ -25,6 +25,9 @@ import {
 } from '../lib/types';
 import { signatureToVRS } from '../lib/SignatureHelper';
 
+/**
+ * Used to read and update the Maker Oracle V2 Medianizer contract.
+ */
 export class Relayer {
   private contracts: Contracts;
 
