@@ -1,5 +1,5 @@
 import Web3 from 'web3';
-import { stripHexPrefix } from './BytesHelper';
+import { stripHexPrefix, combineHexStrings } from './BytesHelper';
 import { address } from './types';
 
 export enum SIGNATURE_TYPES {
@@ -101,24 +101,43 @@ export function createTypedSignature(
 export function fixRawSignature(
   signature: string,
 ): string {
+  const { v, r, s } = signatureToVRS(signature);
+
+  let trueV: string;
+  switch (v) {
+    case '00':
+      trueV = '1b';
+      break;
+    case '01':
+      trueV = '1c';
+      break;
+    case '1b':
+    case '1c':
+      trueV = v;
+      break;
+    default:
+      throw new Error(`Invalid v value: ${v}`);
+  }
+
+  return combineHexStrings(r, s, trueV);
+}
+
+export function signatureToVRS(
+  signature: string,
+): {
+  v: string,
+  r: string,
+  s:string,
+} {
   const stripped = stripHexPrefix(signature);
 
   if (stripped.length !== 130) {
     throw new Error(`Invalid raw signature: ${signature}`);
   }
 
-  const rs = stripped.substr(0, 128);
+  const r = stripped.substr(0, 64);
+  const s = stripped.substr(64, 64);
   const v = stripped.substr(128, 2);
 
-  switch (v) {
-    case '00':
-      return `0x${rs}1b`;
-    case '01':
-      return `0x${rs}1c`;
-    case '1b':
-    case '1c':
-      return `0x${stripped}`;
-    default:
-      throw new Error(`Invalid v value: ${v}`);
-  }
+  return { v, r, s };
 }

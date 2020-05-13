@@ -3,6 +3,7 @@ import { promisify } from 'es6-promisify';
 import mkdirp from 'mkdirp';
 import contracts from './Artifacts';
 import deployed from '../migrations/deployed.json';
+import externalDeployed from '../migrations/external_deployed.json';
 
 const writeFileAsync = promisify(fs.writeFile);
 
@@ -24,6 +25,10 @@ async function clean(): Promise<void> {
 
     if (deployed[contractName]) {
       cleaned.networks = deployed[contractName];
+    }
+
+    if (externalDeployed[contractName]) {
+      cleaned.networks = externalDeployed[contractName];
     }
 
     if (contract.networks[TEST_NETWORK_ID]) {
