@@ -171,6 +171,8 @@ export class Contracts {
       confirmations,
       confirmationType,
       gasMultiplier,
+      gas, // don't send gas
+      gasPrice, // don't send gasPrice
       ...otherOptions
     } = {
       ...this.defaultOptions,
