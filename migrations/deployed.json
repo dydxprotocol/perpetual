@@ -62,8 +62,8 @@
     "P1Deleveraging": {
         "1": {
             "links": {},
-            "address": "0x9C6C96727d1Cf2F183a8ef77E274621F26D728f8",
-            "transactionHash": "0x32147facd6b87070640dd916b7863906db35789e81d9b8ee2ca1a01681301ee1"
+            "address": "0xa4e4A9ae84882BE5049E450A3500ba1CD012F0C5",
+            "transactionHash": "0xfbbd02bccef8f30c6e60edfd8323b30e76e24d2ec8e52213d8393f433d616b00"
         },
         "42": {
             "links": {},

@@ -55,7 +55,7 @@ Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.excha
 |[`P1Orders`](contracts/protocol/v1/traders/P1Orders.sol)|Trader contract for limit and stop-limit orders|[0x3ea6F88eC8F7b24Bb3Ad206fa80124210e8e28F3](https://etherscan.io/address/0x3ea6F88eC8F7b24Bb3Ad206fa80124210e8e28F3)|
 |[`P1Liquidation`](contracts/protocol/v1/traders/P1Liquidation.sol)|Trader contract for liquidations|[0x18Ba3F12f9d3699dE7D451cA97ED55Cd33DD0f80](https://etherscan.io/address/0x18Ba3F12f9d3699dE7D451cA97ED55Cd33DD0f80)|
 |[`P1LiquidationProxy`](contracts/protocol/v1/traders/P1Liquidation.sol)|Proxy contract for doing liquidations that contribute to an insurance fund|[0x51C72bEfAe54D365A9D0C08C486aee4F99285e08](https://etherscan.io/address/0x51C72bEfAe54D365A9D0C08C486aee4F99285e08)|
-|[`P1Deleveraging`](contracts/protocol/v1/traders/P1Deleveraging.sol)|Trader contract for deleveraging|[0x9C6C96727d1Cf2F183a8ef77E274621F26D728f8](https://etherscan.io/address/0x9C6C96727d1Cf2F183a8ef77E274621F26D728f8)|
+|[`P1Deleveraging`](contracts/protocol/v1/traders/P1Deleveraging.sol)|Trader contract for deleveraging|[0xa4e4A9ae84882BE5049E450A3500ba1CD012F0C5](https://etherscan.io/address/0xa4e4A9ae84882BE5049E450A3500ba1CD012F0C5)|
 
 ## Security
 
