@@ -149,7 +149,7 @@ function getInsuranceFee(network) {
 
 function getDeleveragingOperatorAddress(network) {
   if (isMainnet(network) || isKovan(network)) {
-    return '0xe5E98525553d8a20d77211F4db4DC1f599515FF3';
+    return '0x0000000000000000000000000000000000000000'; // TODO
   }
   if (isDevNetwork(network)) {
     return '0x0000000000000000000000000000000000000000'; // set later in tests
@@ -159,7 +159,7 @@ function getDeleveragingOperatorAddress(network) {
 
 function getFundingRateProviderAddress(network) {
   if (isMainnet(network) || isKovan(network)) {
-    return '0x0000000000000000000000000000000000000000'; // TODO
+    return '0xe5E98525553d8a20d77211F4db4DC1f599515FF3';
   }
   if (isDevNetwork(network)) {
     return '0x0000000000000000000000000000000000000000'; // set later in tests
