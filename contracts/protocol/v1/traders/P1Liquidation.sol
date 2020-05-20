@@ -175,6 +175,16 @@ contract P1Liquidation is
             tradeData.isBuy == makerBalance.positionIsPositive,
             "liquidation must not increase maker's position size"
         );
+
+        // Disallow liquidating in the edge case where both the position and margin are negative.
+        //
+        // This case is not handled correctly by P1Trade. If an account is in this situation, the
+        // margin should first be set to zero via a deposit, then the account should be deleveraged.
+        require(
+            makerBalance.marginIsPositive || makerBalance.margin == 0 ||
+                makerBalance.positionIsPositive || makerBalance.position == 0,
+            "Cannot liquidate when maker position and margin are both negative"
+        );
     }
 
     function _isUndercollateralized(

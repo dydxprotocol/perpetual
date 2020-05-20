@@ -1,15 +1,16 @@
 import BigNumber from 'bignumber.js';
 import _ from 'lodash';
 
+import { fastForward, mineAvgBlock } from './helpers/EVM';
 import initializePerpetual from './helpers/initializePerpetual';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
-import { fastForward } from './helpers/EVM';
 import { expect, expectBN, expectBaseValueEqual, expectThrow } from './helpers/Expect';
 import { address } from '../src';
 import { FEES, INTEGERS, PRICES } from '../src/lib/Constants';
 import {
+  BaseValue,
   BigNumberable,
   Order,
   Price,
@@ -262,7 +263,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     });
 
     it('With all-or-nothing, fails if amount is greater than the maker position', async () => {
-      // Attempt to liquidate the short position.
+      // Attempt to deleverage the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
       await expectThrow(
         deleverage(short, long, positionSize.plus(1), { allOrNothing: true }),
@@ -275,7 +276,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
       await sell(ctx, long, thirdParty, new BigNumber(1), new BigNumber(100));
 
-      // Attempt to liquidate the short position.
+      // Attempt to deleverage the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
       await expectThrow(
         deleverage(short, long, positionSize, { allOrNothing: true }),
@@ -337,8 +338,60 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
           )
           .deleverage(long, short, positionSize, true, false)
           .commit({ from: short }),
-        'cannot deleverage after execution of an order, in the same tx',
+        'cannot deleverage after other trade operations, in the same tx',
       );
+    });
+
+    it('Cannot deleverage twice in the same tx', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+      await expectThrow(
+        ctx.perpetual.trade.initiate()
+          .deleverage(long, short, 1, true, false)
+          .deleverage(long, short, positionSize.minus(1), true, false)
+          .commit({ from: admin }),
+        'cannot deleverage after other trade operations, in the same tx',
+      );
+    });
+
+    describe('when an account has no positive value', async () => {
+      beforeEach(async () => {
+        // Short begins with -10 position, 1500 margin.
+        // Set a negative funding rate and accumulate 2000 margin worth of interest.
+        await ctx.perpetual.testing.funder.setFunding(new BaseValue(-2));
+        await mineAvgBlock();
+        await ctx.perpetual.margin.deposit(short, 0);
+        const balance = await ctx.perpetual.getters.getAccountBalance(short);
+        expectBN(balance.position).to.equal(-10);
+        expectBN(balance.margin).to.equal(-500);
+      });
+
+      it('Cannot directly deleverage the account', async () => {
+        await expectThrow(
+          deleverage(short, long, positionSize),
+          'Cannot liquidate when maker position and margin are both negative',
+        );
+      });
+
+      it('Succeeds deleveraging after bringing margin up to zero', async () => {
+        // Avoid additional funding.
+        await ctx.perpetual.testing.funder.setFunding(new BaseValue(0));
+
+        // Deposit margin into the target account to bring it to zero margin.
+        await ctx.perpetual.margin.withdraw(long, long, 500, { from: long });
+        await ctx.perpetual.margin.deposit(short, 500, { from: long });
+
+        // Deleverage the underwater account.
+        const txResult = await deleverage(short, long, positionSize);
+
+        // Check balances.
+        await expectBalances(
+          ctx,
+          txResult,
+          [long, short],
+          [new BigNumber(1000), new BigNumber(0)],
+          [new BigNumber(0), new BigNumber(0)],
+        );
+      });
     });
   });
 
