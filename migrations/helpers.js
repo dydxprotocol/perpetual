@@ -147,6 +147,16 @@ function getInsuranceFee(network) {
   throw new Error('Cannot find insurance fund fee');
 }
 
+function getDeleveragingOperatorAddress(network) {
+  if (isMainnet(network) || isKovan(network)) {
+    return '0x0000000000000000000000000000000000000000'; // TODO
+  }
+  if (isDevNetwork(network)) {
+    return '0x0000000000000000000000000000000000000000'; // set later in tests
+  }
+  throw new Error('Cannot find funding rate provider address');
+}
+
 function getFundingRateProviderAddress(network) {
   if (isMainnet(network) || isKovan(network)) {
     return '0xe5E98525553d8a20d77211F4db4DC1f599515FF3';
@@ -168,5 +178,6 @@ module.exports = {
   getMinCollateralization,
   getInsuranceFundAddress,
   getInsuranceFee,
+  getDeleveragingOperatorAddress,
   getFundingRateProviderAddress,
 };

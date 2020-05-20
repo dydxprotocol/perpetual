@@ -69,6 +69,10 @@ contract P1Deleveraging is
         address indexed account
     );
 
+    event LogDeleveragingOperatorSet(
+        address deleveragingOperator
+    );
+
     // ============ Immutable Storage ============
 
     // address of the perpetual contract
@@ -85,22 +89,30 @@ contract P1Deleveraging is
     // The contract admin can deleverage underwater accounts at any time.
     mapping (address => uint256) public _MARKED_TIMESTAMP_;
 
+    // Address which has the ability to deleverage accounts without marking them first.
+    address public _DELEVERAGING_OPERATOR_;
+
     // ============ Constructor ============
 
     constructor (
-        address perpetualV1
+        address perpetualV1,
+        address deleveragingOperator
     )
         public
     {
         _PERPETUAL_V1_ = perpetualV1;
+        _DELEVERAGING_OPERATOR_ = deleveragingOperator;
+
+        emit LogDeleveragingOperatorSet(deleveragingOperator);
     }
 
     // ============ External Functions ============
 
     /**
      * @notice Allows an underwater (less than 100% collateralization) account to be subsumed by any
-     * other account with an offsetting position (a position of opposite sign). The sender must be
-     * the owner account unless the account has been marked as underwater for a timelock period.
+     *  other account with an offsetting position (a position of opposite sign). The sender must be
+     *  the privileged deleveraging operator unless the account has been marked as underwater for
+     *  the timelock period.
      * @dev Emits the LogDeleveraged event. May emit the LogUnmarkedForDeleveraging event.
      *
      * @param  sender  The address that called the trade() function on PerpetualV1.
@@ -223,6 +235,23 @@ contract P1Deleveraging is
         _unmark(account);
     }
 
+    /**
+     * @notice Set the privileged deleveraging operator. Can only be called by the admin.
+     * @dev Emits the LogFundingRateProviderSet event.
+     *
+     * @param  newOperator  The new operator, who will have the ability to deleverage accounts
+     *                      without first marking them and waiting the timelock period.
+     */
+    function setDeleveragingOperator(
+        address newOperator
+    )
+        external
+        onlyOwner
+    {
+        _DELEVERAGING_OPERATOR_ = newOperator;
+        emit LogDeleveragingOperatorSet(newOperator);
+    }
+
     // ============ Helper Functions ============
 
     function _unmark(
@@ -251,8 +280,8 @@ contract P1Deleveraging is
         private
         view
     {
-        // The contract admin may deleverage underwater accounts at any time.
-        if (sender != owner()) {
+        // The privileged deleveraging operator may deleverage underwater accounts at any time.
+        if (sender != _DELEVERAGING_OPERATOR_) {
             uint256 markedTimestamp = _MARKED_TIMESTAMP_[maker];
             require(
                 markedTimestamp != 0,

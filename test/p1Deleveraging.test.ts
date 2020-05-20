@@ -6,7 +6,7 @@ import initializePerpetual from './helpers/initializePerpetual';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
-import { expect, expectBN, expectBaseValueEqual, expectThrow } from './helpers/Expect';
+import { expect, expectBN, expectBaseValueEqual, expectThrow, expectAddressesEqual } from './helpers/Expect';
 import { address } from '../src';
 import { FEES, INTEGERS, PRICES } from '../src/lib/Constants';
 import {
@@ -28,7 +28,8 @@ const positionSize = new BigNumber(10);
 let admin: address;
 let long: address;
 let short: address;
-let thirdParty: address;
+let rando: address;
+let deleveragingOperator: address;
 let deleveragingTimelockSeconds: number;
 
 async function init(ctx: ITestContext): Promise<void> {
@@ -36,7 +37,8 @@ async function init(ctx: ITestContext): Promise<void> {
   admin = ctx.accounts[0];
   long = ctx.accounts[1];
   short = ctx.accounts[2];
-  thirdParty = ctx.accounts[3];
+  rando = ctx.accounts[3];
+  deleveragingOperator = ctx.accounts[4];
   deleveragingTimelockSeconds = await ctx.perpetual.deleveraging.getDeleveragingTimelockSeconds();
 
   // Set up initial balances:
@@ -48,6 +50,7 @@ async function init(ctx: ITestContext): Promise<void> {
   // +---------+--------+----------+-------------------+
   await Promise.all([
     ctx.perpetual.testing.oracle.setPrice(initialPrice),
+    ctx.perpetual.deleveraging.setDeleveragingOperator(deleveragingOperator, { from: admin }),
     mintAndDeposit(ctx, long, new BigNumber(500)),
     mintAndDeposit(ctx, short, new BigNumber(500)),
   ]);
@@ -55,6 +58,62 @@ async function init(ctx: ITestContext): Promise<void> {
 }
 
 perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
+
+  describe('setDeleveragingOperator()', () => {
+    it('sets the privileged deleveraging operator', async () => {
+      // Make the long account deleverageable.
+      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+
+      // Check that the operator-to-be can't deleverage without marking.
+      await expectThrow(
+        deleverage(long, short, positionSize, { sender: rando }),
+        'Cannot deleverage since account is not marked',
+      );
+
+      // Set the operator.
+      const txResult = await ctx.perpetual.deleveraging.setDeleveragingOperator(
+        rando,
+        { from: admin },
+      );
+
+      // Check logs.
+      const logs = ctx.perpetual.logs.parseLogs(txResult);
+      expect(logs.length).to.equal(1);
+      const log = logs[0];
+      expect(log.name).to.equal('LogDeleveragingOperatorSet');
+      expectAddressesEqual(log.args.deleveragingOperator, rando);
+
+      // Check getter.
+      const operatorAfter = await ctx.perpetual.deleveraging.getDeleveragingOperator();
+      expectAddressesEqual(operatorAfter, rando);
+
+      // Check that the old operator can't deleverage without marking.
+      await expectThrow(
+        deleverage(long, short, positionSize, { sender: deleveragingOperator }),
+        'Cannot deleverage since account is not marked',
+      );
+
+      // Check that the new operator can deleverage without marking.
+      await deleverage(long, short, positionSize, { sender: rando });
+    });
+
+    it('fails if the caller is not the admin', async () => {
+      // Call from a random address.
+      await expectThrow(
+        ctx.perpetual.deleveraging.setDeleveragingOperator(deleveragingOperator, { from: rando }),
+        'Ownable: caller is not the owner',
+      );
+
+      // Call from the operator address.
+      await expectThrow(
+        ctx.perpetual.deleveraging.setDeleveragingOperator(
+          deleveragingOperator,
+          { from: deleveragingOperator },
+        ),
+        'Ownable: caller is not the owner',
+      );
+    });
+  });
 
   describe('trade()', () => {
     it('Fails if the caller is not the perpetual contract', async () => {
@@ -182,8 +241,8 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Succeeds even if amount is greater than the maker position', async() => {
       // Cover some of the short position.
-      await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
-      await buy(ctx, short, thirdParty, new BigNumber(1), new BigNumber(150));
+      await mintAndDeposit(ctx, rando, new BigNumber(10000));
+      await buy(ctx, short, rando, new BigNumber(1), new BigNumber(150));
 
       // New balances:
       // | account | margin | position |
@@ -199,7 +258,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       await expectBalances(
         ctx,
         txResult,
-        [long, short, thirdParty],
+        [long, short, rando],
         [new BigNumber(850), new BigNumber(0), new BigNumber(10150)],
         [new BigNumber(1), new BigNumber(0), new BigNumber(-1)],
       );
@@ -207,8 +266,8 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Succeeds even if amount is greater than the taker position', async() => {
       // Sell off some of the long position.
-      await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
-      await sell(ctx, long, thirdParty, new BigNumber(1), new BigNumber(150));
+      await mintAndDeposit(ctx, rando, new BigNumber(10000));
+      await sell(ctx, long, rando, new BigNumber(1), new BigNumber(150));
 
       // New balances:
       // | account | margin | position |
@@ -224,7 +283,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       await expectBalances(
         ctx,
         txResult,
-        [long, short, thirdParty],
+        [long, short, rando],
         [new BigNumber(1000), new BigNumber(150), new BigNumber(9850)],
         [new BigNumber(0), new BigNumber(-1), new BigNumber(1)],
       );
@@ -273,8 +332,8 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('With all-or-nothing, fails if amount is greater than the taker position', async () => {
       // Sell off some of the long position.
-      await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
-      await sell(ctx, long, thirdParty, new BigNumber(1), new BigNumber(100));
+      await mintAndDeposit(ctx, rando, new BigNumber(10000));
+      await sell(ctx, long, rando, new BigNumber(1), new BigNumber(100));
 
       // Attempt to deleverage the short position.
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
@@ -286,8 +345,8 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Cannot deleverage a long against a long', async () => {
       // Turn the short into a long.
-      await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
-      await buy(ctx, short, thirdParty, new BigNumber(20), new BigNumber(500));
+      await mintAndDeposit(ctx, rando, new BigNumber(10000));
+      await buy(ctx, short, rando, new BigNumber(20), new BigNumber(500));
 
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
       await expectThrow(
@@ -298,8 +357,8 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Cannot deleverage a short against a short', async () => {
       // Turn the long into a short.
-      await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
-      await sell(ctx, long, thirdParty, new BigNumber(20), new BigNumber(2500));
+      await mintAndDeposit(ctx, rando, new BigNumber(10000));
+      await sell(ctx, long, rando, new BigNumber(20), new BigNumber(2500));
 
       await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
       await expectThrow(
@@ -348,7 +407,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
         ctx.perpetual.trade.initiate()
           .deleverage(long, short, 1, true, false)
           .deleverage(long, short, positionSize.minus(1), true, false)
-          .commit({ from: admin }),
+          .commit({ from: deleveragingOperator }),
         'cannot deleverage after other trade operations, in the same tx',
       );
     });
@@ -402,9 +461,9 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     });
 
     it('Can mark an account and deleverage it after waiting the timelock period', async () => {
-      await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
+      await ctx.perpetual.deleveraging.mark(long, { from: rando });
       await fastForward(deleveragingTimelockSeconds);
-      const txResult = await deleverage(long, short, positionSize, { sender: thirdParty });
+      const txResult = await deleverage(long, short, positionSize, { sender: rando });
 
       await expectBalances(
         ctx,
@@ -417,31 +476,31 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
 
     it('Cannot deleverage an unmarked account', async () => {
       await expectThrow(
-        deleverage(long, short, positionSize, { sender: thirdParty }),
+        deleverage(long, short, positionSize, { sender: rando }),
         'Cannot deleverage since account is not marked',
       );
     });
 
     it('Cannot deleverage an account that was not marked for the timelock period', async () => {
-      await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
+      await ctx.perpetual.deleveraging.mark(long, { from: rando });
       await fastForward(deleveragingTimelockSeconds - 5);
       await expectThrow(
-        deleverage(long, short, positionSize, { sender: thirdParty }),
+        deleverage(long, short, positionSize, { sender: rando }),
         'Cannot deleverage since account has not been marked for the timelock period',
       );
     });
 
     it('Can deleverage partially, and then fully, after waiting one timelock period', async () => {
-      await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
+      await ctx.perpetual.deleveraging.mark(long, { from: rando });
       await fastForward(deleveragingTimelockSeconds);
-      await deleverage(long, short, positionSize.div(2), { sender: thirdParty });
-      await deleverage(long, short, positionSize.div(2), { sender: thirdParty });
+      await deleverage(long, short, positionSize.div(2), { sender: rando });
+      await deleverage(long, short, positionSize.div(2), { sender: rando });
     });
 
     it('Cannot deleverage fully, and then deleverage again, after waiting only once', async () => {
-      await ctx.perpetual.deleveraging.mark(long, { from: thirdParty });
+      await ctx.perpetual.deleveraging.mark(long, { from: rando });
       await fastForward(deleveragingTimelockSeconds);
-      const txResult = await deleverage(long, short, positionSize, { sender: thirdParty });
+      const txResult = await deleverage(long, short, positionSize, { sender: rando });
 
       // Check logs.
       const logs = ctx.perpetual.logs.parseLogs(txResult);
@@ -452,13 +511,13 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
       // Set up a new underwater position.
       await ctx.perpetual.testing.oracle.setPrice(initialPrice);
       await mintAndDeposit(ctx, long, new BigNumber(500));
-      await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
-      await buy(ctx, long, thirdParty, positionSize, new BigNumber(1000));
+      await mintAndDeposit(ctx, rando, new BigNumber(10000));
+      await buy(ctx, long, rando, positionSize, new BigNumber(1000));
       await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
 
       // Try to deleverage the same account again.
       await expectThrow(
-        deleverage(long, short, positionSize, { sender: thirdParty }),
+        deleverage(long, short, positionSize, { sender: rando }),
         'Cannot deleverage since account is not marked',
       );
     });
@@ -528,6 +587,6 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
     return ctx.perpetual.trade
       .initiate()
       .deleverage(maker, taker, amount, isBuy, !!args.allOrNothing)
-      .commit({ from: args.sender || admin });
+      .commit({ from: args.sender || deleveragingOperator });
   }
 });

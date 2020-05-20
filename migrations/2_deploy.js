@@ -26,6 +26,7 @@ const {
   getMinCollateralization,
   getInsuranceFundAddress,
   getInsuranceFee,
+  getDeleveragingOperatorAddress,
   getFundingRateProviderAddress,
 } = require('./helpers');
 
@@ -128,6 +129,7 @@ async function deployTraders(deployer, network) {
     deployer.deploy(
       P1Deleveraging,
       PerpetualProxy.address,
+      getDeleveragingOperatorAddress(network),
     ),
     deployer.deploy(
       P1Liquidation,
