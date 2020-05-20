@@ -58,6 +58,11 @@ export class Deleveraging {
     return this.deleveraging.options.address;
   }
 
+  // ============ Getters ============
+
+  /**
+   * Use eth_call to simulate the result of calling the trade() function.
+   */
   public async trade(
     maker: address,
     taker: address,
@@ -80,6 +85,27 @@ export class Deleveraging {
       options,
     );
   }
+
+  public async getDeleveragingTimelockSeconds(
+    options?: CallOptions,
+  ): Promise<number> {
+    const timelockSeconds: string = await this.contracts.call(
+      this.deleveraging.methods.DELEVERAGING_TIMELOCK_S(),
+      options,
+    );
+    return Number.parseInt(timelockSeconds, 10);
+  }
+
+  public async getDeleveragingOperator(
+    options?: CallOptions,
+  ): Promise<address> {
+    return this.contracts.call(
+      this.deleveraging.methods._DELEVERAGING_OPERATOR_(),
+      options,
+    );
+  }
+
+  // ============ State-Changing Functions ============
 
   public async mark(
     account: address,
@@ -105,13 +131,22 @@ export class Deleveraging {
     );
   }
 
-  public async getDeleveragingTimelockSeconds(
-    options?: CallOptions,
-  ): Promise<number> {
-    const timelockSeconds: string = await this.contracts.call(
-      this.deleveraging.methods.DELEVERAGING_TIMELOCK_S(),
+  // ============ Admin Functions ============
+
+  /**
+   * Set the privileged deleveraging operator.
+   *
+   * Must be called by the contract owner.
+   */
+  public async setDeleveragingOperator(
+    deleveragingOperator: address,
+    options?: SendOptions,
+  ): Promise<TxResult> {
+    return this.contracts.send(
+      this.contracts.p1Deleveraging.methods.setDeleveragingOperator(
+        deleveragingOperator,
+      ),
       options,
     );
-    return Number.parseInt(timelockSeconds, 10);
   }
 }
