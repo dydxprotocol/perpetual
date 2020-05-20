@@ -115,12 +115,13 @@ export interface TxResult {
 
 export interface TxOptions {
   from?: address;
-  gasPrice?: number;
+  gasPrice?: number | string;
   gas?: number;
-  value?: number;
+  value?: number | string;
 }
 
 export interface SendOptions extends TxOptions {
+  nonce?: string | number;
   confirmations?: number;
   confirmationType?: ConfirmationType;
   gasMultiplier?: number;
