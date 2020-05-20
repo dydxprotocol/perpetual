@@ -121,6 +121,7 @@ export interface TxOptions {
 }
 
 export interface SendOptions extends TxOptions {
+  nonce?: string | number;
   confirmations?: number;
   confirmationType?: ConfirmationType;
   gasMultiplier?: number;
