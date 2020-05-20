@@ -407,7 +407,7 @@ perpetualDescribe('P1Deleveraging', init, (ctx: ITestContext) => {
         ctx.perpetual.trade.initiate()
           .deleverage(long, short, 1, true, false)
           .deleverage(long, short, positionSize.minus(1), true, false)
-          .commit({ from: admin }),
+          .commit({ from: deleveragingOperator }),
         'cannot deleverage after other trade operations, in the same tx',
       );
     });
