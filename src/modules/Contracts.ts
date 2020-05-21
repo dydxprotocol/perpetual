@@ -174,7 +174,7 @@ export class Contracts {
       ...this.defaultOptions,
       ...specificOptions,
     });
-    return (method as any).call(otherOptions, blockNumber);
+    return (method as any).call(otherOptions, blockNumber || 'latest');
   }
 
   public async send(
@@ -368,33 +368,33 @@ export class Contracts {
   // ============ Parse Options ============
 
   private toEstimateOptions(
-    txOptions: SendOptions,
+    options: SendOptions,
   ): TxOptions {
-    return {
-      from: txOptions.from,
-      value: txOptions.value,
-    };
+    return _.pick(options, [
+      'from',
+      'value',
+    ]);
   }
 
   private toCallOptions(
     options: any,
   ): CallOptions {
-    return {
-      from: options.from,
-      value: options.value,
-      blockNumber: options.blockNumber,
-    };
+    return _.pick(options, [
+      'from',
+      'value',
+      'blockNumber',
+    ]);
   }
 
   private toNativeSendOptions(
     options: any,
   ): NativeSendOptions {
-    return {
-      from: options.from,
-      value: options.value,
-      gasPrice: options.gasPrice,
-      gas: options.gas,
-      nonce: options.nonce,
-    };
+    return _.pick(options, [
+      'from',
+      'value',
+      'gasPrice',
+      'gas',
+      'nonce',
+    ]);
   }
 }
