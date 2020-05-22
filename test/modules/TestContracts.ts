@@ -16,13 +16,17 @@ const p1DeleveragingJson = require(`${jsonFolder}P1Deleveraging.json`);
 const p1LiquidationJson = require(`${jsonFolder}P1Liquidation.json`);
 const p1CurrencyConverterProxyJson = require(`${jsonFolder}P1CurrencyConverterProxy.json`);
 const p1LiquidatorProxyJson = require(`${jsonFolder}P1LiquidatorProxy.json`);
+const p1SoloBridgeProxyJson = require(`${jsonFolder}P1SoloBridgeProxy.json`);
 const p1WethProxyJson = require(`${jsonFolder}P1WethProxy.json`);
+
+// Test Contract JSON
 const testExchangeWrapperJson = require(`${jsonFolder}Test_ExchangeWrapper.json`);
 const testLibJson = require(`${jsonFolder}Test_Lib.json`);
 const testP1FunderJson = require(`${jsonFolder}Test_P1Funder.json`);
 const testP1MonolithJson = require(`${jsonFolder}Test_P1Monolith.json`);
 const testP1OracleJson = require(`${jsonFolder}Test_P1Oracle.json`);
 const testP1TraderJson = require(`${jsonFolder}Test_P1Trader.json`);
+const testSoloJson = require(`${jsonFolder}Test_Solo.json`);
 const testTokenJson = require(`${jsonFolder}Test_Token.json`);
 const testToken2Json = require(`${jsonFolder}Test_Token2.json`);
 const testMakerOracleJson = require(`${jsonFolder}Test_MakerOracle.json`);
@@ -37,6 +41,7 @@ export class TestContracts extends Contracts {
   public testP1Monolith: Contract;
   public testP1Oracle: Contract;
   public testP1Trader: Contract;
+  public testSolo: Contract;
   public testToken: Contract;
   public testToken2: Contract;
   public testMakerOracle: Contract;
@@ -60,6 +65,7 @@ export class TestContracts extends Contracts {
     this.p1Liquidation = this.addContract(p1LiquidationJson);
     this.p1CurrencyConverterProxy = this.addContract(p1CurrencyConverterProxyJson);
     this.p1LiquidatorProxy = this.addContract(p1LiquidatorProxyJson);
+    this.p1SoloBridgeProxy = this.addContract(p1SoloBridgeProxyJson);
     this.p1WethProxy = this.addContract(p1WethProxyJson);
     this.weth = this.addContract(wethJson);
 
@@ -70,6 +76,7 @@ export class TestContracts extends Contracts {
     this.testP1Monolith = this.addContract(testP1MonolithJson, true);
     this.testP1Oracle = this.addContract(testP1OracleJson, true);
     this.testP1Trader = this.addContract(testP1TraderJson, true);
+    this.testSolo = this.addContract(testSoloJson, true);
     this.testToken = this.addContract(testTokenJson, true);
     this.testToken2 = this.addContract(testToken2Json, true);
     this.testMakerOracle = this.addContract(testMakerOracleJson, true);

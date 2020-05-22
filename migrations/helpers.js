@@ -180,6 +180,19 @@ function getFundingRateProviderAddress(network) {
   throw new Error('Cannot find funding rate provider address');
 }
 
+function getSoloAddress(network, devContract) {
+  if (isMainnet(network)) {
+    return '0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e';
+  }
+  if (isKovan(network)) {
+    return '0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE';
+  }
+  if (isDevNetwork(network)) {
+    return devContract.address;
+  }
+  throw new Error('Cannot find Solo');
+}
+
 module.exports = {
   getChainId,
   isDevNetwork,
@@ -194,4 +207,5 @@ module.exports = {
   getInsuranceFee,
   getDeleveragingOperatorAddress,
   getFundingRateProviderAddress,
+  getSoloAddress,
 };
