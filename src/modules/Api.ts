@@ -284,7 +284,7 @@ export class Api {
    * funding rate update.
    *
    * Params:
-   * * markets (optional): If present, will limit the results to the specified markets.
+   * - markets (optional): Limit results to the specified markets.
    */
   public async getFundingRates({
     markets,
@@ -295,28 +295,34 @@ export class Api {
       url: `${this.endpoint}/v1/funding-rates`,
       method: 'get',
       timeout: this.timeout,
-      params: markets ? { markets } : {},
+      params: { markets },
     });
 
     return response.data;
   }
 
   /**
-   * Get historical funding rates.
+   * Get historical funding rates. The most recent funding rates are returned first.
    *
    * Params:
-   * * markets (optional): If present, will limit the results to the specified markets.
+   * - markets (optional): Limit results to the specified markets.
+   * - limit (optional): The maximum number of funding rates. The default, and maximum, is 100.
+   * - offset (optional): The number of entries to skip, in order to retrieve older funding rates.
    */
   public async getHistoricalFundingRates({
     markets,
+    limit,
+    offset,
   }: {
     markets?: ApiMarketName[],
+    limit?: number,
+    offset?: number,
   } = {}): Promise<{ [market: string]: ApiHistoricalFundingRates }> {
     const response = await axios({
       url: `${this.endpoint}/v1/historical-funding-rates`,
       method: 'get',
       timeout: this.timeout,
-      params: markets ? { markets } : {},
+      params: { markets, limit, offset },
     });
 
     return response.data;
@@ -326,7 +332,7 @@ export class Api {
    * Get the index price used in the funding rate calculation.
    *
    * Params:
-   * * markets (optional): If present, will limit the results to the specified markets.
+   * - markets (optional): Limit results to the specified markets.
    */
   public async getFundingIndexPrice({
     markets,
@@ -337,7 +343,7 @@ export class Api {
       url: `${this.endpoint}/v1/index-price`,
       method: 'get',
       timeout: this.timeout,
-      params: markets ? { markets } : {},
+      params: { markets },
     });
 
     return response.data;
