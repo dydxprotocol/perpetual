@@ -29,12 +29,13 @@ import {
 
 import {
   address,
-  CallOptions,
   ConfirmationType,
   Provider,
-  SendOptions,
-  TxOptions,
   TxResult,
+  TxOptions,
+  CallOptions,
+  NativeSendOptions,
+  SendOptions,
 } from '../lib/types';
 
 // JSON
@@ -168,17 +169,12 @@ export class Contracts {
   ): Promise<any> {
     const {
       blockNumber,
-      confirmations,
-      confirmationType,
-      gasMultiplier,
-      gas, // don't send gas
-      gasPrice, // don't send gasPrice
       ...otherOptions
-    } = {
+    } = this.toCallOptions({
       ...this.defaultOptions,
       ...specificOptions,
-    };
-    return (method as any).call(otherOptions);
+    });
+    return (method as any).call(otherOptions, blockNumber || 'latest');
   }
 
   public async send(
@@ -240,9 +236,8 @@ export class Contracts {
       confirmations,
       confirmationType,
       gasMultiplier,
-      ...remainingOptions
+      ...txOptions
     } = sendOptions;
-    const txOptions = remainingOptions as TxOptions;
 
     if (!Object.values(ConfirmationType).includes(confirmationType)) {
       throw new Error(`Invalid confirmation type: ${confirmationType}`);
@@ -260,7 +255,7 @@ export class Contracts {
       }
     }
 
-    const promi: PromiEvent<Contract> = method.send(txOptions as any);
+    const promi: PromiEvent<Contract> = method.send(this.toNativeSendOptions(txOptions) as any);
 
     let hashOutcome = OUTCOMES.INITIAL;
     let confirmationOutcome = OUTCOMES.INITIAL;
@@ -356,18 +351,50 @@ export class Contracts {
     method: ContractSendMethod,
     txOptions: SendOptions,
   ) {
+    const estimateOptions: TxOptions = this.toEstimateOptions(txOptions);
     try {
-      const gasEstimate = await method.estimateGas(txOptions);
+      const gasEstimate = await method.estimateGas(estimateOptions);
       return gasEstimate;
     } catch (error) {
-      const { from, value } = txOptions;
       error.transactionData = {
-        from,
-        value,
+        ...estimateOptions,
         data: method.encodeABI(),
         to: (method as any)._parent._address,
       };
       throw error;
     }
+  }
+
+  // ============ Parse Options ============
+
+  private toEstimateOptions(
+    options: SendOptions,
+  ): TxOptions {
+    return _.pick(options, [
+      'from',
+      'value',
+    ]);
+  }
+
+  private toCallOptions(
+    options: any,
+  ): CallOptions {
+    return _.pick(options, [
+      'from',
+      'value',
+      'blockNumber',
+    ]);
+  }
+
+  private toNativeSendOptions(
+    options: any,
+  ): NativeSendOptions {
+    return _.pick(options, [
+      'from',
+      'value',
+      'gasPrice',
+      'gas',
+      'nonce',
+    ]);
   }
 }
