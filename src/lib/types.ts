@@ -481,3 +481,30 @@ export interface ApiAccount {
     [market: string]: ApiBalance,
   };
 }
+
+// ============ Funding API ============
+
+export interface ApiFundingRate {
+  market: ApiMarketName;
+  effectiveAt: string;
+  fundingRate: string;
+  fundingRate8Hr: string;
+  averagePremiumComponent: string;
+  averagePremiumComponent8Hr: string;
+}
+
+// Per-market response from /funding-rates
+export interface ApiFundingRates {
+  current: ApiFundingRate;
+  predicted: ApiFundingRate | null;
+}
+
+// Per-market response from /historical-funding-rates
+export interface ApiHistoricalFundingRates {
+  history: ApiFundingRate[];
+}
+
+// Per-market response from /index-price
+export interface ApiIndexPrice {
+  price: string;
+}
