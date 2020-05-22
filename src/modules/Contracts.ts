@@ -126,7 +126,7 @@ export class Contracts {
     this.setDefaultAccount(this.web3.eth.defaultAccount);
 
     if (isDevNetwork()) {
-      _countGasUsage = true;
+      this._countGasUsage = true;
     }
   }
 
@@ -195,7 +195,7 @@ export class Contracts {
 
     const result = await this._send(method, sendOptions);
 
-    if (_countGasUsage) {
+    if (this._countGasUsage) {
       // Count gas used.
       const contract: Contract = (method as any)._parent;
       const contractInfo = _.find(this.contractsList, { contract });
