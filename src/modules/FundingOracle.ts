@@ -49,21 +49,17 @@ export class FundingOracle {
   public async getBounds(
     options?: CallOptions,
   ): Promise<FundingRateBounds> {
-    const results: [string, string, string] = await Promise.all([
+    const results: [string, string] = await Promise.all([
       this.contracts.call(this.contracts.p1FundingOracle.methods.MAX_ABS_VALUE(), options),
-      this.contracts.call(
-        this.contracts.p1FundingOracle.methods.MAX_ABS_DIFF_PER_UPDATE(),
-        options,
-      ),
       this.contracts.call(
         this.contracts.p1FundingOracle.methods.MAX_ABS_DIFF_PER_SECOND(),
         options,
       ),
     ]);
-    const [maxAbsValue, maxAbsDiffPerUpdate, maxAbsDiffPerSecond] = results.map((s: string) => {
+    const [maxAbsValue, maxAbsDiffPerSecond] = results.map((s: string) => {
       return FundingRate.fromSolidity(s);
     });
-    return { maxAbsValue, maxAbsDiffPerUpdate, maxAbsDiffPerSecond };
+    return { maxAbsValue, maxAbsDiffPerSecond };
   }
 
   public async getFunding(

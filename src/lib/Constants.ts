@@ -83,12 +83,11 @@ export const ORDER_FLAGS = {
 
 // ============ P1FundingOracle.sol ============
 
-// Rate limiting is based on a 55 minute period, equal to the funding rate update interval
-// of one hour, with five minutes as a buffer.
-const FUNDING_LIMIT_PERIOD = INTEGERS.ONE_MINUTE_IN_SECONDS.times(55);
+// Rate limiting is based on a 45 minute period, equal to the funding rate update interval
+// of one hour, with fifteen minutes as a buffer.
+const FUNDING_LIMIT_PERIOD = INTEGERS.ONE_MINUTE_IN_SECONDS.times(45);
 
 // Funding rate limits set by the smart contract.
 export const FUNDING_RATE_MAX_ABS_VALUE = FundingRate.fromEightHourRate('0.0075').roundedDown();
-export const FUNDING_RATE_MAX_ABS_DIFF_PER_UPDATE = FUNDING_RATE_MAX_ABS_VALUE;
 export const FUNDING_RATE_MAX_ABS_DIFF_PER_SECOND =
-  FUNDING_RATE_MAX_ABS_VALUE.div(FUNDING_LIMIT_PERIOD).roundedDown();
+  FUNDING_RATE_MAX_ABS_VALUE.times(2).div(FUNDING_LIMIT_PERIOD).roundedDown();

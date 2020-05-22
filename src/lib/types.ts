@@ -175,7 +175,6 @@ export interface TradeResult {
 
 export interface FundingRateBounds {
   maxAbsValue: FundingRate;
-  maxAbsDiffPerUpdate: FundingRate;
   maxAbsDiffPerSecond: FundingRate;
 }
 
