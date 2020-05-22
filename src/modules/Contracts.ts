@@ -38,6 +38,10 @@ import {
   SendOptions,
 } from '../lib/types';
 
+import {
+  isDevNetwork,
+} from '../lib/NetworkHelper';
+
 // JSON
 import perpetualProxyJson from '../../build/contracts/PerpetualProxy.json';
 import perpetualV1Json from '../../build/contracts/PerpetualV1.json';
@@ -71,6 +75,7 @@ export class Contracts {
   private defaultOptions: SendOptions;
   private _cumulativeGasUsed: number = 0;
   private _gasUsedByFunction: { name: string, gasUsed: number }[] = [];
+  private _countGasUsage: boolean = false;
 
   protected web3: Web3;
 
@@ -119,6 +124,10 @@ export class Contracts {
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
+
+    if (isDevNetwork()) {
+      _countGasUsage = true;
+    }
   }
 
   public getCumulativeGasUsed(): number {
@@ -132,8 +141,6 @@ export class Contracts {
 
   /**
    * Get a list of gas used by function since last call to resetGasUsed().
-   *
-   * Empty unless DEBUG_GAS_USAGE_BY_FUNCTION was set.
    */
   public * getGasUsedByFunction(): Iterable<{ name: string, gasUsed: number }> {
     for (const gasUsed of this._gasUsedByFunction) {
@@ -187,20 +194,18 @@ export class Contracts {
     };
 
     const result = await this._send(method, sendOptions);
-    if (sendOptions.confirmationType === ConfirmationType.Confirmed ||
-        sendOptions.confirmationType === ConfirmationType.Both) {
 
+    if (_countGasUsage) {
       // Count gas used.
       const contract: Contract = (method as any)._parent;
       const contractInfo = _.find(this.contractsList, { contract });
       if (contractInfo && !contractInfo.isTest) {
         const gasUsed = (result as TxResult).gasUsed;
         this._cumulativeGasUsed += gasUsed;
-        if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
-          this._gasUsedByFunction.push({ gasUsed, name: (method as any)._method.name });
-        }
+        this._gasUsedByFunction.push({ gasUsed, name: (method as any)._method.name });
       }
     }
+
     return result;
   }
 
