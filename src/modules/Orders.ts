@@ -69,7 +69,6 @@ const EIP712_CANCEL_ORDER_STRUCT_STRING =
 
 export class Orders {
   private contracts: Contracts;
-  private networkId: number;
   private web3: Web3;
 
   // ============ Constructor ============
@@ -77,11 +76,9 @@ export class Orders {
   constructor(
     contracts: Contracts,
     web3: Web3,
-    networkId: number,
   ) {
     this.web3 = web3;
     this.contracts = contracts;
-    this.networkId = networkId;
   }
 
   // ============ On-Chain Approve / On-Chain Cancel ============
@@ -419,7 +416,7 @@ export class Orders {
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
       { t: 'bytes32', v: hashString('P1Orders') },
       { t: 'bytes32', v: hashString('1.0') },
-      { t: 'uint256', v: `${this.networkId}` },
+      { t: 'uint256', v: `${this.contracts.networkId}` },
       { t: 'bytes32', v: addressToBytes32(this.contracts.p1Orders.options.address) },
     );
   }
@@ -495,7 +492,7 @@ export class Orders {
     return {
       name: 'P1Orders',
       version: '1.0',
-      chainId: this.networkId,
+      chainId: this.contracts.networkId,
       verifyingContract: this.contracts.p1Orders.options.address,
     };
   }

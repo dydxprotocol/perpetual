@@ -85,7 +85,7 @@ export class Perpetual {
     this.logs = new Logs(this.contracts, this.web3);
     this.margin = new Margin(this.contracts);
     this.operator = new Operator(this.contracts);
-    this.orders = new Orders(this.contracts, this.web3, networkId);
+    this.orders = new Orders(this.contracts, this.web3);
     this.token = new Token(this.contracts);
     this.trade = new Trade(this.contracts, this.orders);
     this.api = new Api(this.orders, options.apiOptions);
