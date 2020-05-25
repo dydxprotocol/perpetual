@@ -21,7 +21,7 @@ const shortUndercollateralizedPrice = new Price(140);
 const shortUnderwaterPrice = new Price(160);
 const positionSize = new BigNumber(100);
 const halfPosition = positionSize.div(2);
-const ERROR_MAX_POSITION = 'Cannot liquidate if it would put sender past the specified maxPosition';
+const ERROR_MAX_POSITION = 'Cannot liquidate if it would put liquidator past the specified maxPosition';
 
 let admin: address;
 let long: address;

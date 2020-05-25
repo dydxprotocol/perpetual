@@ -49,8 +49,8 @@ contract P1LiquidatorProxy is
     // ============ Events ============
 
     event LogLiquidatorProxyUsed(
-        address indexed liquidator,
         address indexed liquidatee,
+        address indexed liquidator,
         bool isBuy,
         uint256 liquidationAmount,
         uint256 feeAmount
@@ -148,7 +148,7 @@ contract P1LiquidatorProxy is
             "msg.sender cannot operate the liquidator account"
         );
 
-        // Settle the sender's account and get balances.
+        // Settle the liquidator's account and get balances.
         perpetual.deposit(liquidator, 0);
         P1Types.Balance memory initialBalance = perpetual.getAccountBalance(liquidator);
 
@@ -162,12 +162,12 @@ contract P1LiquidatorProxy is
         // Do the liquidation.
         _doLiquidation(
             perpetual,
-            liquidator,
             liquidatee,
+            liquidator,
             maxPositionDelta
         );
 
-        // Get the balances of the sender.
+        // Get the balances of the liquidator.
         P1Types.Balance memory currentBalance = perpetual.getAccountBalance(liquidator);
 
         // Get the liquidated amount and fee amount.
@@ -177,7 +177,7 @@ contract P1LiquidatorProxy is
             currentBalance
         );
 
-        // Transfer fee from sender to insurance fund.
+        // Transfer fee from liquidator to insurance fund.
         if (feeAmount > 0) {
             perpetual.withdraw(liquidator, address(this), feeAmount);
             perpetual.deposit(_INSURANCE_FUND_, feeAmount);
@@ -185,8 +185,8 @@ contract P1LiquidatorProxy is
 
         // Log the result.
         emit LogLiquidatorProxyUsed(
-            liquidator,
             liquidatee,
+            liquidator,
             isBuy,
             liqAmount,
             feeAmount
@@ -249,7 +249,7 @@ contract P1LiquidatorProxy is
 
         require(
             result.isPositive == isBuy && result.value > 0,
-            "Cannot liquidate if it would put sender past the specified maxPosition"
+            "Cannot liquidate if it would put liquidator past the specified maxPosition"
         );
 
         return result;
@@ -261,8 +261,8 @@ contract P1LiquidatorProxy is
      */
     function _doLiquidation(
         I_PerpetualV1 perpetual,
-        address liquidator,
         address liquidatee,
+        address liquidator,
         SignedMath.Int memory maxPositionDelta
     )
         private
