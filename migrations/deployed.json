@@ -74,8 +74,8 @@
     "P1Liquidation": {
         "1": {
             "links": {},
-            "address": "0x18Ba3F12f9d3699dE7D451cA97ED55Cd33DD0f80",
-            "transactionHash": "0x9a557ab21717b0315cd3924baee4834cceea925f78565d44860c89ecde073e14"
+            "address": "0x9b1289dd794F10AF38A3117fE933836D685f7339",
+            "transactionHash": "0x4eabdf1b32ae3b0364818ae10df41fd4a6d284480d1d78a32ffd52ea72fc49b4"
         },
         "42": {
             "links": {},
@@ -86,8 +86,8 @@
     "P1LiquidatorProxy": {
         "1": {
             "links": {},
-            "address": "0x51C72bEfAe54D365A9D0C08C486aee4F99285e08",
-            "transactionHash": "0x55a3b85bcac8843a2a0fd21a1ae795d038e57d7ccf9a284fdfe65774e1b2d1c7"
+            "address": "0xA179038Ae1534E4492164BA38ac809e29770ca5F",
+            "transactionHash": "0x96a9e89570c1251e719017a500089f3b2348a547482b8ec33ddb0d94bf634af3"
         }
     }
 }
