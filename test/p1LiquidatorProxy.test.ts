@@ -21,7 +21,7 @@ const shortUndercollateralizedPrice = new Price(140);
 const shortUnderwaterPrice = new Price(160);
 const positionSize = new BigNumber(100);
 const halfPosition = positionSize.div(2);
-const ERROR_MAX_POSITION = 'Cannot liquidate if it would put sender past the specified maxPosition';
+const ERROR_MAX_POSITION = 'Cannot liquidate if it would put liquidator past the specified maxPosition';
 
 let admin: address;
 let long: address;
@@ -35,6 +35,7 @@ let smallShort: address;
 interface LiquidateOptions {
   liquidator: address;
   liquidatee: address;
+  sender?: address;
   isBuy: boolean;
   maxPosition: BigNumberable;
 }
@@ -163,356 +164,435 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
   });
 
   describe('liquidate()', () => {
-    it('Succeeds partially liquidating a long position', async () => {
-      const feeAmount = 10;
+    describe('Basic Cases', () => {
+      it('Succeeds partially liquidating a long position', async () => {
+        const feeAmount = 10;
 
-      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
-      const txResult = await liquidate({
-        liquidatee: long,
-        liquidator: neutral,
-        isBuy: true,
-        maxPosition: halfPosition,
-      });
-      await expectFinalBalances(
-        txResult,
-        [long, neutral],
-        [-2500, 17500 - feeAmount],
-        [halfPosition, halfPosition],
-        feeAmount,
-      );
-      expectLogs(txResult, {
-        feeAmount,
-        liquidatee: long,
-        liquidator: neutral,
-        isBuy: true,
-        liquidationAmount: halfPosition,
-      });
-    });
-
-    it('Succeeds partially liquidating a short position', async () => {
-      const feeAmount = 50;
-
-      await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
-      const txResult = await liquidate({
-        liquidatee: short,
-        liquidator: neutral,
-        isBuy: false,
-        maxPosition: halfPosition.negated(),
-      });
-      await expectFinalBalances(
-        txResult,
-        [short, neutral],
-        [7500, 27500 - feeAmount],
-        [halfPosition.negated(), halfPosition.negated()],
-        feeAmount,
-      );
-      expectLogs(txResult, {
-        feeAmount,
-        liquidatee: short,
-        liquidator: neutral,
-        isBuy: false,
-        liquidationAmount: halfPosition,
-      });
-    });
-
-    it('Succeeds fully liquidating an undercollateralized long position', async () => {
-      const feeAmount = 20;
-
-      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
-      const txResult = await liquidate({
-        liquidatee: long,
-        liquidator: neutral,
-        isBuy: true,
-        maxPosition: positionSize,
-      });
-      await expectFinalBalances(
-        txResult,
-        [long, neutral],
-        [0, 15000 - feeAmount],
-        [0, positionSize],
-        feeAmount,
-      );
-      expectLogs(txResult, {
-        feeAmount,
-        liquidatee: long,
-        liquidator: neutral,
-        isBuy: true,
-        liquidationAmount: positionSize,
-      });
-    });
-
-    it('Succeeds fully liquidating an undercollateralized short position', async () => {
-      const feeAmount = 100;
-
-      await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
-      const txResult = await liquidate({
-        liquidatee: short,
-        liquidator: neutral,
-        isBuy: false,
-        maxPosition: positionSize.negated(),
-      });
-      await expectFinalBalances(
-        txResult,
-        [short, neutral],
-        [0, 35000 - feeAmount],
-        [0, positionSize.negated()],
-        feeAmount,
-      );
-      expectLogs(txResult, {
-        feeAmount,
-        liquidatee: short,
-        liquidator: neutral,
-        isBuy: false,
-        liquidationAmount: positionSize,
-      });
-    });
-
-    it('Succeeds fully liquidating a long position using a high maxPositionSize', async () => {
-      const feeAmount = 20;
-
-      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
-      const txResult = await liquidate({
-        liquidatee: long,
-        liquidator: neutral,
-        isBuy: true,
-        maxPosition: positionSize.times(2),
-      });
-      await expectFinalBalances(
-        txResult,
-        [long, neutral],
-        [0, 15000 - feeAmount],
-        [0, positionSize],
-        feeAmount,
-      );
-      expectLogs(txResult, {
-        feeAmount,
-        liquidatee: long,
-        liquidator: neutral,
-        isBuy: true,
-        liquidationAmount: positionSize,
-      });
-    });
-
-    it('Succeeds fully liquidating a short position using a high maxPositionSize', async () => {
-      const feeAmount = 100;
-
-      await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
-      const txResult = await liquidate({
-        liquidatee: short,
-        liquidator: neutral,
-        isBuy: false,
-        maxPosition: positionSize.negated().times(2),
-      });
-      await expectFinalBalances(
-        txResult,
-        [short, neutral],
-        [0, 35000 - feeAmount],
-        [0, positionSize.negated()],
-        feeAmount,
-      );
-      expectLogs(txResult, {
-        feeAmount,
-        liquidatee: short,
-        liquidator: neutral,
-        isBuy: false,
-        liquidationAmount: positionSize,
-      });
-    });
-
-    it('Succeeds partially liquidating an underwater long position', async () => {
-      const feeAmount = 0;
-
-      await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
-      const txResult = await liquidate({
-        liquidatee: long,
-        liquidator: neutral,
-        isBuy: true,
-        maxPosition: halfPosition,
-      });
-      await expectFinalBalances(
-        txResult,
-        [long, neutral],
-        [-2500, 17500 - feeAmount],
-        [halfPosition, halfPosition],
-        feeAmount,
-      );
-      expectLogs(txResult, {
-        feeAmount,
-        liquidatee: long,
-        liquidator: neutral,
-        isBuy: true,
-        liquidationAmount: halfPosition,
-      });
-    });
-
-    it('Succeeds partially liquidating an underwater short position', async () => {
-      const feeAmount = 0;
-
-      await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
-      const txResult = await liquidate({
-        liquidatee: short,
-        liquidator: neutral,
-        isBuy: false,
-        maxPosition: halfPosition.negated(),
-      });
-      await expectFinalBalances(
-        txResult,
-        [short, neutral],
-        [7500, 27500 - feeAmount],
-        [halfPosition.negated(), halfPosition.negated()],
-        feeAmount,
-      );
-      expectLogs(txResult, {
-        feeAmount,
-        liquidatee: short,
-        liquidator: neutral,
-        isBuy: false,
-        liquidationAmount: halfPosition,
-      });
-    });
-
-    it('Fails if isBuy=true for a short', async () => {
-      await expectThrow(
-        liquidate({
-          liquidatee: short,
-          liquidator: neutral,
-          isBuy: true,
-          maxPosition: -50,
-        }),
-        ERROR_MAX_POSITION,
-      );
-    });
-
-    it('Fails if isBuy=false for a long', async () => {
-      await expectThrow(
-        liquidate({
+        await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+        const txResult = await liquidate({
           liquidatee: long,
           liquidator: neutral,
-          isBuy: false,
-          maxPosition: 50,
-        }),
-        ERROR_MAX_POSITION,
-      );
-    });
-
-    it('Fails if already at maxPosition for a long', async () => {
-      await expectThrow(
-        liquidate({
-          liquidatee: long,
-          liquidator: short,
-          isBuy: true,
-          maxPosition: positionSize.negated(),
-        }),
-        ERROR_MAX_POSITION,
-      );
-      await expectThrow(
-        liquidate({
-          liquidatee: long,
-          liquidator: neutral,
-          isBuy: true,
-          maxPosition: 0,
-        }),
-        ERROR_MAX_POSITION,
-      );
-      await expectThrow(
-        liquidate({
-          liquidatee: long,
-          liquidator: smallLong,
           isBuy: true,
           maxPosition: halfPosition,
-        }),
-        ERROR_MAX_POSITION,
-      );
-    });
+        });
+        await expectFinalBalances(
+          txResult,
+          [long, neutral],
+          [-2500, 17500 - feeAmount],
+          [halfPosition, halfPosition],
+          feeAmount,
+        );
+        expectLogs(txResult, {
+          feeAmount,
+          liquidatee: long,
+          liquidator: neutral,
+          isBuy: true,
+          liquidationAmount: halfPosition,
+        });
+      });
 
-    it('Fails if already at maxPosition for a short', async () => {
-      await expectThrow(
-        liquidate({
-          liquidatee: short,
-          liquidator: long,
-          isBuy: false,
-          maxPosition: positionSize,
-        }),
-        ERROR_MAX_POSITION,
-      );
-      await expectThrow(
-        liquidate({
+      it('Succeeds partially liquidating a short position', async () => {
+        const feeAmount = 50;
+
+        await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
+        const txResult = await liquidate({
           liquidatee: short,
           liquidator: neutral,
-          isBuy: false,
-          maxPosition: 0,
-        }),
-        ERROR_MAX_POSITION,
-      );
-      await expectThrow(
-        liquidate({
-          liquidatee: short,
-          liquidator: smallShort,
           isBuy: false,
           maxPosition: halfPosition.negated(),
-        }),
-        ERROR_MAX_POSITION,
-      );
-    });
-
-    it('Fails if already past maxPosition for a long', async () => {
-      await expectThrow(
-        liquidate({
-          liquidatee: long,
-          liquidator: short,
-          isBuy: true,
-          maxPosition: positionSize.negated().minus(1),
-        }),
-        ERROR_MAX_POSITION,
-      );
-      await expectThrow(
-        liquidate({
-          liquidatee: long,
-          liquidator: neutral,
-          isBuy: true,
-          maxPosition: -1,
-        }),
-        ERROR_MAX_POSITION,
-      );
-      await expectThrow(
-        liquidate({
-          liquidatee: long,
-          liquidator: smallLong,
-          isBuy: true,
-          maxPosition: halfPosition.minus(1),
-        }),
-        ERROR_MAX_POSITION,
-      );
-    });
-
-    it('Fails if already past maxPosition for a short', async () => {
-      await expectThrow(
-        liquidate({
-          liquidatee: short,
-          liquidator: long,
-          isBuy: false,
-          maxPosition: positionSize.plus(1),
-        }),
-        ERROR_MAX_POSITION,
-      );
-      await expectThrow(
-        liquidate({
+        });
+        await expectFinalBalances(
+          txResult,
+          [short, neutral],
+          [7500, 27500 - feeAmount],
+          [halfPosition.negated(), halfPosition.negated()],
+          feeAmount,
+        );
+        expectLogs(txResult, {
+          feeAmount,
           liquidatee: short,
           liquidator: neutral,
           isBuy: false,
-          maxPosition: 1,
-        }),
-        ERROR_MAX_POSITION,
-      );
-      await expectThrow(
-        liquidate({
+          liquidationAmount: halfPosition,
+        });
+      });
+
+      it('Succeeds fully liquidating an undercollateralized long position', async () => {
+        const feeAmount = 20;
+
+        await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+        const txResult = await liquidate({
+          liquidatee: long,
+          liquidator: neutral,
+          isBuy: true,
+          maxPosition: positionSize,
+        });
+        await expectFinalBalances(
+          txResult,
+          [long, neutral],
+          [0, 15000 - feeAmount],
+          [0, positionSize],
+          feeAmount,
+        );
+        expectLogs(txResult, {
+          feeAmount,
+          liquidatee: long,
+          liquidator: neutral,
+          isBuy: true,
+          liquidationAmount: positionSize,
+        });
+      });
+
+      it('Succeeds fully liquidating an undercollateralized short position', async () => {
+        const feeAmount = 100;
+
+        await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
+        const txResult = await liquidate({
           liquidatee: short,
-          liquidator: smallShort,
+          liquidator: neutral,
           isBuy: false,
-          maxPosition: halfPosition.negated().plus(1),
-        }),
-        ERROR_MAX_POSITION,
-      );
+          maxPosition: positionSize.negated(),
+        });
+        await expectFinalBalances(
+          txResult,
+          [short, neutral],
+          [0, 35000 - feeAmount],
+          [0, positionSize.negated()],
+          feeAmount,
+        );
+        expectLogs(txResult, {
+          feeAmount,
+          liquidatee: short,
+          liquidator: neutral,
+          isBuy: false,
+          liquidationAmount: positionSize,
+        });
+      });
+
+      it('Succeeds fully liquidating a long position using a high maxPositionSize', async () => {
+        const feeAmount = 20;
+
+        await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+        const txResult = await liquidate({
+          liquidatee: long,
+          liquidator: neutral,
+          isBuy: true,
+          maxPosition: positionSize.times(2),
+        });
+        await expectFinalBalances(
+          txResult,
+          [long, neutral],
+          [0, 15000 - feeAmount],
+          [0, positionSize],
+          feeAmount,
+        );
+        expectLogs(txResult, {
+          feeAmount,
+          liquidatee: long,
+          liquidator: neutral,
+          isBuy: true,
+          liquidationAmount: positionSize,
+        });
+      });
+
+      it('Succeeds fully liquidating a short position using a high maxPositionSize', async () => {
+        const feeAmount = 100;
+
+        await ctx.perpetual.testing.oracle.setPrice(shortUndercollateralizedPrice);
+        const txResult = await liquidate({
+          liquidatee: short,
+          liquidator: neutral,
+          isBuy: false,
+          maxPosition: positionSize.negated().times(2),
+        });
+        await expectFinalBalances(
+          txResult,
+          [short, neutral],
+          [0, 35000 - feeAmount],
+          [0, positionSize.negated()],
+          feeAmount,
+        );
+        expectLogs(txResult, {
+          feeAmount,
+          liquidatee: short,
+          liquidator: neutral,
+          isBuy: false,
+          liquidationAmount: positionSize,
+        });
+      });
+
+      it('Succeeds partially liquidating an underwater long position', async () => {
+        const feeAmount = 0;
+
+        await ctx.perpetual.testing.oracle.setPrice(longUnderwaterPrice);
+        const txResult = await liquidate({
+          liquidatee: long,
+          liquidator: neutral,
+          isBuy: true,
+          maxPosition: halfPosition,
+        });
+        await expectFinalBalances(
+          txResult,
+          [long, neutral],
+          [-2500, 17500 - feeAmount],
+          [halfPosition, halfPosition],
+          feeAmount,
+        );
+        expectLogs(txResult, {
+          feeAmount,
+          liquidatee: long,
+          liquidator: neutral,
+          isBuy: true,
+          liquidationAmount: halfPosition,
+        });
+      });
+
+      it('Succeeds partially liquidating an underwater short position', async () => {
+        const feeAmount = 0;
+
+        await ctx.perpetual.testing.oracle.setPrice(shortUnderwaterPrice);
+        const txResult = await liquidate({
+          liquidatee: short,
+          liquidator: neutral,
+          isBuy: false,
+          maxPosition: halfPosition.negated(),
+        });
+        await expectFinalBalances(
+          txResult,
+          [short, neutral],
+          [7500, 27500 - feeAmount],
+          [halfPosition.negated(), halfPosition.negated()],
+          feeAmount,
+        );
+        expectLogs(txResult, {
+          feeAmount,
+          liquidatee: short,
+          liquidator: neutral,
+          isBuy: false,
+          liquidationAmount: halfPosition,
+        });
+      });
+    });
+
+    describe('Account Permissions', () => {
+      it('Succeeds for localOperator', async () => {
+        const feeAmount = 10;
+
+        await Promise.all([
+          ctx.perpetual.operator.setLocalOperator(rando, true, { from: neutral }),
+          ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice),
+        ]);
+        const txResult = await liquidate({
+          liquidatee: long,
+          liquidator: neutral,
+          sender: rando,
+          isBuy: true,
+          maxPosition: halfPosition,
+        });
+        await expectFinalBalances(
+          txResult,
+          [long, neutral],
+          [-2500, 17500 - feeAmount],
+          [halfPosition, halfPosition],
+          feeAmount,
+        );
+        expectLogs(txResult, {
+          feeAmount,
+          liquidatee: long,
+          liquidator: neutral,
+          isBuy: true,
+          liquidationAmount: halfPosition,
+        });
+      });
+
+      it('Succeeds for globalOperator', async () => {
+        const feeAmount = 10;
+
+        await Promise.all([
+          ctx.perpetual.admin.setGlobalOperator(rando, true, { from: admin }),
+          ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice),
+        ]);
+        const txResult = await liquidate({
+          liquidatee: long,
+          liquidator: neutral,
+          sender: rando,
+          isBuy: true,
+          maxPosition: halfPosition,
+        });
+        await expectFinalBalances(
+          txResult,
+          [long, neutral],
+          [-2500, 17500 - feeAmount],
+          [halfPosition, halfPosition],
+          feeAmount,
+        );
+        expectLogs(txResult, {
+          feeAmount,
+          liquidatee: long,
+          liquidator: neutral,
+          isBuy: true,
+          liquidationAmount: halfPosition,
+        });
+      });
+
+      it('Fails for random account', async () => {
+        await expectThrow(
+          liquidate({
+            liquidatee: long,
+            liquidator: neutral,
+            sender: rando,
+            isBuy: true,
+            maxPosition: halfPosition,
+          }),
+          'msg.sender cannot operate the liquidator account',
+        );
+      });
+    });
+
+    describe('Failures', () => {
+      it('Fails if isBuy=true for a short', async () => {
+        await expectThrow(
+          liquidate({
+            liquidatee: short,
+            liquidator: neutral,
+            isBuy: true,
+            maxPosition: -50,
+          }),
+          ERROR_MAX_POSITION,
+        );
+      });
+
+      it('Fails if isBuy=false for a long', async () => {
+        await expectThrow(
+          liquidate({
+            liquidatee: long,
+            liquidator: neutral,
+            isBuy: false,
+            maxPosition: 50,
+          }),
+          ERROR_MAX_POSITION,
+        );
+      });
+
+      it('Fails if already at maxPosition for a long', async () => {
+        await expectThrow(
+          liquidate({
+            liquidatee: long,
+            liquidator: short,
+            isBuy: true,
+            maxPosition: positionSize.negated(),
+          }),
+          ERROR_MAX_POSITION,
+        );
+        await expectThrow(
+          liquidate({
+            liquidatee: long,
+            liquidator: neutral,
+            isBuy: true,
+            maxPosition: 0,
+          }),
+          ERROR_MAX_POSITION,
+        );
+        await expectThrow(
+          liquidate({
+            liquidatee: long,
+            liquidator: smallLong,
+            isBuy: true,
+            maxPosition: halfPosition,
+          }),
+          ERROR_MAX_POSITION,
+        );
+      });
+
+      it('Fails if already at maxPosition for a short', async () => {
+        await expectThrow(
+          liquidate({
+            liquidatee: short,
+            liquidator: long,
+            isBuy: false,
+            maxPosition: positionSize,
+          }),
+          ERROR_MAX_POSITION,
+        );
+        await expectThrow(
+          liquidate({
+            liquidatee: short,
+            liquidator: neutral,
+            isBuy: false,
+            maxPosition: 0,
+          }),
+          ERROR_MAX_POSITION,
+        );
+        await expectThrow(
+          liquidate({
+            liquidatee: short,
+            liquidator: smallShort,
+            isBuy: false,
+            maxPosition: halfPosition.negated(),
+          }),
+          ERROR_MAX_POSITION,
+        );
+      });
+
+      it('Fails if already past maxPosition for a long', async () => {
+        await expectThrow(
+          liquidate({
+            liquidatee: long,
+            liquidator: short,
+            isBuy: true,
+            maxPosition: positionSize.negated().minus(1),
+          }),
+          ERROR_MAX_POSITION,
+        );
+        await expectThrow(
+          liquidate({
+            liquidatee: long,
+            liquidator: neutral,
+            isBuy: true,
+            maxPosition: -1,
+          }),
+          ERROR_MAX_POSITION,
+        );
+        await expectThrow(
+          liquidate({
+            liquidatee: long,
+            liquidator: smallLong,
+            isBuy: true,
+            maxPosition: halfPosition.minus(1),
+          }),
+          ERROR_MAX_POSITION,
+        );
+      });
+
+      it('Fails if already past maxPosition for a short', async () => {
+        await expectThrow(
+          liquidate({
+            liquidatee: short,
+            liquidator: long,
+            isBuy: false,
+            maxPosition: positionSize.plus(1),
+          }),
+          ERROR_MAX_POSITION,
+        );
+        await expectThrow(
+          liquidate({
+            liquidatee: short,
+            liquidator: neutral,
+            isBuy: false,
+            maxPosition: 1,
+          }),
+          ERROR_MAX_POSITION,
+        );
+        await expectThrow(
+          liquidate({
+            liquidatee: short,
+            liquidator: smallShort,
+            isBuy: false,
+            maxPosition: halfPosition.negated().plus(1),
+          }),
+          ERROR_MAX_POSITION,
+        );
+      });
     });
 
     it('Succeeds even if the insurance fund is undercollateralized', async () => {
@@ -559,9 +639,10 @@ perpetualDescribe('P1LiquidatorProxy', init, (ctx: ITestContext) => {
   async function liquidate(options?: LiquidateOptions) {
     return ctx.perpetual.liquidatorProxy.liquidate(
       options.liquidatee,
+      options.liquidator,
       options.isBuy,
       new BigNumber(options.maxPosition),
-      { from: options.liquidator },
+      { from: options.sender || options.liquidator },
     );
   }
 
