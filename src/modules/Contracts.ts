@@ -26,7 +26,6 @@ import {
   ContractSendMethod,
   Contract,
 } from 'web3-eth-contract';
-
 import {
   address,
   ConfirmationType,
@@ -37,10 +36,6 @@ import {
   NativeSendOptions,
   SendOptions,
 } from '../lib/types';
-
-import {
-  isDevNetwork,
-} from '../lib/NetworkHelper';
 
 // JSON
 import perpetualProxyJson from '../../build/contracts/PerpetualProxy.json';
@@ -80,6 +75,7 @@ export class Contracts {
   protected web3: Web3;
 
   // Contract instances
+  public networkId: number;
   public contractsList: ContractInfo[] = [];
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
@@ -124,10 +120,6 @@ export class Contracts {
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
-
-    if (isDevNetwork()) {
-      this._countGasUsage = true;
-    }
   }
 
   public getCumulativeGasUsed(): number {
@@ -152,6 +144,11 @@ export class Contracts {
     provider: Provider,
     networkId: number,
   ): void {
+    this.networkId = networkId;
+
+    // Only record gas usage for local testnets.
+    this._countGasUsage = [1001, 1002].includes(networkId);
+
     this.contractsList.forEach(
       contract => this.setContractProvider(
         contract.contract,
@@ -195,7 +192,13 @@ export class Contracts {
 
     const result = await this._send(method, sendOptions);
 
-    if (this._countGasUsage) {
+    if (
+      this._countGasUsage
+      && [
+        ConfirmationType.Both,
+        ConfirmationType.Confirmed,
+      ].includes(sendOptions.confirmationType)
+    ) {
       // Count gas used.
       const contract: Contract = (method as any)._parent;
       const contractInfo = _.find(this.contractsList, { contract });
