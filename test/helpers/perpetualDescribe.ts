@@ -71,13 +71,9 @@ export default function perpetualDescribe(
     // Runs before any afterEach() calls made within the perpetualDescribe() call.
     afterEach(() => {
       // Output the gas used in each test case.
-      if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
-        for (const { gasUsed, name } of ctx.perpetual.contracts.getGasUsedByFunction()) {
-          const label = (`${name}:`).padEnd(20, ' ');
-          printGasUsage(label, `${gasUsed}`.padStart(9, ' '));
-        }
-      } else {
-        printGasUsage('Gas used:', ctx.perpetual.contracts.getCumulativeGasUsed());
+      for (const { gasUsed, name } of ctx.perpetual.contracts.getGasUsedByFunction()) {
+        const label = (`${name}:`).padEnd(20, ' ');
+        printGasUsage(label, `${gasUsed}`.padStart(9, ' '));
       }
     });
 
