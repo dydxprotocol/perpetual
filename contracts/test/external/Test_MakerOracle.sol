@@ -87,7 +87,5 @@ contract Test_MakerOracle is
         bytes32[] calldata
     )
         external
-    {
-        // Do nothing
-    }
+    { /* solium-disable-line no-empty-blocks */ }
 }

@@ -49,8 +49,8 @@ contract P1LiquidatorProxy is
     // ============ Events ============
 
     event LogLiquidatorProxyUsed(
-        address indexed liquidator,
         address indexed liquidatee,
+        address indexed liquidator,
         bool isBuy,
         uint256 liquidationAmount,
         uint256 feeAmount
@@ -126,12 +126,14 @@ contract P1LiquidatorProxy is
      * @dev Emits the LogLiquidatorProxyUsed event.
      *
      * @param  liquidatee   The account to liquidate.
+     * @param  liquidator   The account that performs the liquidation.
      * @param  isBuy        True if the liquidatee has a long position, false otherwise.
      * @param  maxPosition  Maximum position size that the liquidator will take post-liquidation.
      * @return              The change in position.
      */
     function liquidate(
         address liquidatee,
+        address liquidator,
         bool isBuy,
         SignedMath.Int calldata maxPosition
     )
@@ -140,9 +142,15 @@ contract P1LiquidatorProxy is
     {
         I_PerpetualV1 perpetual = I_PerpetualV1(_PERPETUAL_V1_);
 
-        // Settle the sender's account and get balances.
-        perpetual.deposit(msg.sender, 0);
-        P1Types.Balance memory initialBalance = perpetual.getAccountBalance(msg.sender);
+        // Verify that this account can liquidate for the liquidator.
+        require(
+            liquidator == msg.sender || perpetual.hasAccountPermissions(liquidator, msg.sender),
+            "msg.sender cannot operate the liquidator account"
+        );
+
+        // Settle the liquidator's account and get balances.
+        perpetual.deposit(liquidator, 0);
+        P1Types.Balance memory initialBalance = perpetual.getAccountBalance(liquidator);
 
         // Get the maximum liquidatable amount.
         SignedMath.Int memory maxPositionDelta = _getMaxPositionDelta(
@@ -155,11 +163,12 @@ contract P1LiquidatorProxy is
         _doLiquidation(
             perpetual,
             liquidatee,
+            liquidator,
             maxPositionDelta
         );
 
-        // Get the balances of the sender.
-        P1Types.Balance memory currentBalance = perpetual.getAccountBalance(msg.sender);
+        // Get the balances of the liquidator.
+        P1Types.Balance memory currentBalance = perpetual.getAccountBalance(liquidator);
 
         // Get the liquidated amount and fee amount.
         (uint256 liqAmount, uint256 feeAmount) = _getLiquidatedAndFeeAmount(
@@ -168,16 +177,16 @@ contract P1LiquidatorProxy is
             currentBalance
         );
 
-        // Transfer fee from sender to insurance fund.
+        // Transfer fee from liquidator to insurance fund.
         if (feeAmount > 0) {
-            perpetual.withdraw(msg.sender, address(this), feeAmount);
+            perpetual.withdraw(liquidator, address(this), feeAmount);
             perpetual.deposit(_INSURANCE_FUND_, feeAmount);
         }
 
         // Log the result.
         emit LogLiquidatorProxyUsed(
-            msg.sender,
             liquidatee,
+            liquidator,
             isBuy,
             liqAmount,
             feeAmount
@@ -240,7 +249,7 @@ contract P1LiquidatorProxy is
 
         require(
             result.isPositive == isBuy && result.value > 0,
-            "Cannot liquidate if it would put sender past the specified maxPosition"
+            "Cannot liquidate if it would put liquidator past the specified maxPosition"
         );
 
         return result;
@@ -253,16 +262,17 @@ contract P1LiquidatorProxy is
     function _doLiquidation(
         I_PerpetualV1 perpetual,
         address liquidatee,
+        address liquidator,
         SignedMath.Int memory maxPositionDelta
     )
         private
     {
         // Create accounts. Base protocol requires accounts to be sorted.
-        bool takerFirst = address(msg.sender) < liquidatee;
+        bool takerFirst = liquidator < liquidatee;
         address[] memory accounts = new address[](2);
         uint256 takerIndex = takerFirst ? 0 : 1;
         uint256 makerIndex = takerFirst ? 1 : 0;
-        accounts[takerIndex] = msg.sender;
+        accounts[takerIndex] = liquidator;
         accounts[makerIndex] = liquidatee;
 
         // Create trade args.

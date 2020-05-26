@@ -68,6 +68,7 @@ export class LiquidatorProxy {
 
   public async getLiquidateReturnValue(
     liquidatee: address,
+    liquidator: address,
     isBuy: boolean,
     maxPosition: BigNumberable,
     options?: CallOptions,
@@ -75,6 +76,7 @@ export class LiquidatorProxy {
     const result = await this.contracts.call(
       this.proxy.methods.liquidate(
         liquidatee,
+        liquidator,
         isBuy,
         bnToSoliditySignedInt(maxPosition),
       ),
@@ -96,6 +98,7 @@ export class LiquidatorProxy {
 
   public async liquidate(
     liquidatee: address,
+    liquidator: address,
     isBuy: boolean,
     maxPosition: BigNumberable,
     options?: SendOptions,
@@ -103,6 +106,7 @@ export class LiquidatorProxy {
     return this.contracts.send(
       this.proxy.methods.liquidate(
         liquidatee,
+        liquidator,
         isBuy,
         bnToSoliditySignedInt(maxPosition),
       ),
