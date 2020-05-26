@@ -111,7 +111,7 @@ export class Logs {
       }
     }
 
-    // Check if the logs are coming from olf contracts
+    // Check if the logs are coming from old contracts
     if (OLD_LIQUIDATION_ADDRESSES.includes(logAddress.toLowerCase())) {
       const parsedLog = this.parseLogWithContract(this.contracts.p1Liquidation, log);
       if (parsedLog) {
