@@ -94,6 +94,7 @@ export interface EthereumAccount {
 }
 
 export interface TxResult {
+  status?: boolean;
   transactionHash?: string;
   transactionIndex?: number;
   blockHash?: string;
@@ -107,10 +108,13 @@ export interface TxResult {
   events?: {
     [eventName: string]: EventLog;
   };
-  status?: boolean;
+  nonce?: number;
   confirmation?: Promise<TransactionReceipt>;
-  gasEstimate?: number;
-  gas?: number;
+}
+
+export interface EstimateGasResult {
+  gasEstimate: number;
+  gas: number;
 }
 
 export interface TxOptions {
