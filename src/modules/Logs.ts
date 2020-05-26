@@ -24,7 +24,14 @@ const TUPLE_MAP = {
   'struct P1Orders.Fill': ['amount', 'price', 'fee', 'isNegativeFee'],
 };
 
-const OLD_LIQUIDATION_ADDRESS = '0x1F8b4f89a5b8CA0BAa0eDbd0d928DD68B3357280';
+const OLD_LIQUIDATION_ADDRESSES = [
+  '0x1F8b4f89a5b8CA0BAa0eDbd0d928DD68B3357280',
+  '0x18Ba3F12f9d3699dE7D451cA97ED55Cd33DD0f80',
+].map(a => a.toLowerCase());
+
+const OLD_LIQUIDATOR_PROXY_ADDRESSES = [
+  '0x51C72bEfAe54D365A9D0C08C486aee4F99285e08',
+].map(a => a.toLowerCase());
 
 export class Logs {
   private contracts: Contracts;
@@ -104,9 +111,15 @@ export class Logs {
       }
     }
 
-    // Check if the logs are coming from the proxy ABI.
-    if (addressesAreEqual(logAddress, OLD_LIQUIDATION_ADDRESS)) {
+    // Check if the logs are coming from old contracts
+    if (OLD_LIQUIDATION_ADDRESSES.includes(logAddress.toLowerCase())) {
       const parsedLog = this.parseLogWithContract(this.contracts.p1Liquidation, log);
+      if (parsedLog) {
+        return parsedLog;
+      }
+    }
+    if (OLD_LIQUIDATOR_PROXY_ADDRESSES.includes(logAddress.toLowerCase())) {
+      const parsedLog = this.parseLogWithContract(this.contracts.p1LiquidatorProxy, log);
       if (parsedLog) {
         return parsedLog;
       }
