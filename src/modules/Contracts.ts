@@ -342,17 +342,17 @@ export class Contracts {
     }
 
     if (confirmationType === ConfirmationType.Hash) {
-      return { transactionHash };
+      return this.normalizeResponse({ transactionHash });
     }
 
     if (confirmationType === ConfirmationType.Confirmed) {
       return confirmationPromise;
     }
 
-    return {
+    return this.normalizeResponse({
       transactionHash,
       confirmation: confirmationPromise,
-    };
+    });
   }
 
   private async estimateGas(
@@ -404,5 +404,24 @@ export class Contracts {
       'gas',
       'nonce',
     ]);
+  }
+
+  private normalizeResponse(
+    txResult: any,
+  ): any {
+    const txHash = txResult.transactionHash;
+    if (txHash) {
+      const {
+        transactionHash: internalHash,
+        nonce: internalNonce,
+      } = txHash;
+      if (internalHash) {
+        txResult.transactionHash = internalHash;
+      }
+      if (internalNonce) {
+        txResult.nonce = internalNonce;
+      }
+    }
+    return txResult;
   }
 }
