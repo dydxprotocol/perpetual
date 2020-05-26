@@ -184,7 +184,7 @@ export class Contracts {
   public async send(
     method: ContractSendMethod,
     specificOptions: SendOptions = {},
-  ): Promise<any> {
+  ): Promise<TxResult> {
     const sendOptions: SendOptions = {
       ...this.defaultOptions,
       ...specificOptions,
@@ -239,7 +239,7 @@ export class Contracts {
   private async _send( // tslint:disable-line:function-name
     method: ContractSendMethod,
     sendOptions: SendOptions = {},
-  ): Promise<any> {
+  ): Promise<TxResult> {
     const {
       confirmations,
       confirmationType,

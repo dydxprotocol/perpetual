@@ -24,6 +24,7 @@ import {
   Price,
   CallOptions,
   SendOptions,
+  TxResult,
 } from '../lib/types';
 
 export class PriceOracle {
@@ -85,7 +86,7 @@ export class PriceOracle {
     sender: address,
     oracle: address,
     options: SendOptions = {},
-  ): Promise<void> {
+  ): Promise<TxResult> {
     return this.contracts.send(
       this.contracts.p1MakerOracle.methods.setRoute(sender, oracle),
       options,
@@ -96,7 +97,7 @@ export class PriceOracle {
     oracle: address,
     adjustment: BaseValue,
     options: SendOptions = {},
-  ): Promise<void> {
+  ): Promise<TxResult> {
     return this.contracts.send(
       this.contracts.p1MakerOracle.methods.setAdjustment(oracle, adjustment.toSolidity()),
       options,

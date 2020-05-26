@@ -9,6 +9,7 @@ import {
   Price,
   SendOptions,
   SignedIntStruct,
+  TxResult,
   address,
   bnFromSoliditySignedInt,
   bnToSoliditySignedInt,
@@ -276,7 +277,7 @@ export class TestLib {
     slot: string,
     value: string,
     options?: SendOptions,
-  ): Promise<void> {
+  ): Promise<TxResult> {
     return this.contracts.send(
       this.contracts.testLib.methods.store(
         slot,

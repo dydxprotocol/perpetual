@@ -22,6 +22,7 @@ import {
   CallOptions,
   SendOptions,
   MakerOracleMessage,
+  TxResult,
 } from '../lib/types';
 import { signatureToVRS } from '../lib/SignatureHelper';
 
@@ -90,7 +91,7 @@ export class Relayer {
   public async poke(
     messages: MakerOracleMessage[],
     options: SendOptions = {},
-  ): Promise<void> {
+  ): Promise<TxResult> {
     // Get value and age of messages.
     const vals = messages.map(m => m.price.toSolidity());
     const ages = messages.map(m => m.timestamp.toFixed());

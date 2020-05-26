@@ -108,6 +108,7 @@ export interface TxResult {
     [eventName: string]: EventLog;
   };
   status?: boolean;
+  nonce?: number; // non-standard field, returned only through dYdX Sender service
   confirmation?: Promise<TransactionReceipt>;
   gasEstimate?: number;
   gas?: number;
