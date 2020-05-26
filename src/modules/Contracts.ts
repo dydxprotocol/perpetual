@@ -30,7 +30,6 @@ import {
   address,
   ConfirmationType,
   Provider,
-  EstimateGasResult,
   TxResult,
   TxOptions,
   CallOptions,
@@ -185,7 +184,7 @@ export class Contracts {
   public async send(
     method: ContractSendMethod,
     specificOptions: SendOptions = {},
-  ): Promise<TxResult | EstimateGasResult | TransactionReceipt> {
+  ): Promise<TxResult> {
     const sendOptions: SendOptions = {
       ...this.defaultOptions,
       ...specificOptions,
@@ -240,7 +239,7 @@ export class Contracts {
   private async _send( // tslint:disable-line:function-name
     method: ContractSendMethod,
     sendOptions: SendOptions = {},
-  ): Promise<TxResult | EstimateGasResult | TransactionReceipt> {
+  ): Promise<TxResult> {
     const {
       confirmations,
       confirmationType,
@@ -409,7 +408,7 @@ export class Contracts {
 
   private normalizeResponse(
     txResult: any,
-  ): TxResult {
+  ): any {
     const txHash = txResult.transactionHash;
     if (txHash) {
       const {

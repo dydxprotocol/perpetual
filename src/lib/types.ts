@@ -94,7 +94,6 @@ export interface EthereumAccount {
 }
 
 export interface TxResult {
-  status?: boolean;
   transactionHash?: string;
   transactionIndex?: number;
   blockHash?: string;
@@ -108,13 +107,11 @@ export interface TxResult {
   events?: {
     [eventName: string]: EventLog;
   };
+  status?: boolean;
   nonce?: number; // non-standard field, returned only through dYdX Sender service
   confirmation?: Promise<TransactionReceipt>;
-}
-
-export interface EstimateGasResult {
-  gasEstimate: number;
-  gas: number;
+  gasEstimate?: number;
+  gas?: number;
 }
 
 export interface TxOptions {
