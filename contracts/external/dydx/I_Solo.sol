@@ -26,7 +26,7 @@ pragma experimental ABIEncoderV2;
  *
  * Interface for calling the Solo margin smart contract.
  */
-interface I_MakerOracle {
+interface I_Solo {
 
     // ============ Enums ============
 
@@ -118,7 +118,7 @@ interface I_MakerOracle {
     function getMarketTokenAddress(
         uint256 marketId
     )
-        public
+        external
         view
         returns (address);
 
@@ -138,8 +138,8 @@ interface I_MakerOracle {
      *                   actions will be processed in order.
      */
     function operate(
-        AccountInfo[] memory accounts,
-        ActionArgs[] memory actions
+        AccountInfo[] calldata accounts,
+        ActionArgs[] calldata actions
     )
-        public;
+        external;
 }

@@ -20,12 +20,12 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
-import { Ownable } from "@openzeppelin/contracts/ownership/Ownable.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import { I_Solo } from "../../external/dydx/I_Solo.sol";
+import { I_Solo } from "../../../external/dydx/I_Solo.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { SignedMath } from "../../lib/SignedMath.sol";
+import { TypedSignature } from "../../lib/TypedSignature.sol";
 import { I_PerpetualV1 } from "../intf/I_PerpetualV1.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
@@ -139,10 +139,10 @@ contract P1SoloBridge {
         _SOLO_MARKET_ID_ = soloMarketId;
 
         I_PerpetualV1 perpetual = I_PerpetualV1(_PERPETUAL_V1_);
-        I_Solo solo = I_Solo(_SOLO_MARGIN);
+        I_Solo solo = I_Solo(_SOLO_MARGIN_);
 
         // Verify that the Solo market matches the Perpetual margin asset.
-        // We make the assumption that the Perpetual margin asset will never change.
+        // We make the assumption that the Perpetual margin asset will not change.
         require(
             perpetual.getTokenContract() == solo.getMarketTokenAddress(soloMarketId),
             "Perpetual and Solo tokens do not match"
@@ -167,7 +167,7 @@ contract P1SoloBridge {
      * @param  transfer   The transfer to execute.
      * @param  signature  Signature for the transfer, required if sender is not the account owner.
      */
-    function transfer(
+    function bridgeTransfer(
         Transfer calldata transfer,
         TypedSignature.Signature calldata signature
     )
@@ -180,7 +180,7 @@ contract P1SoloBridge {
         _verifyPermissions(
             transfer,
             transferHash,
-            signature,
+            signature
         );
         _verifyStatusAndExpiration(
             transfer,
@@ -211,7 +211,6 @@ contract P1SoloBridge {
         // Log the transfer.
         emit LogTransferred(
             transfer.account,
-            transfer.token,
             transfer.soloAccountNumber,
             transfer.toPerpetual,
             transfer.amount
@@ -235,10 +234,10 @@ contract P1SoloBridge {
             "Transfer can only be invalidated by the account owner"
         );
         bytes32 transferHash = _getTransferHash(transfer);
-        _HASH_USED_[transferhash] = true;
+        _HASH_USED_[transferHash] = true;
         emit LogTransferInvalidated(
             msg.sender,
-            transferHash,
+            transferHash
         );
     }
 
@@ -268,8 +267,8 @@ contract P1SoloBridge {
         // Create Solo actions array.
         I_Solo.AssetAmount memory amount = I_Solo.AssetAmount({
             sign: true, // isPositive
-            denomination: Types.AssetDenomination.Wei,
-            ref: Types.AssetReference.Delta,
+            denomination: I_Solo.AssetDenomination.Wei,
+            ref: I_Solo.AssetReference.Delta,
             value: transfer.amount
         });
         I_Solo.WithdrawArgs memory withdrawArgs = I_Solo.WithdrawArgs({
@@ -278,20 +277,20 @@ contract P1SoloBridge {
             market: soloMarketId,
             to: address(this)
         });
-        I_Solo.ActionArgs[] memory actions = new I_Solo.ActionArgs[](1);
-        actions[0] = I_Solo.ActionArgs({
-            actionType: Actions.ActionType.Withdraw,
-            accountId: 0,
+        I_Solo.ActionArgs[] memory soloActions = new I_Solo.ActionArgs[](1);
+        soloActions[0] = I_Solo.ActionArgs({
+            actionType: I_Solo.ActionType.Withdraw,
+            accountId: transfer.soloAccountNumber,
             amount: amount,
             primaryMarketId: soloMarketId,
-            secondaryMarketId: 0, // TODO: check this isn't a valid ID?
-            otherAddress: address(0),
-            otherAccountId: 0, // TODO: check this isn't used
+            secondaryMarketId: 0, // Unused by withdrawal.
+            otherAddress: address(0), // Unused by withdrawal.
+            otherAccountId: 0, // Unused by withdrawal.
             data: abi.encode(withdrawArgs)
         });
 
         // Execute withdrawal and deposit.
-        solo.operate(accounts, actions);
+        solo.operate(soloAccounts, soloActions);
         perpetual.deposit(transfer.account, transfer.amount);
     }
 
@@ -319,31 +318,31 @@ contract P1SoloBridge {
         // Create Solo actions array.
         I_Solo.AssetAmount memory amount = I_Solo.AssetAmount({
             sign: true, // isPositive
-            denomination: Types.AssetDenomination.Wei,
-            ref: Types.AssetReference.Delta,
+            denomination: I_Solo.AssetDenomination.Wei,
+            ref: I_Solo.AssetReference.Delta,
             value: transfer.amount
         });
-        I_Solo.WithdrawArgs memory withdrawArgs = I_Solo.DepositArgs({
+        I_Solo.DepositArgs memory depositArgs = I_Solo.DepositArgs({
             amount: amount,
             account: soloAccount,
             market: soloMarketId,
             from: address(this)
         });
-        I_Solo.ActionArgs[] memory actions = new I_Solo.ActionArgs[](1);
-        actions[0] = I_Solo.ActionArgs({
-            actionType: Actions.ActionType.Deposit,
-            accountId: 0,
+        I_Solo.ActionArgs[] memory soloActions = new I_Solo.ActionArgs[](1);
+        soloActions[0] = I_Solo.ActionArgs({
+            actionType: I_Solo.ActionType.Deposit,
+            accountId: transfer.soloAccountNumber,
             amount: amount,
             primaryMarketId: soloMarketId,
-            secondaryMarketId: 0, // TODO: check this isn't a valid ID?
-            otherAddress: address(0),
-            otherAccountId: 0, // TODO: check this isn't used
-            data: abi.encode(withdrawArgs)
+            secondaryMarketId: 0, // Unused by deposit.
+            otherAddress: address(0), // Unused by deposit.
+            otherAccountId: 0, // Unused by deposit.
+            data: abi.encode(depositArgs)
         });
 
         // Execute withdrawal and deposit.
         perpetual.withdraw(transfer.account, address(this), transfer.amount);
-        solo.operate(accounts, actions);
+        solo.operate(soloAccounts, soloActions);
     }
 
     /**
@@ -351,7 +350,7 @@ contract P1SoloBridge {
      */
     function _verifyPermissions(
         Transfer memory transfer,
-        bytes32 memory transferHash,
+        bytes32 transferHash,
         TypedSignature.Signature memory signature
     )
         private
@@ -370,7 +369,7 @@ contract P1SoloBridge {
      */
     function _verifyStatusAndExpiration(
         Transfer memory transfer,
-        bytes32 memory transferHash
+        bytes32 transferHash
     )
         private
         view
