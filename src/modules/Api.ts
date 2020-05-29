@@ -307,22 +307,26 @@ export class Api {
    * Params:
    * - markets (optional): Limit results to the specified markets.
    * - limit (optional): The maximum number of funding rates. The default, and maximum, is 100.
-   * - offset (optional): The number of entries to skip, in order to retrieve older funding rates.
+   * - startingBefore (optional): Return funding rates effective before this date.
    */
   public async getHistoricalFundingRates({
     markets,
     limit,
-    offset,
+    startingBefore,
   }: {
     markets?: ApiMarketName[],
     limit?: number,
-    offset?: number,
+    startingBefore?: Date,
   } = {}): Promise<{ [market: string]: ApiHistoricalFundingRates }> {
     const response = await axios({
       url: `${this.endpoint}/v1/historical-funding-rates`,
       method: 'get',
       timeout: this.timeout,
-      params: { markets, limit, offset },
+      params: {
+        markets,
+        limit,
+        startingBefore: startingBefore.toISOString(),
+      },
     });
 
     return response.data;
