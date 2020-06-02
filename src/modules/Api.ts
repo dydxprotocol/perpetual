@@ -1,20 +1,23 @@
 import { default as axios } from 'axios';
 import BigNumber from 'bignumber.js';
 import {
-  address,
-  SigningMethod,
-  ApiMarketName,
-  BigNumberable,
-  Order,
-  SignedOrder,
-  Fee,
-  Price,
-  ApiOrder,
-  ApiSide,
-  ApiMarketMessage,
   ApiAccount,
+  ApiFundingRates,
+  ApiHistoricalFundingRates,
+  ApiIndexPrice,
+  ApiMarketMessage,
+  ApiMarketName,
   ApiOptions,
+  ApiOrder,
   ApiOrderOnOrderbook,
+  ApiSide,
+  BigNumberable,
+  Fee,
+  Order,
+  Price,
+  SignedOrder,
+  SigningMethod,
+  address,
 } from '../lib/types';
 import { Orders } from './Orders';
 
@@ -35,6 +38,8 @@ export class Api {
     this.timeout = apiOptions.timeout || DEFAULT_API_TIMEOUT;
     this.perpetualOrders = perpetualOrders;
   }
+
+  // ============ Managing Orders ============
 
   public async placePerpetualOrder({
     order: {
@@ -225,6 +230,8 @@ export class Api {
     return response.data;
   }
 
+  // ============ Getters ============
+
   public async getMarkets():
     Promise<{ markets: ApiMarketMessage[] }> {
     const response = await axios({
@@ -258,6 +265,89 @@ export class Api {
       url: `${this.endpoint}/v1/orderbook/${market}`,
       method: 'get',
       timeout: this.timeout,
+    });
+
+    return response.data;
+  }
+
+  // ============ Funding Getters ============
+
+  /**
+   * Get the current and predicted funding rates.
+   *
+   * IMPORTANT: The `current` value returned by this function is not active until it has been mined
+   * on-chain, which may not happen for some period of time after the start of the hour. To get the
+   * funding rate that is currently active on-chain, use the getMarkets() function.
+   *
+   * The `current` rate is updated each hour, on the hour. The `predicted` rate is updated each
+   * minute, on the minute, and may be null if no premiums have been calculated since the last
+   * funding rate update.
+   *
+   * Params:
+   * - markets (optional): Limit results to the specified markets.
+   */
+  public async getFundingRates({
+    markets,
+  }: {
+    markets?: ApiMarketName[],
+  } = {}): Promise<{ [market: string]: ApiFundingRates }> {
+    const response = await axios({
+      url: `${this.endpoint}/v1/funding-rates`,
+      method: 'get',
+      timeout: this.timeout,
+      params: { markets },
+    });
+
+    return response.data;
+  }
+
+  /**
+   * Get historical funding rates. The most recent funding rates are returned first.
+   *
+   * Params:
+   * - markets (optional): Limit results to the specified markets.
+   * - limit (optional): The maximum number of funding rates. The default, and maximum, is 100.
+   * - startingBefore (optional): Return funding rates effective before this date.
+   */
+  public async getHistoricalFundingRates({
+    markets,
+    limit,
+    startingBefore,
+  }: {
+    markets?: ApiMarketName[],
+    limit?: number,
+    startingBefore?: Date,
+  } = {}): Promise<{ [market: string]: ApiHistoricalFundingRates }> {
+    const response = await axios({
+      url: `${this.endpoint}/v1/historical-funding-rates`,
+      method: 'get',
+      timeout: this.timeout,
+      params: {
+        markets,
+        limit,
+        startingBefore: startingBefore && startingBefore.toISOString(),
+      },
+    });
+
+    return response.data;
+  }
+
+  /**
+   * Get the index price used in the funding rate calculation.
+   *
+   * Params:
+   * - markets (optional): Limit results to the specified markets.
+   */
+  public async getFundingIndexPrice({
+    markets,
+  }: {
+    markets?: ApiMarketName[],
+  } = {}): Promise<{ [market: string]: ApiIndexPrice }> {
+    const response = await axios({
+      url: `${this.endpoint}/v1/index-price`,
+      method: 'get',
+      timeout: this.timeout,
+      params: { markets },
     });
 
     return response.data;
