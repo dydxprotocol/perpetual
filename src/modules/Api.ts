@@ -325,7 +325,7 @@ export class Api {
       params: {
         markets,
         limit,
-        startingBefore: startingBefore.toISOString(),
+        startingBefore: startingBefore && startingBefore.toISOString(),
       },
     });
 
