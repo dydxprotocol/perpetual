@@ -39,6 +39,7 @@ contract P1CurrencyConverterProxy {
 
     event LogConvertedDeposit(
         address indexed account,
+        address source,
         address perpetual,
         address exchangeWrapper,
         address tokenFrom,
@@ -118,7 +119,7 @@ contract P1CurrencyConverterProxy {
         // Convert fromToken to toToken on the ExchangeWrapper.
         I_ExchangeWrapper exchangeWrapperContract = I_ExchangeWrapper(exchangeWrapper);
         uint256 tokenToAmount = exchangeWrapperContract.exchange(
-            self,
+            msg.sender,
             self,
             tokenTo,
             tokenFrom,
@@ -142,6 +143,7 @@ contract P1CurrencyConverterProxy {
         // Log the result.
         emit LogConvertedDeposit(
             account,
+            msg.sender,
             perpetual,
             exchangeWrapper,
             tokenFrom,
@@ -191,12 +193,6 @@ contract P1CurrencyConverterProxy {
         // Withdraw fromToken from the Perpetual.
         perpetualContract.withdraw(
             account,
-            self,
-            tokenFromAmount
-        );
-
-        // Send fromToken to the ExchangeWrapper.
-        IERC20(tokenFrom).safeTransfer(
             exchangeWrapper,
             tokenFromAmount
         );
@@ -204,7 +200,7 @@ contract P1CurrencyConverterProxy {
         // Convert fromToken to toToken on the ExchangeWrapper.
         I_ExchangeWrapper exchangeWrapperContract = I_ExchangeWrapper(exchangeWrapper);
         uint256 tokenToAmount = exchangeWrapperContract.exchange(
-            self,
+            msg.sender,
             self,
             tokenTo,
             tokenFrom,

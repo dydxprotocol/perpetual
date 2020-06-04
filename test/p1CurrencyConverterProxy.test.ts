@@ -104,6 +104,7 @@ perpetualDescribe('P1CurrencyConverterProxy', init, (ctx: ITestContext) => {
       const log = filteredLogs[0];
       expect(log.name).to.equal('LogConvertedDeposit');
       expect(log.args.account).to.equal(account);
+      expect(log.args.source).to.equal(account);
       expect(log.args.perpetual).to.equal(ctx.perpetual.contracts.perpetualProxy.options.address);
       expect(log.args.exchangeWrapper).to.equal(exchangeWrapperAddress);
       expect(log.args.tokenFrom).to.equal(nonNativeToken);
@@ -151,6 +152,7 @@ perpetualDescribe('P1CurrencyConverterProxy', init, (ctx: ITestContext) => {
       const log = filteredLogs[0];
       expect(log.name).to.equal('LogConvertedDeposit');
       expect(log.args.account).to.equal(account);
+      expect(log.args.source).to.equal(otherAddress);
       expect(log.args.perpetual).to.equal(ctx.perpetual.contracts.perpetualProxy.options.address);
       expect(log.args.exchangeWrapper).to.equal(exchangeWrapperAddress);
       expect(log.args.tokenFrom).to.equal(nonNativeToken);
