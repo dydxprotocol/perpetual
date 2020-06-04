@@ -45,7 +45,7 @@ import p1MakerOracleJson from '../../build/contracts/P1MakerOracle.json';
 import p1OrdersJson from '../../build/contracts/P1Orders.json';
 import p1DeleveragingJson from '../../build/contracts/P1Deleveraging.json';
 import p1LiquidationJson from '../../build/contracts/P1Liquidation.json';
-import p1CurrencyConverterProxyJson from '../../build/contracts/p1CurrencyConverterProxy.json';
+import p1CurrencyConverterProxyJson from '../../build/contracts/P1CurrencyConverterProxy.json';
 import p1LiquidatorProxyJson from '../../build/contracts/P1LiquidatorProxy.json';
 import erc20Json from '../../build/contracts/ERC20.json';
 import makerOracleJson from '../../build/contracts/I_MakerOracle.json';
