@@ -19,7 +19,7 @@ export class TestPerpetual extends Perpetual {
     options: PerpetualOptions = {},
   ) {
     super(provider, networkId, options);
-    this.testing = new Testing(provider, this.contracts);
+    this.testing = new Testing(provider, this.contracts, this.web3);
   }
 
   public setProvider(

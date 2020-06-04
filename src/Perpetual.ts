@@ -35,6 +35,7 @@ import { PriceOracle } from './modules/PriceOracle';
 import { Relayer } from './modules/Relayer';
 import { Deleveraging } from './modules/Deleveraging';
 import { Liquidation } from './modules/Liquidation';
+import { CurrencyConverterProxy } from './modules/CurrencyConverterProxy';
 import { LiquidatorProxy } from './modules/LiquidatorProxy';
 import { Getters } from './modules/Getters';
 import { Margin } from './modules/Margin';
@@ -55,6 +56,7 @@ export class Perpetual {
   public relayer: Relayer;
   public deleveraging: Deleveraging;
   public liquidation: Liquidation;
+  public currencyConverterProxy: CurrencyConverterProxy;
   public liquidatorProxy: LiquidatorProxy;
   public getters: Getters;
   public logs: Logs;
@@ -80,6 +82,7 @@ export class Perpetual {
     this.relayer = new Relayer(this.contracts);
     this.deleveraging = new Deleveraging(this.contracts);
     this.liquidation = new Liquidation(this.contracts);
+    this.currencyConverterProxy = new CurrencyConverterProxy(this.contracts);
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
     this.getters = new Getters(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);

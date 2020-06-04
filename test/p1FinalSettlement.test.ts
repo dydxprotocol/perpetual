@@ -279,12 +279,12 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           // Admin bails out the contract.
           const underwaterAmount = new BigNumber(1300);
           await ctx.perpetual.testing.token.mint(
-            ctx.perpetual.testing.token.address,
+            ctx.perpetual.contracts.testToken.options.address,
             admin,
             underwaterAmount,
           );
           await ctx.perpetual.testing.token.transfer(
-            ctx.perpetual.testing.token.address,
+            ctx.perpetual.contracts.testToken.options.address,
             admin,
             ctx.perpetual.contracts.perpetualProxy.options.address,
             underwaterAmount,
@@ -322,12 +322,12 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
           // Admin bails out the contract.
           const underwaterAmount = new BigNumber(300);
           await ctx.perpetual.testing.token.mint(
-            ctx.perpetual.testing.token.address,
+            ctx.perpetual.contracts.testToken.options.address,
             admin,
             underwaterAmount,
           );
           await ctx.perpetual.testing.token.transfer(
-            ctx.perpetual.testing.token.address,
+            ctx.perpetual.contracts.testToken.options.address,
             admin,
             ctx.perpetual.contracts.perpetualProxy.options.address,
             underwaterAmount,
@@ -381,7 +381,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
     const expectedAmountBN = new BigNumber(expectedAmount);
     const withdrawAmount = BigNumber.max(expectedAmountBN, 0);
     const balanceBefore = await ctx.perpetual.testing.token.getBalance(
-      ctx.perpetual.testing.token.address,
+      ctx.perpetual.contracts.testToken.options.address,
       account,
     );
     const txResult = await ctx.perpetual.finalSettlement.withdrawFinalSettlement({ from: account });
@@ -415,7 +415,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
 
     // Check that token balance is updated as expected.
     const balanceAfter = await ctx.perpetual.testing.token.getBalance(
-      ctx.perpetual.testing.token.address,
+      ctx.perpetual.contracts.testToken.options.address,
       account,
     );
     const balanceDiff = balanceAfter.minus(balanceBefore);

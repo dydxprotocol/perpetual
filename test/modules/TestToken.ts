@@ -35,10 +35,6 @@ export class TestToken extends Token {
     super(contracts);
   }
 
-  public get address(): string {
-    return (this.contracts as TestContracts).testToken.options.address;
-  }
-
   public mint(
     tokenAddress: address,
     account: address,

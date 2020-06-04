@@ -27,12 +27,12 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
       // Set initial balances and allowances.
       const amount = new BigNumber(150);
       await ctx.perpetual.testing.token.mint(
-        ctx.perpetual.testing.token.address,
+        ctx.perpetual.contracts.testToken.options.address,
         accountOwner,
         amount,
       );
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
-        ctx.perpetual.testing.token.address,
+        ctx.perpetual.contracts.testToken.options.address,
         accountOwner,
       );
 
@@ -63,12 +63,12 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
       // Set initial balances and allowances.
       const amount = new BigNumber(150);
       await ctx.perpetual.testing.token.mint(
-        ctx.perpetual.testing.token.address,
+        ctx.perpetual.contracts.testToken.options.address,
         otherUser,
         amount,
       );
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
-        ctx.perpetual.testing.token.address,
+        ctx.perpetual.contracts.testToken.options.address,
         otherUser,
       );
 
@@ -89,21 +89,21 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
     it('Can make multiple deposits', async () => {
       // Set initial balances and allowances.
       await ctx.perpetual.testing.token.mint(
-        ctx.perpetual.testing.token.address,
+        ctx.perpetual.contracts.testToken.options.address,
         accountOwner,
         new BigNumber(1000),
       );
       await ctx.perpetual.testing.token.mint(
-        ctx.perpetual.testing.token.address,
+        ctx.perpetual.contracts.testToken.options.address,
         otherUser,
         new BigNumber(1000),
       );
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
-        ctx.perpetual.testing.token.address,
+        ctx.perpetual.contracts.testToken.options.address,
         accountOwner,
       );
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
-        ctx.perpetual.testing.token.address,
+        ctx.perpetual.contracts.testToken.options.address,
         otherUser,
       );
 
@@ -125,12 +125,12 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
       // Set initial balances and allowances.
       const amount = new BigNumber(1000);
       await ctx.perpetual.testing.token.mint(
-        ctx.perpetual.testing.token.address,
+        ctx.perpetual.contracts.testToken.options.address,
         accountOwner,
         amount,
       );
       await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
-        ctx.perpetual.testing.token.address,
+        ctx.perpetual.contracts.testToken.options.address,
         otherUser,
       );
 
