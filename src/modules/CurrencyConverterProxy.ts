@@ -22,6 +22,7 @@ import { Contract } from 'web3-eth-contract';
 import { Contracts } from './Contracts';
 import {
   BigNumberable,
+  CallOptions,
   SendOptions,
   TxResult,
   address,
@@ -36,6 +37,60 @@ export class CurrencyConverterProxy {
   ) {
     this.contracts = contracts;
     this.proxy = this.contracts.p1CurrencyConverterProxy;
+  }
+
+  // ============ Getters ============
+
+  /**
+   * Use eth_call to simulate the result of calling the deposit() function.
+   */
+  public async getDepositConvertedAmount(
+    account: address,
+    exchangeWrapper: address,
+    tokenFrom: address,
+    tokenFromAmount: BigNumberable,
+    data: string,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: string = await this.contracts.call(
+      this.proxy.methods.deposit(
+        account,
+        this.contracts.perpetualProxy.options.address,
+        exchangeWrapper,
+        tokenFrom,
+        new BigNumber(tokenFromAmount).toFixed(),
+        data,
+      ),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
+  /**
+   * Use eth_call to simulate the result of calling the withdraw() function.
+   */
+  public async getWithdrawConvertedAmount(
+    account: address,
+    destination: address,
+    exchangeWrapper: address,
+    tokenTo: address,
+    tokenFromAmount: BigNumberable,
+    data: string,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: string = await  this.contracts.call(
+      this.proxy.methods.withdraw(
+        account,
+        destination,
+        this.contracts.perpetualProxy.options.address,
+        exchangeWrapper,
+        tokenTo,
+        new BigNumber(tokenFromAmount).toFixed(),
+        data,
+      ),
+      options,
+    );
+    return new BigNumber(result);
   }
 
   // ============ State-Changing Functions ============

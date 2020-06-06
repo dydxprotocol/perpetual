@@ -160,6 +160,18 @@ perpetualDescribe('P1CurrencyConverterProxy', init, (ctx: ITestContext) => {
       expectBN(log.args.tokenFromAmount).to.equal(nonNativeAmount);
       expectBN(log.args.tokenToAmount).to.equal(marginAmount);
     });
+
+    it('returns the amount deposited after the conversion (when using eth_call)', async () => {
+      const toTokenAmount = await ctx.perpetual.currencyConverterProxy.getDepositConvertedAmount(
+        account,
+        exchangeWrapperAddress,
+        nonNativeToken,
+        nonNativeAmount,
+        getTestOrderData(nonNativeAmount),
+        { from: account },
+      );
+      expectBN(toTokenAmount).to.equal(marginAmount);
+    });
   });
 
   describe('withdraw()', () => {
@@ -317,6 +329,19 @@ perpetualDescribe('P1CurrencyConverterProxy', init, (ctx: ITestContext) => {
           'msg.sender cannot operate the account',
         );
       });
+    });
+
+    it('returns the amount withdrawn after the conversion (when using eth_call)', async () => {
+      const toTokenAmount = await ctx.perpetual.currencyConverterProxy.getWithdrawConvertedAmount(
+        account,
+        otherAddress,
+        exchangeWrapperAddress,
+        nonNativeToken,
+        marginAmount,
+        getTestOrderData(marginAmount),
+        { from: account },
+      );
+      expectBN(toTokenAmount).to.equal(nonNativeAmount);
     });
   });
 
