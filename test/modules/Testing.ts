@@ -16,7 +16,10 @@
 
 */
 
+import Web3 from 'web3';
+
 import { EVM } from './EVM';
+import { TestExchangeWrapper } from './TestExchangeWrapper';
 import { TestLib } from './TestLib';
 import { TestP1Funder } from './TestP1Funder';
 import { TestP1Monolith } from './TestP1Monolith';
@@ -30,6 +33,7 @@ import { TestContracts } from './TestContracts';
 export class Testing {
   public evm: EVM;
   public funder: TestP1Funder;
+  public exchangeWrapper: TestExchangeWrapper;
   public lib: TestLib;
   public monolith: TestP1Monolith;
   public oracle: TestP1Oracle;
@@ -40,9 +44,11 @@ export class Testing {
   constructor(
     provider: Provider,
     contracts: TestContracts,
+    web3: Web3,
   ) {
     this.evm = new EVM(provider);
     this.funder = new TestP1Funder(contracts);
+    this.exchangeWrapper = new TestExchangeWrapper(contracts, web3);
     this.lib = new TestLib(contracts);
     this.monolith = new TestP1Monolith(contracts);
     this.oracle = new TestP1Oracle(contracts);

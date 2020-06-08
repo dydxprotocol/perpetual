@@ -48,15 +48,18 @@ const P1Liquidation = artifacts.require('P1Liquidation');
 const P1MakerOracle = artifacts.require('P1MakerOracle');
 
 // Proxies
+const P1CurrencyConverterProxy = artifacts.require('P1CurrencyConverterProxy');
 const P1LiquidatorProxy = artifacts.require('P1LiquidatorProxy');
 
 // Test Contracts
+const TestExchangeWrapper = artifacts.require('Test_ExchangeWrapper');
 const TestLib = artifacts.require('Test_Lib');
 const TestP1Funder = artifacts.require('Test_P1Funder');
 const TestP1Monolith = artifacts.require('Test_P1Monolith');
 const TestP1Oracle = artifacts.require('Test_P1Oracle');
 const TestP1Trader = artifacts.require('Test_P1Trader');
 const TestToken = artifacts.require('Test_Token');
+const TestToken2 = artifacts.require('Test_Token2');
 const TestMakerOracle = artifacts.require('Test_MakerOracle');
 
 // ============ Main Migration ============
@@ -76,12 +79,14 @@ module.exports = migration;
 async function deployTestContracts(deployer, network) {
   if (isDevNetwork(network)) {
     await Promise.all([
+      deployer.deploy(TestExchangeWrapper),
       deployer.deploy(TestLib),
       deployer.deploy(TestP1Funder),
       deployer.deploy(TestP1Monolith),
       deployer.deploy(TestP1Oracle),
       deployer.deploy(TestP1Trader),
       deployer.deploy(TestToken),
+      deployer.deploy(TestToken2),
       deployer.deploy(TestMakerOracle),
     ]);
   }
@@ -136,16 +141,26 @@ async function deployTraders(deployer, network) {
       PerpetualProxy.address,
     ),
   ]);
-  await deployer.deploy(
-    P1LiquidatorProxy,
-    PerpetualProxy.address,
-    P1Liquidation.address,
-    getInsuranceFundAddress(network),
-    getInsuranceFee(network),
-  );
 
-  // initialize liquidatorProxy on non-testnet
+  // deploy proxies
+  await Promise.all([
+    deployer.deploy(
+      P1CurrencyConverterProxy,
+    ),
+    deployer.deploy(
+      P1LiquidatorProxy,
+      PerpetualProxy.address,
+      P1Liquidation.address,
+      getInsuranceFundAddress(network),
+      getInsuranceFee(network),
+    ),
+  ]);
+
+  // initialize proxies on non-testnet
   if (!isDevNetwork(network)) {
+    const currencyConverterProxy = await P1CurrencyConverterProxy.deployed();
+    await currencyConverterProxy.approveMaximumOnPerpetual(PerpetualProxy.address);
+
     const liquidatorProxy = await P1LiquidatorProxy.deployed();
     await liquidatorProxy.approveMaximumOnPerpetual();
   }
@@ -156,6 +171,7 @@ async function deployTraders(deployer, network) {
     perpetual.setGlobalOperator(P1Orders.address, true),
     perpetual.setGlobalOperator(P1Deleveraging.address, true),
     perpetual.setGlobalOperator(P1Liquidation.address, true),
+    perpetual.setGlobalOperator(P1CurrencyConverterProxy.address, true),
     perpetual.setGlobalOperator(P1LiquidatorProxy.address, true),
   ]);
   if (isDevNetwork(network)) {
