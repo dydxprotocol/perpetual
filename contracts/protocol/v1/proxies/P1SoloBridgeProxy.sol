@@ -35,8 +35,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @title P1SoloBridgeProxy
  * @author dYdX
  *
- * @notice Facilitates transfers between the PerpetualV1 and Solo smart contracts. The token to be
- *  transfered will be the margin token used by PerpetualV1.
+ * @notice Facilitates transfers between the PerpetualV1 and Solo smart contracts.
  */
 contract P1SoloBridgeProxy {
     using BaseMath for uint256;
@@ -72,11 +71,13 @@ contract P1SoloBridgeProxy {
     bytes32 constant private EIP712_TRANSFER_STRUCT_SCHEMA_HASH = keccak256(abi.encodePacked(
         "Transfer(",
         "address account,",
+        "address perpetual,",
         "uint256 soloAccountNumber,",
+        "uint256 soloMarketId,",
         "bool toPerpetual,",
-        "uint120 amount,",
-        "bytes16 salt,",
-        "uint256 expiration",
+        "uint256 amount,",
+        "uint256 expiration,",
+        "bytes32 salt",
         ")"
     ));
 
@@ -84,20 +85,24 @@ contract P1SoloBridgeProxy {
 
     struct Transfer {
         address account;
+        address perpetual;
         uint256 soloAccountNumber;
+        uint256 soloMarketId;
         bool toPerpetual; // Indicates whether the transfer is from Solo to Perpetual or vice versa.
-        uint120 amount;
-        bytes16 salt;
+        uint256 amount;
         uint256 expiration;
+        bytes32 salt;
     }
 
     // ============ Events ============
 
     event LogTransferred(
         address indexed account,
+        address perpetual,
         uint256 soloAccountNumber,
+        uint256 soloMarketId,
         bool toPerpetual,
-        uint120 amount
+        uint256 amount
     );
 
     event LogTransferCanceled(
@@ -107,14 +112,8 @@ contract P1SoloBridgeProxy {
 
     // ============ Immutable Storage ============
 
-    // Address of the PerpetualV1 contract.
-    address public _PERPETUAL_V1_;
-
     // Address of the Solo margin contract.
     address public _SOLO_MARGIN_;
-
-    // Market ID in Solo which matches the PerpetualV1 margin token.
-    uint256 public _SOLO_MARKET_ID_;
 
     // Hash of the EIP712 Domain Separator data
     bytes32 public _EIP712_DOMAIN_HASH_;
@@ -127,26 +126,12 @@ contract P1SoloBridgeProxy {
     // ============ Constructor ============
 
     constructor (
-        address perpetualV1,
         address soloMargin,
-        uint256 soloMarketId,
         uint256 chainId
     )
         public
     {
-        _PERPETUAL_V1_ = perpetualV1;
         _SOLO_MARGIN_ = soloMargin;
-        _SOLO_MARKET_ID_ = soloMarketId;
-
-        I_PerpetualV1 perpetual = I_PerpetualV1(_PERPETUAL_V1_);
-        I_Solo solo = I_Solo(_SOLO_MARGIN_);
-
-        // Verify that the Solo market matches the Perpetual margin asset.
-        // We make the assumption that the Perpetual margin asset will not change.
-        require(
-            perpetual.getTokenContract() == solo.getMarketTokenAddress(soloMarketId),
-            "Perpetual and Solo tokens do not match"
-        );
 
         /* solium-disable-next-line indentation */
         _EIP712_DOMAIN_HASH_ = keccak256(abi.encode(
@@ -175,30 +160,29 @@ contract P1SoloBridgeProxy {
         returns (uint256)
     {
         bytes32 transferHash = _getTransferHash(transfer);
-        I_PerpetualV1 perpetual = I_PerpetualV1(_PERPETUAL_V1_);
         I_Solo solo = I_Solo(_SOLO_MARGIN_);
+        I_PerpetualV1 perpetual = I_PerpetualV1(transfer.perpetual);
 
         // Validations.
         _verifyPermissions(
-            perpetual,
             solo,
+            perpetual,
             transfer,
             transferHash,
             signature
         );
-        _verifyStatusAndExpiration(
+        _verifyTransfer(
+            solo,
+            perpetual,
             transfer,
             transferHash
         );
-
-        uint256 soloMarketId = _SOLO_MARKET_ID_;
 
         // Execute the transfer.
         if (transfer.toPerpetual) {
             _doSoloOperation(
                 solo,
                 transfer,
-                soloMarketId,
                 true
             );
             perpetual.deposit(transfer.account, transfer.amount);
@@ -207,7 +191,6 @@ contract P1SoloBridgeProxy {
             _doSoloOperation(
                 solo,
                 transfer,
-                soloMarketId,
                 false
             );
         }
@@ -215,7 +198,9 @@ contract P1SoloBridgeProxy {
         // Log the transfer.
         emit LogTransferred(
             transfer.account,
+            transfer.perpetual,
             transfer.soloAccountNumber,
+            transfer.soloMarketId,
             transfer.toPerpetual,
             transfer.amount
         );
@@ -235,10 +220,10 @@ contract P1SoloBridgeProxy {
     {
         // Check permissions. Short-circuit if sender is the account owner.
         if (msg.sender != transfer.account) {
-            I_PerpetualV1 perpetual = I_PerpetualV1(_PERPETUAL_V1_);
             I_Solo solo = I_Solo(_SOLO_MARGIN_);
+            I_PerpetualV1 perpetual = I_PerpetualV1(transfer.perpetual);
             require(
-                _hasWithdrawPermissions(perpetual, solo, transfer),
+                _hasWithdrawPermissions(solo, perpetual, transfer),
                 "Sender does not have permission to cancel"
             );
         }
@@ -257,12 +242,11 @@ contract P1SoloBridgeProxy {
     // ============ Helper Functions ============
 
     /**
-     * @dev Execute a withdrawl or deposit operation on Solo.
+     * @dev Execute a withdrawal or deposit operation on Solo.
      */
     function _doSoloOperation(
         I_Solo solo,
         Transfer memory transfer,
-        uint256 soloMarketId,
         bool isWithdrawal
     )
         private
@@ -292,7 +276,7 @@ contract P1SoloBridgeProxy {
                 I_Solo.WithdrawArgs({
                     amount: amount,
                     account: soloAccount,
-                    market: soloMarketId,
+                    market: transfer.soloMarketId,
                     to: address(this)
                 })
             );
@@ -302,7 +286,7 @@ contract P1SoloBridgeProxy {
                 I_Solo.DepositArgs({
                     amount: amount,
                     account: soloAccount,
-                    market: soloMarketId,
+                    market: transfer.soloMarketId,
                     from: address(this)
                 })
             );
@@ -312,14 +296,14 @@ contract P1SoloBridgeProxy {
             actionType: actionType,
             accountId: transfer.soloAccountNumber,
             amount: amount,
-            primaryMarketId: soloMarketId,
+            primaryMarketId: transfer.soloMarketId,
             secondaryMarketId: 0,
             otherAddress: address(0),
             otherAccountId: 0,
             data: data
         });
 
-        // Execute the operation.
+        // Execute the withdrawal or deposit.
         solo.operate(soloAccounts, soloActions);
     }
 
@@ -327,8 +311,8 @@ contract P1SoloBridgeProxy {
      * Verify that either msg.sender has withdraw permissions or the signature is valid.
      */
     function _verifyPermissions(
-        I_PerpetualV1 perpetual,
         I_Solo solo,
+        I_PerpetualV1 perpetual,
         Transfer memory transfer,
         bytes32 transferHash,
         TypedSignature.Signature memory signature
@@ -336,7 +320,7 @@ contract P1SoloBridgeProxy {
         private
         view
     {
-        bool hasWithdrawPermissions = _hasWithdrawPermissions(perpetual, solo, transfer);
+        bool hasWithdrawPermissions = _hasWithdrawPermissions(solo, perpetual, transfer);
         require(
             hasWithdrawPermissions ||
                 TypedSignature.recover(transferHash, signature) == transfer.account,
@@ -348,14 +332,15 @@ contract P1SoloBridgeProxy {
      * Check whether msg.sender has withdraw permissions.
      */
     function _hasWithdrawPermissions(
-        I_PerpetualV1 perpetual,
         I_Solo solo,
+        I_PerpetualV1 perpetual,
         Transfer memory transfer
     )
         private
         view
         returns (bool)
     {
+        // Short-circuit if sender is the account owner.
         if (msg.sender == transfer.account) {
             return true;
         }
@@ -369,15 +354,23 @@ contract P1SoloBridgeProxy {
     }
 
     /**
-     * Verify the transfer is not executed, canceled, or expired.
+     * Verify token addresses and that the transfer is not executed, canceled, or expired.
      */
-    function _verifyStatusAndExpiration(
+    function _verifyTransfer(
+        I_Solo solo,
+        I_PerpetualV1 perpetual,
         Transfer memory transfer,
         bytes32 transferHash
     )
         private
         view
     {
+        // Verify that the Solo market asset matches the Perpetual margin asset.
+        require(
+            solo.getMarketTokenAddress(transfer.soloMarketId) == perpetual.getTokenContract(),
+            "Solo and Perpetual assets are not the same"
+        );
+
         // Verify expiration.
         require(
             transfer.expiration >= block.timestamp || transfer.expiration == 0,
