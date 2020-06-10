@@ -89,5 +89,12 @@
             "address": "0xA179038Ae1534E4492164BA38ac809e29770ca5F",
             "transactionHash": "0x96a9e89570c1251e719017a500089f3b2348a547482b8ec33ddb0d94bf634af3"
         }
+    },
+    "P1CurrencyConverterProxy": {
+        "1": {
+            "links": {},
+            "address": "0xA0d885316Be23dE8bB19E7C53F6d483279E3467D",
+            "transactionHash": "0xebf5df9bd9e7a35896f4e3c69b781b85f7c35a7b2f32500f634f7837bce74fdf"
+        }
     }
 }
