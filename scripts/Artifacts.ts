@@ -10,7 +10,7 @@ import { default as P1Orders } from '../build/contracts/P1Orders.json';
 import { default as P1Deleveraging } from '../build/contracts/P1Deleveraging.json';
 import { default as P1Liquidation } from '../build/contracts/P1Liquidation.json';
 import { default as P1LiquidatorProxy } from '../build/contracts/P1LiquidatorProxy.json';
-import { default as P1CurrencyConverterProxy } from '../build/contracts/P1CurrencyConverterProxy';
+import { default as P1CurrencyConverterProxy } from '../build/contracts/P1CurrencyConverterProxy.json';
 import { default as ERC20 } from '../build/contracts/ERC20.json';
 import { default as I_MakerOracle } from '../build/contracts/I_MakerOracle.json';
 
