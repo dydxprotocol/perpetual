@@ -146,6 +146,45 @@ contract P1SoloBridgeProxy {
     // ============ External Functions ============
 
     /**
+     * @notice Sets the maximum allowance on the Solo contract for a given market. Must be called
+     *  at least once on a given market before deposits can be made.
+     * @dev Cannot be run in the constructor due to technical restrictions in Solidity.
+     */
+    function approveMaximumOnSolo(
+        uint256 soloMarketId
+    )
+        external
+    {
+        address solo = _SOLO_MARGIN_;
+        IERC20 tokenContract = IERC20(I_Solo(solo).getMarketTokenAddress(soloMarketId));
+
+        // safeApprove requires unsetting the allowance first.
+        tokenContract.safeApprove(solo, 0);
+
+        // Set the allowance to the highest possible value.
+        tokenContract.safeApprove(solo, uint256(-1));
+    }
+
+    /**
+     * @notice Sets the maximum allowance on the Perpetual contract. Must be called at least once
+     *  on a given Perpetual before deposits can be made.
+     * @dev Cannot be run in the constructor due to technical restrictions in Solidity.
+     */
+    function approveMaximumOnPerpetual(
+        address perpetual
+    )
+        external
+    {
+        IERC20 tokenContract = IERC20(I_PerpetualV1(perpetual).getTokenContract());
+
+        // safeApprove requires unsetting the allowance first.
+        tokenContract.safeApprove(perpetual, 0);
+
+        // Set the allowance to the highest possible value.
+        tokenContract.safeApprove(perpetual, uint256(-1));
+    }
+
+    /**
      * @notice Executes a transfer from Solo to Perpetual or vice vera.
      * @dev Emits the LogTransferred event.
      *
