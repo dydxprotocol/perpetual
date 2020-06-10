@@ -32,13 +32,13 @@ import { P1Types } from "../lib/P1Types.sol";
 
 
 /**
- * @title P1SoloBridge
+ * @title P1SoloBridgeProxy
  * @author dYdX
  *
  * @notice Facilitates transfers between the PerpetualV1 and Solo smart contracts. The token to be
  *  transfered will be the margin token used by PerpetualV1.
  */
-contract P1SoloBridge {
+contract P1SoloBridgeProxy {
     using BaseMath for uint256;
     using SafeMath for uint256;
     using SignedMath for SignedMath.Int;
@@ -51,7 +51,7 @@ contract P1SoloBridge {
     bytes2 constant private EIP191_HEADER = 0x1901;
 
     // EIP712 Domain Name value
-    string constant private EIP712_DOMAIN_NAME = "P1SoloBridge";
+    string constant private EIP712_DOMAIN_NAME = "P1SoloBridgeProxy";
 
     // EIP712 Domain Version value
     string constant private EIP712_DOMAIN_VERSION = "1.0";
@@ -100,7 +100,7 @@ contract P1SoloBridge {
         uint120 amount
     );
 
-    event LogTransferInvalidated(
+    event LogTransferCanceled(
         address indexed account,
         bytes32 transferHash
     );
@@ -175,9 +175,13 @@ contract P1SoloBridge {
         returns (uint256)
     {
         bytes32 transferHash = _getTransferHash(transfer);
+        I_PerpetualV1 perpetual = I_PerpetualV1(_PERPETUAL_V1_);
+        I_Solo solo = I_Solo(_SOLO_MARGIN_);
 
         // Validations.
         _verifyPermissions(
+            perpetual,
+            solo,
             transfer,
             transferHash,
             signature
@@ -187,24 +191,24 @@ contract P1SoloBridge {
             transferHash
         );
 
-        I_PerpetualV1 perpetual = I_PerpetualV1(_PERPETUAL_V1_);
-        I_Solo solo = I_Solo(_SOLO_MARGIN_);
         uint256 soloMarketId = _SOLO_MARKET_ID_;
 
         // Execute the transfer.
         if (transfer.toPerpetual) {
-            _transferFromSoloToPerpetual(
-                perpetual,
+            _doSoloOperation(
                 solo,
                 transfer,
-                soloMarketId
+                soloMarketId,
+                true
             );
+            perpetual.deposit(transfer.account, transfer.amount);
         } else {
-            _transferFromPerpetualToSolo(
-                perpetual,
+            perpetual.withdraw(transfer.account, address(this), transfer.amount);
+            _doSoloOperation(
                 solo,
                 transfer,
-                soloMarketId
+                soloMarketId,
+                false
             );
         }
 
@@ -220,22 +224,31 @@ contract P1SoloBridge {
     /**
      * @notice Prevent a transfer from executing. Useful if a transfer was signed off-chain, and
      *  authorization needs to be revoked.
-     * @dev Emits the LogTransferInvalidated event.
+     * @dev Emits the LogTransferCanceled event.
      *
      * @param  transfer  The transfer that will be prevented from executing.
      */
-    function invalidateTransfer(
+    function cancelTransfer(
         Transfer calldata transfer
     )
         external
     {
-        require(
-            msg.sender == transfer.account,
-            "Transfer can only be invalidated by the account owner"
-        );
+        // Check permissions. Short-circuit if sender is the account owner.
+        if (msg.sender != transfer.account) {
+            I_PerpetualV1 perpetual = I_PerpetualV1(_PERPETUAL_V1_);
+            I_Solo solo = I_Solo(_SOLO_MARGIN_);
+            require(
+                _hasWithdrawPermissions(perpetual, solo, transfer),
+                "Sender does not have permission to cancel"
+            );
+        }
+
+        // Cancel the transfer.
         bytes32 transferHash = _getTransferHash(transfer);
         _HASH_USED_[transferHash] = true;
-        emit LogTransferInvalidated(
+
+        // Log the cancelation.
+        emit LogTransferCanceled(
             msg.sender,
             transferHash
         );
@@ -244,13 +257,13 @@ contract P1SoloBridge {
     // ============ Helper Functions ============
 
     /**
-     * @dev Execute a transfer from Solo to Perpetual.
+     * @dev Execute a withdrawl or deposit operation on Solo.
      */
-    function _transferFromSoloToPerpetual(
-        I_PerpetualV1 perpetual,
+    function _doSoloOperation(
         I_Solo solo,
         Transfer memory transfer,
-        uint256 soloMarketId
+        uint256 soloMarketId,
+        bool isWithdrawal
     )
         private
     {
@@ -266,89 +279,56 @@ contract P1SoloBridge {
 
         // Create Solo actions array.
         I_Solo.AssetAmount memory amount = I_Solo.AssetAmount({
-            sign: true, // isPositive
+            sign: true,
             denomination: I_Solo.AssetDenomination.Wei,
             ref: I_Solo.AssetReference.Delta,
             value: transfer.amount
         });
-        I_Solo.WithdrawArgs memory withdrawArgs = I_Solo.WithdrawArgs({
-            amount: amount,
-            account: soloAccount,
-            market: soloMarketId,
-            to: address(this)
-        });
+        I_Solo.ActionType actionType;
+        bytes memory data;
+        if (isWithdrawal) {
+            actionType = I_Solo.ActionType.Withdraw;
+            data = abi.encode(
+                I_Solo.WithdrawArgs({
+                    amount: amount,
+                    account: soloAccount,
+                    market: soloMarketId,
+                    to: address(this)
+                })
+            );
+        } else {
+            actionType = I_Solo.ActionType.Deposit;
+            data = abi.encode(
+                I_Solo.DepositArgs({
+                    amount: amount,
+                    account: soloAccount,
+                    market: soloMarketId,
+                    from: address(this)
+                })
+            );
+        }
         I_Solo.ActionArgs[] memory soloActions = new I_Solo.ActionArgs[](1);
         soloActions[0] = I_Solo.ActionArgs({
-            actionType: I_Solo.ActionType.Withdraw,
+            actionType: actionType,
             accountId: transfer.soloAccountNumber,
             amount: amount,
             primaryMarketId: soloMarketId,
-            secondaryMarketId: 0, // Unused by withdrawal.
-            otherAddress: address(0), // Unused by withdrawal.
-            otherAccountId: 0, // Unused by withdrawal.
-            data: abi.encode(withdrawArgs)
+            secondaryMarketId: 0,
+            otherAddress: address(0),
+            otherAccountId: 0,
+            data: data
         });
 
-        // Execute withdrawal and deposit.
-        solo.operate(soloAccounts, soloActions);
-        perpetual.deposit(transfer.account, transfer.amount);
-    }
-
-    /**
-     * @dev Execute a transfer from Perpetual to Solo.
-     */
-    function _transferFromPerpetualToSolo(
-        I_PerpetualV1 perpetual,
-        I_Solo solo,
-        Transfer memory transfer,
-        uint256 soloMarketId
-    )
-        private
-    {
-        // Create Solo account struct.
-        I_Solo.AccountInfo memory soloAccount = I_Solo.AccountInfo({
-            owner: transfer.account,
-            number: transfer.soloAccountNumber
-        });
-
-        // Create Solo accounts array.
-        I_Solo.AccountInfo[] memory soloAccounts = new I_Solo.AccountInfo[](1);
-        soloAccounts[0] = soloAccount;
-
-        // Create Solo actions array.
-        I_Solo.AssetAmount memory amount = I_Solo.AssetAmount({
-            sign: true, // isPositive
-            denomination: I_Solo.AssetDenomination.Wei,
-            ref: I_Solo.AssetReference.Delta,
-            value: transfer.amount
-        });
-        I_Solo.DepositArgs memory depositArgs = I_Solo.DepositArgs({
-            amount: amount,
-            account: soloAccount,
-            market: soloMarketId,
-            from: address(this)
-        });
-        I_Solo.ActionArgs[] memory soloActions = new I_Solo.ActionArgs[](1);
-        soloActions[0] = I_Solo.ActionArgs({
-            actionType: I_Solo.ActionType.Deposit,
-            accountId: transfer.soloAccountNumber,
-            amount: amount,
-            primaryMarketId: soloMarketId,
-            secondaryMarketId: 0, // Unused by deposit.
-            otherAddress: address(0), // Unused by deposit.
-            otherAccountId: 0, // Unused by deposit.
-            data: abi.encode(depositArgs)
-        });
-
-        // Execute withdrawal and deposit.
-        perpetual.withdraw(transfer.account, address(this), transfer.amount);
+        // Execute the operation.
         solo.operate(soloAccounts, soloActions);
     }
 
     /**
-     * Verify that either msg.sender is the account owner or the signature is valid.
+     * Verify that either msg.sender has withdraw permissions or the signature is valid.
      */
     function _verifyPermissions(
+        I_PerpetualV1 perpetual,
+        I_Solo solo,
         Transfer memory transfer,
         bytes32 transferHash,
         TypedSignature.Signature memory signature
@@ -356,16 +336,40 @@ contract P1SoloBridge {
         private
         view
     {
-        if (msg.sender != transfer.account) {
-            require(
+        bool hasWithdrawPermissions = _hasWithdrawPermissions(perpetual, solo, transfer);
+        require(
+            hasWithdrawPermissions ||
                 TypedSignature.recover(transferHash, signature) == transfer.account,
-                "Sender is not the account owner and signature is invalid"
-            );
+            "Sender does not have withdraw permissions and signature is invalid"
+        );
+    }
+
+    /**
+     * Check whether msg.sender has withdraw permissions.
+     */
+    function _hasWithdrawPermissions(
+        I_PerpetualV1 perpetual,
+        I_Solo solo,
+        Transfer memory transfer
+    )
+        private
+        view
+        returns (bool)
+    {
+        if (msg.sender == transfer.account) {
+            return true;
+        }
+
+        if (transfer.toPerpetual) {
+            return solo.getIsLocalOperator(transfer.account, msg.sender) ||
+                solo.getIsGlobalOperator(msg.sender);
+        } else {
+            return perpetual.hasAccountPermissions(transfer.account, msg.sender);
         }
     }
 
     /**
-     * Verify the transfer is not executed, invalidated, or expired.
+     * Verify the transfer is not executed, canceled, or expired.
      */
     function _verifyStatusAndExpiration(
         Transfer memory transfer,
@@ -383,7 +387,7 @@ contract P1SoloBridge {
         // Verify status.
         require(
             !_HASH_USED_[transferHash],
-            "Transfer was already executed or invalidated"
+            "Transfer was already executed or canceled"
         );
     }
 

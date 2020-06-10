@@ -110,6 +110,36 @@ interface I_Solo {
     // ============ Getter Functions ============
 
     /**
+     * Return true if a particular address is approved as an operator for an owner's accounts.
+     * Approved operators can act on the accounts of the owner as if it were the operator's own.
+     *
+     * @param  owner     The owner of the accounts
+     * @param  operator  The possible operator
+     * @return           True if operator is approved for owner's accounts
+     */
+    function getIsLocalOperator(
+        address owner,
+        address operator
+    )
+        external
+        view
+        returns (bool);
+
+    /**
+     * Return true if a particular address is approved as a global operator. Such an address can
+     * act on any account as if it were the operator's own.
+     *
+     * @param  operator  The address to query
+     * @return           True if operator is a global operator
+     */
+    function getIsGlobalOperator(
+        address operator
+    )
+        external
+        view
+        returns (bool);
+
+    /**
      * @notice Get the ERC20 token address for a market.
      *
      * @param  marketId  The market to query
