@@ -508,3 +508,9 @@ export interface ApiHistoricalFundingRates {
 export interface ApiIndexPrice {
   price: string;
 }
+
+export enum RequestMethod {
+  GET = 'get',
+  POST = 'post',
+  DELETE = 'delete',
+}
