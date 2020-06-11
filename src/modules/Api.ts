@@ -18,6 +18,7 @@ import {
   SignedOrder,
   SigningMethod,
   address,
+  RequestMethod,
 } from '../lib/types';
 import { Orders } from './Orders';
 
@@ -195,14 +196,11 @@ export class Api {
       order: jsonOrder,
     };
 
-    const response = await axios({
+    return this.axiosRequest({
       data,
-      method: 'post',
+      method: RequestMethod.POST,
       url: `${this.endpoint}/v2/orders`,
-      timeout: this.timeout,
     });
-
-    return response.data;
   }
 
   public async cancelOrder({
@@ -218,28 +216,23 @@ export class Api {
       SigningMethod.Hash,
     );
 
-    const response = await axios({
+    return this.axiosRequest({
       url: `${this.endpoint}/v2/orders/${orderId}`,
-      method: 'delete',
+      method: RequestMethod.DELETE,
       headers: {
         authorization: `Bearer ${signature}`,
       },
-      timeout: this.timeout,
     });
-
-    return response.data;
   }
 
   // ============ Getters ============
 
   public async getMarkets():
     Promise<{ markets: ApiMarketMessage[] }> {
-    const response = await axios({
+    return this.axiosRequest({
       url: `${this.endpoint}/v1/perpetual-markets`,
-      method: 'get',
-      timeout: this.timeout,
+      method: RequestMethod.GET,
     });
-    return response.data;
   }
 
   public async getAccountBalances({
@@ -247,13 +240,10 @@ export class Api {
   }: {
     accountOwner: address,
   }): Promise<ApiAccount> {
-    const response = await axios({
+    return this.axiosRequest({
       url: `${this.endpoint}/v1/perpetual-accounts/${accountOwner}`,
-      method: 'get',
-      timeout: this.timeout,
+      method: RequestMethod.GET,
     });
-
-    return response.data;
   }
 
   public async getOrderbook({
@@ -261,13 +251,10 @@ export class Api {
   }: {
     market: ApiMarketName,
   }): Promise<{ bids: ApiOrderOnOrderbook[], asks: ApiOrderOnOrderbook[] }> {
-    const response = await axios({
+    return this.axiosRequest({
       url: `${this.endpoint}/v1/orderbook/${market}`,
-      method: 'get',
-      timeout: this.timeout,
+      method: RequestMethod.GET,
     });
-
-    return response.data;
   }
 
   // ============ Funding Getters ============
@@ -291,14 +278,11 @@ export class Api {
   }: {
     markets?: ApiMarketName[],
   } = {}): Promise<{ [market: string]: ApiFundingRates }> {
-    const response = await axios({
+    return this.axiosRequest({
       url: `${this.endpoint}/v1/funding-rates`,
-      method: 'get',
-      timeout: this.timeout,
+      method: RequestMethod.GET,
       params: { markets },
     });
-
-    return response.data;
   }
 
   /**
@@ -318,18 +302,15 @@ export class Api {
     limit?: number,
     startingBefore?: Date,
   } = {}): Promise<{ [market: string]: ApiHistoricalFundingRates }> {
-    const response = await axios({
+    return this.axiosRequest({
       url: `${this.endpoint}/v1/historical-funding-rates`,
-      method: 'get',
-      timeout: this.timeout,
+      method: RequestMethod.GET,
       params: {
         markets,
         limit,
         startingBefore: startingBefore && startingBefore.toISOString(),
       },
     });
-
-    return response.data;
   }
 
   /**
@@ -343,14 +324,47 @@ export class Api {
   }: {
     markets?: ApiMarketName[],
   } = {}): Promise<{ [market: string]: ApiIndexPrice }> {
-    const response = await axios({
+    return this.axiosRequest({
       url: `${this.endpoint}/v1/index-price`,
-      method: 'get',
-      timeout: this.timeout,
+      method: RequestMethod.GET,
       params: { markets },
     });
+  }
 
-    return response.data;
+  private async axiosRequest(
+    {
+      url,
+      method,
+      headers,
+      data,
+      params,
+    }: {
+      url: string,
+      method: RequestMethod,
+      headers?: any,
+      data?: any,
+      params?: any,
+    }): Promise<any> {
+    try {
+      const response = await axios({
+        url,
+        method,
+        headers,
+        data,
+        params,
+        timeout: this.timeout,
+      });
+
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw new Error(error.response.data.errors[0].msg);
+      } else if (error.request) {
+        throw new Error(error.request);
+      } else {
+        throw new Error(error.message);
+      }
+    }
   }
 }
 
