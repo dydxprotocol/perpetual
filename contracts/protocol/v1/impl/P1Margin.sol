@@ -74,8 +74,7 @@ contract P1Margin is
         P1Types.Context memory context = _loadContext();
         P1Types.Balance memory balance = _settleAccount(context, account);
 
-        SafeERC20.safeTransferFrom(
-            IERC20(_TOKEN_),
+        IERC20(_TOKEN_).transferFrom(
             msg.sender,
             address(this),
             amount
@@ -116,8 +115,7 @@ contract P1Margin is
         P1Types.Context memory context = _loadContext();
         P1Types.Balance memory balance = _settleAccount(context, account);
 
-        SafeERC20.safeTransfer(
-            IERC20(_TOKEN_),
+        IERC20(_TOKEN_).transfer(
             destination,
             amount
         );

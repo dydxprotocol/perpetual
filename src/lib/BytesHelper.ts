@@ -11,6 +11,10 @@ export function addressToBytes32(input: address): string {
   return `0x000000000000000000000000${ stripHexPrefix(input) }`;
 }
 
+export function bnToBytes16(bn: BigNumberable): string {
+  return `0x${new BigNumber(bn).toString(16).padStart(32, '0')}`;
+}
+
 export function bnToBytes32(bn: BigNumberable): string {
   return `0x${new BigNumber(bn).toString(16).padStart(64, '0')}`;
 }

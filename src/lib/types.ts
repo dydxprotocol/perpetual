@@ -212,6 +212,21 @@ export interface MakerOracleMessage {
   signature: string;
 }
 
+export interface SoloBridgeTransfer {
+  account: address;
+  perpetual: address;
+  soloAccountNumber: BigNumberable;
+  soloMarketId: BigNumberable;
+  toPerpetual: boolean; // Indicates whether the transfer is from Solo to Perpetual or vice versa.
+  amount: BigNumberable;
+  expiration: BigNumberable;
+  salt: BigNumberable;
+}
+
+export interface SignedSoloBridgeTransfer extends SoloBridgeTransfer {
+  typedSignature: string;
+}
+
 // ============ Helper Functions ============
 
 export function bnToSoliditySignedInt(value: BigNumberable): SignedIntStruct {
