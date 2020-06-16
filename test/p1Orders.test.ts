@@ -87,7 +87,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       expect(validSignature).to.be.true;
     });
 
-    it.only('Signs correctly for typed data', async () => {
+    it('Signs correctly for typed data', async () => {
       const typedSignature = await ctx.perpetual.orders.signOrder(
         defaultOrder,
         SigningMethod.TypedData,
