@@ -78,7 +78,7 @@ async function init(ctx: ITestContext): Promise<void> {
 }
 
 perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
-  describe.only('off-chain helpers', () => {
+  describe('off-chain helpers', () => {
     it('Signs correctly for hash', async () => {
       const signedTransfer = await ctx.perpetual.soloBridgeProxy.getSignedTransfer(
         defaultTransferToPerpetual,
@@ -90,7 +90,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
       expect(validSignature).to.be.true;
     });
 
-    it.only('Signs correctly for typed data', async () => {
+    it('Signs correctly for typed data', async () => {
       const signedTransfer = await ctx.perpetual.soloBridgeProxy.getSignedTransfer(
         defaultTransferToPerpetual,
         SigningMethod.TypedData,

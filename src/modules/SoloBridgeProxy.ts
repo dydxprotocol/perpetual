@@ -21,7 +21,7 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from './Contracts';
-import { bnToBytes16, hashString, addressToBytes32, bnToBytes32 } from '../lib/BytesHelper';
+import { hashString, addressToBytes32, bnToBytes32 } from '../lib/BytesHelper';
 import {
   EIP712_DOMAIN_STRING,
   EIP712_DOMAIN_STRUCT,
@@ -257,7 +257,7 @@ export class SoloBridgeProxy {
       // toPerpetual: transfer.toPerpetual,
       amount: new BigNumber(transfer.amount).toFixed(0),
       expiration: new BigNumber(transfer.expiration).toFixed(0),
-      salt: bnToBytes16(transfer.salt),
+      salt: bnToBytes32(transfer.salt),
     };
   }
 
