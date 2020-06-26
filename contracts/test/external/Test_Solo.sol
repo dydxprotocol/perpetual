@@ -33,13 +33,6 @@ import { I_Solo } from "../../external/dydx/I_Solo.sol";
 contract Test_Solo is
   I_Solo
 {
-    // ============ Events ============
-
-    event LogTestOperateCalled(
-        I_Solo.AccountInfo[] accounts,
-        I_Solo.ActionArgs[] actions
-    );
-
     // ============ Test Data ============
 
     mapping(address => bool) internal _GLOBAL_OPERATORS_;
@@ -196,8 +189,6 @@ contract Test_Solo is
         } else {
             revert("Expected action type to be Withdraw or Deposit");
         }
-
-        emit LogTestOperateCalled(accounts, actions);
     }
 
     /**
