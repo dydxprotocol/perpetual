@@ -48,10 +48,12 @@ async function init(ctx: ITestContext): Promise<void> {
     toPerpetual: false,
   };
   defaultTransferToPerpetualSigned = await ctx.perpetual.soloBridgeProxy.getSignedTransfer(
-    defaultTransferToPerpetual, SigningMethod.Hash,
+    defaultTransferToPerpetual,
+    SigningMethod.Hash,
   );
   defaultTransferToSoloSigned = await ctx.perpetual.soloBridgeProxy.getSignedTransfer(
-    defaultTransferToSolo, SigningMethod.Hash,
+    defaultTransferToSolo,
+    SigningMethod.Hash,
   );
 
   await Promise.all([
@@ -78,27 +80,23 @@ async function init(ctx: ITestContext): Promise<void> {
 }
 
 perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
-  describe.only('off-chain helpers', () => {
+  describe('off-chain helpers', () => {
     it('Signs correctly for hash', async () => {
       const signedTransfer = await ctx.perpetual.soloBridgeProxy.getSignedTransfer(
         defaultTransferToPerpetual,
         SigningMethod.Hash,
       );
-      const validSignature = ctx.perpetual.soloBridgeProxy.transferHasValidSignature(
-        signedTransfer,
-      );
-      expect(validSignature).to.be.true;
+      const isValid = ctx.perpetual.soloBridgeProxy.transferHasValidSignature(signedTransfer);
+      expect(isValid).to.be.true;
     });
 
-    it.only('Signs correctly for typed data', async () => {
+    it('Signs correctly for typed data', async () => {
       const signedTransfer = await ctx.perpetual.soloBridgeProxy.getSignedTransfer(
         defaultTransferToPerpetual,
         SigningMethod.TypedData,
       );
-      const validSignature = ctx.perpetual.soloBridgeProxy.transferHasValidSignature(
-        signedTransfer,
-      );
-      expect(validSignature).to.be.true;
+      const isValid = ctx.perpetual.soloBridgeProxy.transferHasValidSignature(signedTransfer);
+      expect(isValid).to.be.true;
     });
 
     it('Recognizes invalid signatures', () => {
@@ -108,11 +106,11 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         `0x${'01'.repeat(70)}01`,
       ];
       badSignatures.map((typedSignature) => {
-        const validSignature = ctx.perpetual.soloBridgeProxy.transferHasValidSignature({
+        const isValid = ctx.perpetual.soloBridgeProxy.transferHasValidSignature({
           ...defaultTransferToPerpetual,
           typedSignature,
         });
-        expect(validSignature).to.be.false;
+        expect(isValid).to.be.false;
       });
     });
   });
@@ -347,29 +345,32 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
     const logs = ctx.perpetual.logs.parseLogs(txResult);
 
     const transferLogs = _.filter(logs, { name: 'LogTransferred' });
-    expect(transferLogs.length).to.equal(1);
+    expect(transferLogs.length, 'transfer count').to.equal(1);
     const transferLog = transferLogs[0];
-    console.log(transferLog.args);
-    expect(transferLog.args.account).to.equal(transfer.account);
-    expect(transferLog.args.perpetual).to.equal(transfer.perpetual);
-    expectBN(transferLog.args.soloAccountNumber).to.equal(transfer.soloAccountNumber);
-    // expectBN(transferLog.args.soloMarketId).to.equal(transfer.soloMarketId);
-    expect(transferLog.args.toPerpetual).to.equal(transfer.toPerpetual);
-    expectBN(transferLog.args.amount).to.equal(transfer.amount);
+    expect(transferLog.args.account, 'account').to.equal(transfer.account);
+    expect(transferLog.args.perpetual, 'perpetual').to.equal(transfer.perpetual);
+    expectBN(transferLog.args.soloAccountNumber, 'soloAccountNumber').to.equal(
+      transfer.soloAccountNumber,
+    );
+    // expectBN(transferLog.args.soloMarketId, 'soloMarketId').to.equal(transfer.soloMarketId);
+    expect(transferLog.args.toPerpetual, 'toPerpetual').to.equal(transfer.toPerpetual);
+    expectBN(transferLog.args.amount, 'amount').to.equal(transfer.amount);
 
     if (transfer.toPerpetual) {
       const depositLogs = _.filter(logs, { name: 'LogDeposit' });
-      expect(depositLogs.length).to.equal(1);
+      expect(depositLogs.length, 'deposit count').to.equal(1);
       const depositLog = depositLogs[0];
-      expect(depositLog.args.account).to.equal(transfer.account);
-      expectBN(depositLog.args.amount).to.equal(transfer.amount);
+      expect(depositLog.args.account, 'deposit account').to.equal(transfer.account);
+      expectBN(depositLog.args.amount, 'deposit amount').to.equal(transfer.amount);
     } else {
       const withdrawalLogs = _.filter(logs, { name: 'LogWithdraw' });
-      expect(withdrawalLogs.length).to.equal(1);
+      expect(withdrawalLogs.length, 'withdrawal count').to.equal(1);
       const withdrawalLog = withdrawalLogs[0];
-      expect(withdrawalLog.args.account).to.equal(transfer.account);
-      expect(withdrawalLog.args.destination).to.equal(ctx.perpetual.soloBridgeProxy.address);
-      expectBN(withdrawalLog.args.amount).to.equal(transfer.amount);
+      expect(withdrawalLog.args.account, 'withdrawal account').to.equal(transfer.account);
+      expect(withdrawalLog.args.destination, 'withdrawal destination').to.equal(
+        ctx.perpetual.soloBridgeProxy.address,
+      );
+      expectBN(withdrawalLog.args.amount, 'withdrawal amount').to.equal(transfer.amount);
     }
   }
 });

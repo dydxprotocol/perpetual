@@ -234,6 +234,9 @@ contract P1SoloBridgeProxy {
             );
         }
 
+        // Mark the transfer as executed so it can't be executed again.
+        _HASH_USED_[transferHash] = true;
+
         // Log the transfer.
         emit LogTransferred(
             transfer.account,

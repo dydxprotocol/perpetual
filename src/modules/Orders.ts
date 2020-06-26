@@ -45,6 +45,8 @@ const EIP712_ORDER_STRUCT = [
   { type: 'uint256', name: 'expiration' },
 ];
 
+const EIP712_DOMAIN_NAME = 'P1Orders';
+const EIP712_DOMAIN_VERSION = '1.0';
 const EIP712_ORDER_STRUCT_STRING =
   'Order(' +
   'bytes32 flags,' +
@@ -403,8 +405,8 @@ export class Orders {
   public getDomainHash(): string {
     return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
-      { t: 'bytes32', v: hashString('P1Orders') },
-      { t: 'bytes32', v: hashString('1.0') },
+      { t: 'bytes32', v: hashString(EIP712_DOMAIN_NAME) },
+      { t: 'bytes32', v: hashString(EIP712_DOMAIN_VERSION) },
       { t: 'uint256', v: `${this.contracts.networkId}` },
       { t: 'bytes32', v: addressToBytes32(this.contracts.p1Orders.options.address) },
     );
@@ -466,8 +468,8 @@ export class Orders {
 
   private getDomainData() {
     return {
-      name: 'P1Orders',
-      version: '1.0',
+      name: EIP712_DOMAIN_NAME,
+      version: EIP712_DOMAIN_VERSION,
       chainId: this.contracts.networkId,
       verifyingContract: this.contracts.p1Orders.options.address,
     };

@@ -21,7 +21,7 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from './Contracts';
-import { bnToBytes16, hashString, addressToBytes32, bnToBytes32 } from '../lib/BytesHelper';
+import { hashString, addressToBytes32, bnToBytes32, boolToBytes32 } from '../lib/BytesHelper';
 import {
   EIP712_DOMAIN_STRING,
   EIP712_DOMAIN_STRUCT,
@@ -51,7 +51,7 @@ const EIP712_TRANSFER_STRUCT_STRING =
   'address perpetual,' +
   'uint256 soloAccountNumber,' +
   'uint256 soloMarketId,' +
-  // 'bool toPerpetual,' +
+  'bool toPerpetual,' +
   'uint256 amount,' +
   'uint256 expiration,' +
   'bytes32 salt' +
@@ -62,7 +62,7 @@ const EIP712_TRANSFER_STRUCT = [
   { type: 'address', name: 'perpetual' },
   { type: 'uint256', name: 'soloAccountNumber' },
   { type: 'uint256', name: 'soloMarketId' },
-  // { type: 'bool', name: 'toPerpetual' },
+  { type: 'bool', name: 'toPerpetual' },
   { type: 'uint256', name: 'amount' },
   { type: 'uint256', name: 'expiration' },
   { type: 'bytes32', name: 'salt' },
@@ -223,7 +223,7 @@ export class SoloBridgeProxy {
       { t: 'bytes32', v: addressToBytes32(transfer.perpetual) },
       { t: 'uint256', v: new BigNumber(transfer.soloAccountNumber).toFixed(0) },
       { t: 'uint256', v: new BigNumber(transfer.soloMarketId).toFixed(0) },
-      // { t: 'bool', v: transfer.toPerpetual as any },
+      { t: 'bytes32', v: boolToBytes32(transfer.toPerpetual) },
       { t: 'uint256', v: new BigNumber(transfer.amount).toFixed(0) },
       { t: 'uint256', v: new BigNumber(transfer.expiration).toFixed(0) },
       { t: 'bytes32', v: bnToBytes32(transfer.salt) },
@@ -254,10 +254,10 @@ export class SoloBridgeProxy {
       perpetual: transfer.perpetual,
       soloAccountNumber: new BigNumber(transfer.soloAccountNumber).toFixed(0),
       soloMarketId: new BigNumber(transfer.soloMarketId).toFixed(0),
-      // toPerpetual: transfer.toPerpetual,
+      toPerpetual: transfer.toPerpetual,
       amount: new BigNumber(transfer.amount).toFixed(0),
       expiration: new BigNumber(transfer.expiration).toFixed(0),
-      salt: bnToBytes16(transfer.salt),
+      salt: bnToBytes32(transfer.salt),
     };
   }
 

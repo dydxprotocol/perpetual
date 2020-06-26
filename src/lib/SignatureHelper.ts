@@ -83,7 +83,6 @@ export function hashHasValidSignature(
   expectedSigner: address,
 ): boolean {
   const signer = ecRecoverTypedSignature(hash, typedSignature);
-  console.log('signer', addressesAreEqual(signer, expectedSigner), signer);
   return addressesAreEqual(signer, expectedSigner);
 }
 
@@ -106,9 +105,6 @@ export function ecRecoverTypedSignature(
 
   const signature = typedSignature.slice(0, -2);
 
-  console.log('EH?\n',prependedHash,
-    signature,
-    true,);
   return new Web3().eth.accounts.recover(
     prependedHash,
     signature,
@@ -158,7 +154,7 @@ export function signatureToVRS(
 ): {
   v: string,
   r: string,
-  s:string,
+  s: string,
 } {
   const stripped = stripHexPrefix(signature);
 
@@ -185,7 +181,7 @@ export function signatureToSolidityStruct(
   return {
     r: `0x${r}`,
     s: `0x${s}`,
-    vType: `0x${v}`,
+    vType: `0x${v}01`, // TODO
   };
 }
 
@@ -198,10 +194,6 @@ export async function ethSignTypedDataInternal(
   let sendMethod: string;
   let rpcMethod: string;
   let rpcData: any;
-
-  console.log('signer', signer);
-  console.log('signingMethod', signingMethod);
-  console.log('data', JSON.stringify(data));
 
   switch (signingMethod) {
     case SigningMethod.TypedData:
