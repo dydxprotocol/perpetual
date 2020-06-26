@@ -31,6 +31,10 @@ const {
   getSoloAddress,
 } = require('./helpers');
 
+// ============ Constants ============
+
+const SOLO_USDC_MARKET = 2;
+
 // ============ Contracts ============
 
 // Base Protocol
@@ -175,7 +179,7 @@ async function deployTraders(deployer, network) {
 
     const soloBridgeProxy = await P1SoloBridgeProxy.deployed();
     await soloBridgeProxy.approveMaximumOnPerpetual(PerpetualProxy.address);
-    await soloBridgeProxy.approveMaximumOnSolo(2); // USDC market ID
+    await soloBridgeProxy.approveMaximumOnSolo(SOLO_USDC_MARKET);
   }
 
   // set global operators

@@ -159,10 +159,10 @@ contract P1SoloBridgeProxy {
         IERC20 tokenContract = IERC20(I_Solo(solo).getMarketTokenAddress(soloMarketId));
 
         // safeApprove requires unsetting the allowance first.
-        tokenContract.approve(solo, 0);
+        tokenContract.safeApprove(solo, 0);
 
         // Set the allowance to the highest possible value.
-        tokenContract.approve(solo, uint256(-1));
+        tokenContract.safeApprove(solo, uint256(-1));
     }
 
     /**
@@ -178,10 +178,10 @@ contract P1SoloBridgeProxy {
         IERC20 tokenContract = IERC20(I_PerpetualV1(perpetual).getTokenContract());
 
         // safeApprove requires unsetting the allowance first.
-        tokenContract.approve(perpetual, 0);
+        tokenContract.safeApprove(perpetual, 0);
 
         // Set the allowance to the highest possible value.
-        tokenContract.approve(perpetual, uint256(-1));
+        tokenContract.safeApprove(perpetual, uint256(-1));
     }
 
     /**
@@ -276,7 +276,7 @@ contract P1SoloBridgeProxy {
 
         // Log the cancelation.
         emit LogTransferCanceled(
-            msg.sender,
+            transfer.account,
             transferHash
         );
     }

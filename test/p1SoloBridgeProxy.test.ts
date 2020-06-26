@@ -3,7 +3,6 @@ import _ from 'lodash';
 import { expectThrow, expect, expectBN } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
-import { mintAndDeposit } from './helpers/balances';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import {
   address,
@@ -12,6 +11,11 @@ import {
   SigningMethod,
   SignedSoloBridgeTransfer,
 } from '../src/lib/types';
+import {
+  expectTokenBalances,
+  expectMarginBalances,
+  mintAndDeposit,
+} from './helpers/balances';
 
 const SOLO_USDC_MARKET = 2;
 
@@ -32,17 +36,28 @@ let defaultTransferToSolo: SoloBridgeTransfer; // Set later
 let defaultTransferToPerpetualSigned: SignedSoloBridgeTransfer;
 let defaultTransferToSoloSigned: SignedSoloBridgeTransfer;
 
-// Accounts.
+// Accounts and addresses.
+let admin: address;
 let account: address;
 let otherAddress: address;
+let perpetualAddress: address;
+let soloAddress: address;
+let proxyAddress: address;
 
 async function init(ctx: ITestContext): Promise<void> {
   await initializePerpetual(ctx);
+
+  // Accounts and addresses.
+  admin = ctx.accounts[0];
   account = ctx.accounts[2];
   otherAddress = ctx.accounts[3];
+  perpetualAddress = ctx.perpetual.contracts.perpetualProxy.options.address;
+  soloAddress = ctx.perpetual.testing.solo.address;
+  proxyAddress = ctx.perpetual.soloBridgeProxy.address;
 
+  // Initialize test parameters.
   defaultTransferToPerpetual.account = account;
-  defaultTransferToPerpetual.perpetual = ctx.perpetual.contracts.perpetualProxy.options.address;
+  defaultTransferToPerpetual.perpetual = perpetualAddress;
   defaultTransferToSolo = {
     ...defaultTransferToPerpetual,
     toPerpetual: false,
@@ -56,31 +71,30 @@ async function init(ctx: ITestContext): Promise<void> {
     SigningMethod.Hash,
   );
 
+  // Set test data on mock Solo contract.
+  await ctx.perpetual.testing.solo.setTokenAddress(
+    SOLO_USDC_MARKET,
+    ctx.perpetual.contracts.testToken.options.address,
+  );
+
+  // Set allowance on Solo and Perpetual for the proxy.
   await Promise.all([
-    // Set allowance on Solo and Perpetual for the proxy.
-    // ctx.perpetual.soloBridgeProxy.approveMaximumOnSolo(SOLO_USDC_MARKET),
+    ctx.perpetual.soloBridgeProxy.approveMaximumOnSolo(SOLO_USDC_MARKET),
     ctx.perpetual.soloBridgeProxy.approveMaximumOnPerpetual(),
-
-    // Give the account tokens. Solo is stubbed out, so these are only used for Perpetual -> Solo.
-    mintAndDeposit(ctx, account, amount),
-
-    // Since Solo is stubbed out, the proxy needs a token balance for Solo -> Perpetual.
-    ctx.perpetual.testing.token.mint(
-      ctx.perpetual.contracts.testToken.options.address,
-      ctx.perpetual.soloBridgeProxy.address,
-      amount,
-    ),
-
-    // Set up test data on mock Solo contract.
-    ctx.perpetual.testing.solo.setTokenAddress(
-      SOLO_USDC_MARKET,
-      ctx.perpetual.contracts.testToken.options.address,
-    ),
   ]);
+
+  // Check initial balances.
+  await expectTokenBalances(
+    ctx,
+    [account, perpetualAddress, soloAddress, proxyAddress],
+    [0, 0, 0, 0],
+  );
 }
 
 perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
+
   describe('off-chain helpers', () => {
+
     it('Signs correctly for hash', async () => {
       const signedTransfer = await ctx.perpetual.soloBridgeProxy.getSignedTransfer(
         defaultTransferToPerpetual,
@@ -116,134 +130,363 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
   });
 
   describe('bridgeTransfer()', () => {
-    it('transfers from Solo -> Perpetual', async () => {
-      // Call the function.
-      const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
-        defaultTransferToPerpetualSigned,
-      );
 
-      // Check logs.
-      checkLogs(txResult, defaultTransferToPerpetual);
+    describe('transfer (Solo -> Perpetual)', async () => {
 
-      // TODO: Check balances.
-    });
-
-    it('transfers from Perpetual -> Solo', async () => {
-      const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
-        defaultTransferToSoloSigned,
-      );
-
-      // Check logs.
-      checkLogs(txResult, defaultTransferToSolo);
-
-      // TODO: Check balances.
-    });
-
-    it('fails if the Solo and Perpetual tokens do not match', async () => {
-      // Set up mock data.
-      const transfer = getModifiedTransfer({ soloMarketId: SOLO_USDC_MARKET + 1 });
-
-      // Call the function.
-      await expectThrow(
-        ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer, { from: account }),
-        'Solo and Perpetual assets are not the same',
-      );
-    });
-
-    it('fails if the transfer has expired', async () => {
-      const transfer = getModifiedTransfer({ expiration: 1 });
-      await expectThrow(
-        ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer, { from: account }),
-        'Transfer has expired',
-      );
-    });
-
-    it('fails if the transfer was already executed', async () => {
-      const transfer = getModifiedTransfer({ amount: amount / 2 });
-      await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
-        transfer,
-        { from: account },
-      );
-      await expectThrow(
-        ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer, { from: account }),
-        'Transfer was already executed or canceled',
-      );
-    });
-
-    it('fails if the transfer was canceled', async () => {
-      await ctx.perpetual.soloBridgeProxy.cancelTransfer(
-        defaultTransferToPerpetual,
-        { from: account },
-      );
-      await expectThrow(
-        ctx.perpetual.soloBridgeProxy.bridgeTransfer(defaultTransferToPerpetual, { from: account }),
-        'Transfer was already executed or canceled',
-      );
-    });
-
-    describe('transfer permissions (Solo -> Perpetual)', async () => {
-      it('succeeds for account bearing a valid signature', async () => {
+      beforeEach(async () => {
+        // Give the test Solo contract tokens for withdrawal.
+        await ctx.perpetual.testing.token.mint(
+          ctx.perpetual.contracts.testToken.options.address,
+          soloAddress,
+          amount,
+        );
       });
 
-      it('succeeds for account owner', async () => {
+      it('succeeds', async () => {
+        // Call the function.
+        const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+          defaultTransferToPerpetualSigned,
+        );
+
+        // Check logs.
+        checkLogs(txResult, defaultTransferToPerpetual);
+
+        // Check balances.
+        await expectTokenBalances(
+          ctx,
+          [account, perpetualAddress, soloAddress, proxyAddress],
+          [0, amount, 0, 0],
+        );
+        await expectMarginBalances(ctx, txResult, [account], [amount]);
       });
 
-      it('succeeds for Solo local operator', async () => {
-      });
+      it('fails if the Solo and Perpetual tokens do not match', async () => {
+        // Set up mock data.
+        const transfer = await getModifiedTransferToPerpetual(
+          { soloMarketId: SOLO_USDC_MARKET + 1 },
+        );
 
-      it('succeeds for Solo global operator', async () => {
-      });
-
-      it('fails for non-owner non-operator account', async () => {
+        // Call the function.
         await expectThrow(
-          ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+          'Solo and Perpetual assets are not the same',
+        );
+      });
+
+      it('fails if the transfer has expired', async () => {
+        const transfer = await getModifiedTransferToPerpetual({ expiration: 1 });
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+          'Transfer has expired',
+        );
+      });
+
+      it('fails if the transfer was already executed', async () => {
+        const transfer = await getModifiedTransferToPerpetual({ amount: amount / 2 });
+        await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+          transfer,
+          { from: account },
+        );
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+          'Transfer was already executed or canceled',
+        );
+      });
+
+      it('fails if the transfer was canceled', async () => {
+        await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          defaultTransferToPerpetual,
+          { from: account },
+        );
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.bridgeTransfer(defaultTransferToPerpetualSigned),
+          'Transfer was already executed or canceled',
+        );
+      });
+
+      describe('permissions', async () => {
+
+        it('succeeds for account owner', async () => {
+          // Call the function.
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+            defaultTransferToPerpetual,
+            { from: account },
+          );
+
+          // Check logs.
+          checkLogs(txResult, defaultTransferToPerpetual);
+
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, amount, 0, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [amount]);
+        });
+
+        it('succeeds for Solo local operator', async () => {
+          // Set up.
+          await ctx.perpetual.testing.solo.setIsLocalOperator(account, otherAddress, true);
+
+          // Call the function.
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
             defaultTransferToPerpetual,
             { from: otherAddress },
-          ),
-          'Sender does not have withdraw permissions and signature is invalid',
-        );
-      });
+          );
 
-      it('fails for Perpetual local operator', async () => {
-      });
+          // Check logs.
+          checkLogs(txResult, defaultTransferToPerpetual);
 
-      it('fails for Perpetual global operator', async () => {
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, amount, 0, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [amount]);
+        });
+
+        it('succeeds for Solo global operator', async () => {
+          // Set up.
+          await ctx.perpetual.testing.solo.setIsGlobalOperator(otherAddress, true);
+
+          // Call the function.
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+            defaultTransferToPerpetual,
+            { from: otherAddress },
+          );
+
+          // Check logs.
+          checkLogs(txResult, defaultTransferToPerpetual);
+
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, amount, 0, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [amount]);
+        });
+
+        it('fails for non-owner non-operator account', async () => {
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+              defaultTransferToPerpetual,
+              { from: otherAddress },
+            ),
+            'Sender does not have withdraw permissions and signature is invalid',
+          );
+        });
+
+        it('fails for Perpetual local operator', async () => {
+          // Set up.
+          await ctx.perpetual.operator.setLocalOperator(otherAddress, true, { from: account });
+
+          // Call the function.
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+              defaultTransferToPerpetual,
+              { from: otherAddress },
+            ),
+            'Sender does not have withdraw permissions and signature is invalid',
+          );
+        });
+
+        it('fails for Perpetual global operator', async () => {
+          // Set up.
+          await ctx.perpetual.admin.setGlobalOperator(otherAddress, true, { from: admin });
+
+          // Call the function.
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+              defaultTransferToPerpetual,
+              { from: otherAddress },
+            ),
+            'Sender does not have withdraw permissions and signature is invalid',
+          );
+        });
       });
     });
 
-    describe('transfer permissions (Perpetual -> Solo)', async () => {
-      it('succeeds for account bearing a valid signature', async () => {
+    describe('transfer (Perpetual -> Solo)', async () => {
+
+      beforeEach(async () => {
+        // Give the account tokens in the Perpetual contract.
+        await mintAndDeposit(ctx, account, amount);
       });
 
-      it('succeeds for account owner', async () => {
+      it('succeeds', async () => {
+        const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+          defaultTransferToSoloSigned,
+        );
+
+        // Check logs.
+        checkLogs(txResult, defaultTransferToSolo);
+
+        // Check balances.
+        await expectTokenBalances(
+          ctx,
+          [account, perpetualAddress, soloAddress, proxyAddress],
+          [0, 0, amount, 0],
+        );
+        await expectMarginBalances(ctx, txResult, [account], [0]);
       });
 
-      it('succeeds for Perpetual local operator', async () => {
-      });
+      it('fails if the Solo and Perpetual tokens do not match', async () => {
+        // Set up mock data.
+        const transfer = await getModifiedTransferToSolo(
+          { soloMarketId: SOLO_USDC_MARKET + 1 },
+        );
 
-      it('succeeds for Perpetual global operator', async () => {
-      });
-
-      it('fails for non-owner non-operator account', async () => {
+        // Call the function.
         await expectThrow(
-          ctx.perpetual.soloBridgeProxy.bridgeTransfer(
-            defaultTransferToSolo,
-            { from: otherAddress },
-          ),
-          'Sender does not have withdraw permissions and signature is invalid',
+          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+          'Solo and Perpetual assets are not the same',
         );
       });
 
-      it('fails for Solo local operator', async () => {
+      it('fails if the transfer has expired', async () => {
+        const transfer = await getModifiedTransferToSolo({ expiration: 1 });
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+          'Transfer has expired',
+        );
       });
 
-      it('fails for Solo global operator', async () => {
+      it('fails if the transfer was already executed', async () => {
+        const transfer = await getModifiedTransferToSolo({ amount: amount / 2 });
+        await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+          transfer,
+          { from: account },
+        );
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+          'Transfer was already executed or canceled',
+        );
+      });
+
+      it('fails if the transfer was canceled', async () => {
+        await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          defaultTransferToSolo,
+          { from: account },
+        );
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.bridgeTransfer(defaultTransferToSoloSigned),
+          'Transfer was already executed or canceled',
+        );
+      });
+
+      describe('permissions', async () => {
+
+        it('succeeds for account owner', async () => {
+          // Call the function.
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+            defaultTransferToSolo,
+            { from: account },
+          );
+
+          // Check logs.
+          checkLogs(txResult, defaultTransferToSolo);
+
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, 0, amount, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [0]);
+        });
+
+        it('succeeds for Perpetual local operator', async () => {
+          // Set up.
+          await ctx.perpetual.operator.setLocalOperator(otherAddress, true, { from: account });
+
+          // Call the function.
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+            defaultTransferToSolo,
+            { from: otherAddress },
+          );
+
+          // Check logs.
+          checkLogs(txResult, defaultTransferToSolo);
+
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, 0, amount, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [0]);
+        });
+
+        it('succeeds for Perpetual global operator', async () => {
+          // Set up.
+          await ctx.perpetual.admin.setGlobalOperator(otherAddress, true, { from: admin });
+
+          // Call the function.
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+            defaultTransferToSolo,
+            { from: otherAddress },
+          );
+
+          // Check logs.
+          checkLogs(txResult, defaultTransferToSolo);
+
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, 0, amount, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [0]);
+        });
+
+        it('fails for non-owner non-operator account', async () => {
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+              defaultTransferToSolo,
+              { from: otherAddress },
+            ),
+            'Sender does not have withdraw permissions and signature is invalid',
+          );
+        });
+
+        it('fails for Solo local operator', async () => {
+          // Set up.
+          await ctx.perpetual.testing.solo.setIsLocalOperator(account, otherAddress, true);
+
+          // Call the function.
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+              defaultTransferToSolo,
+              { from: otherAddress },
+            ),
+            'Sender does not have withdraw permissions and signature is invalid',
+          );
+        });
+
+        it('fails for Solo global operator', async () => {
+          // Set up.
+          await ctx.perpetual.testing.solo.setIsGlobalOperator(otherAddress, true);
+
+          // Call the function.
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+              defaultTransferToSolo,
+              { from: otherAddress },
+            ),
+            'Sender does not have withdraw permissions and signature is invalid',
+          );
+        });
       });
     });
   });
 
   describe('cancelTransfer()', () => {
+
     describe('canceling a transfer (Solo -> Perpetual)', async () => {
+
       it('succeeds for account owner', async () => {
         // Call the function.
         const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
@@ -257,14 +500,51 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         const log = logs[0];
         expect(log.name).to.equal('LogTransferCanceled');
         expect(log.args.account).to.equal(defaultTransferToPerpetual.account);
-        // TODO: Check hash.
-        // expect(log.args.transferHash).to.equal();
+        expect(log.args.transferHash).to.equal(
+          ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToPerpetual),
+        );
       });
 
       it('succeeds for Solo local operator', async () => {
+        // Set up.
+        await ctx.perpetual.testing.solo.setIsLocalOperator(account, otherAddress, true);
+
+        // Call the function.
+        const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          defaultTransferToPerpetual,
+          { from: otherAddress },
+        );
+
+        // Check logs.
+        const logs = await ctx.perpetual.logs.parseLogs(txResult);
+        expect(logs.length).to.equal(1);
+        const log = logs[0];
+        expect(log.name).to.equal('LogTransferCanceled');
+        expect(log.args.account).to.equal(defaultTransferToPerpetual.account);
+        expect(log.args.transferHash).to.equal(
+          ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToPerpetual),
+        );
       });
 
       it('succeeds for Solo global operator', async () => {
+        // Set up.
+        await ctx.perpetual.testing.solo.setIsGlobalOperator(otherAddress, true);
+
+        // Call the function.
+        const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          defaultTransferToPerpetual,
+          { from: otherAddress },
+        );
+
+        // Check logs.
+        const logs = await ctx.perpetual.logs.parseLogs(txResult);
+        expect(logs.length).to.equal(1);
+        const log = logs[0];
+        expect(log.name).to.equal('LogTransferCanceled');
+        expect(log.args.account).to.equal(defaultTransferToPerpetual.account);
+        expect(log.args.transferHash).to.equal(
+          ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToPerpetual),
+        );
       });
 
       it('fails for non-owner non-operator account', async () => {
@@ -278,17 +558,40 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
       });
 
       it('fails for Perpetual local operator', async () => {
+        // Set up.
+        await ctx.perpetual.operator.setLocalOperator(otherAddress, true, { from: account });
+
+        // Call the function.
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.cancelTransfer(
+            defaultTransferToPerpetual,
+            { from: otherAddress },
+          ),
+          'Sender does not have permission to cancel',
+        );
       });
 
       it('fails for Perpetual global operator', async () => {
+        // Set up.
+        await ctx.perpetual.admin.setGlobalOperator(otherAddress, true, { from: admin });
+
+        // Call the function.
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.cancelTransfer(
+            defaultTransferToPerpetual,
+            { from: otherAddress },
+          ),
+          'Sender does not have permission to cancel',
+        );
       });
     });
 
     describe('canceling a transfer (Perpetual -> Solo)', async () => {
+
       it('succeeds for account owner', async () => {
         // Call the function.
         const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
-          defaultTransferToPerpetual,
+          defaultTransferToSolo,
           { from: account },
         );
 
@@ -297,15 +600,52 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         expect(logs.length).to.equal(1);
         const log = logs[0];
         expect(log.name).to.equal('LogTransferCanceled');
-        expect(log.args.account).to.equal(defaultTransferToPerpetual.account);
-        // TODO: Check hash.
-        // expect(log.args.transferHash).to.equal();
+        expect(log.args.account).to.equal(defaultTransferToSolo.account);
+        expect(log.args.transferHash).to.equal(
+          ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToSolo),
+        );
       });
 
       it('succeeds for Perpetual local operator', async () => {
+        // Set up.
+        await ctx.perpetual.operator.setLocalOperator(otherAddress, true, { from: account });
+
+        // Call the function.
+        const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          defaultTransferToSolo,
+          { from: otherAddress },
+        );
+
+        // Check logs.
+        const logs = await ctx.perpetual.logs.parseLogs(txResult);
+        expect(logs.length).to.equal(1);
+        const log = logs[0];
+        expect(log.name).to.equal('LogTransferCanceled');
+        expect(log.args.account).to.equal(defaultTransferToSolo.account);
+        expect(log.args.transferHash).to.equal(
+          ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToSolo),
+        );
       });
 
       it('succeeds for Perpetual global operator', async () => {
+        // Set up.
+        await ctx.perpetual.admin.setGlobalOperator(otherAddress, true, { from: admin });
+
+        // Call the function.
+        const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          defaultTransferToSolo,
+          { from: otherAddress },
+        );
+
+        // Check logs.
+        const logs = await ctx.perpetual.logs.parseLogs(txResult);
+        expect(logs.length).to.equal(1);
+        const log = logs[0];
+        expect(log.name).to.equal('LogTransferCanceled');
+        expect(log.args.account).to.equal(defaultTransferToSolo.account);
+        expect(log.args.transferHash).to.equal(
+          ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToSolo),
+        );
       });
 
       it('fails for non-owner non-operator account', async () => {
@@ -319,23 +659,55 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
       });
 
       it('fails for Solo local operator', async () => {
+        // Set up.
+        await ctx.perpetual.testing.solo.setIsLocalOperator(account, otherAddress, true);
+
+        // Call the function.
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.cancelTransfer(
+            defaultTransferToSolo,
+            { from: otherAddress },
+          ),
+          'Sender does not have permission to cancel',
+        );
       });
 
       it('fails for Solo global operator', async () => {
+        // Set up.
+        await ctx.perpetual.testing.solo.setIsGlobalOperator(otherAddress, true);
+
+        // Call the function.
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.cancelTransfer(
+            defaultTransferToSolo,
+            { from: otherAddress },
+          ),
+          'Sender does not have permission to cancel',
+        );
       });
     });
   });
 
   // ============ Helper Functions ============
 
-  function getModifiedTransfer(
-    args: Partial<SoloBridgeTransfer>,
-  ): SoloBridgeTransfer {
+  function getModifiedTransferToPerpetual(
+    args: Partial<SignedSoloBridgeTransfer>,
+  ): Promise<SignedSoloBridgeTransfer> {
     const newTransfer: SoloBridgeTransfer = {
       ...defaultTransferToPerpetual,
       ...args,
     };
-    return newTransfer;
+    return ctx.perpetual.soloBridgeProxy.getSignedTransfer(newTransfer, SigningMethod.Hash);
+  }
+
+  function getModifiedTransferToSolo(
+    args: Partial<SignedSoloBridgeTransfer>,
+  ): Promise<SignedSoloBridgeTransfer> {
+    const newTransfer: SoloBridgeTransfer = {
+      ...defaultTransferToSolo,
+      ...args,
+    };
+    return ctx.perpetual.soloBridgeProxy.getSignedTransfer(newTransfer, SigningMethod.Hash);
   }
 
   function checkLogs(

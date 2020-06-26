@@ -19,6 +19,7 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
+import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { I_Solo } from "../../external/dydx/I_Solo.sol";
 
 
@@ -124,7 +125,7 @@ contract Test_Solo is
     function getMarketTokenAddress(
         uint256 marketId
     )
-        external
+        public
         view
         returns (address)
     {
@@ -147,11 +148,72 @@ contract Test_Solo is
      *                   actions will be processed in order.
      */
     function operate(
-        I_Solo.AccountInfo[] calldata accounts,
-        I_Solo.ActionArgs[] calldata actions
+        I_Solo.AccountInfo[] memory accounts,
+        I_Solo.ActionArgs[] memory actions
     )
-        external
+        public // public instead of external to avoid UnimplementedFeatureError
     {
+        // Expect exactly one account and one action.
+        require(accounts.length == 1, "Expected one account");
+        require(actions.length == 1, "Expected one action");
+
+        I_Solo.AccountInfo memory account = accounts[0];
+        I_Solo.ActionArgs memory action = actions[0];
+
+        // Compare account and action parameters.
+        require(account.number == action.accountId, "Account ID mismatch");
+
+        // Check amount parameters.
+        _verifyAssetAmount(action.amount);
+
+        // Get the ERC20 token.
+        IERC20 token = IERC20(getMarketTokenAddress(action.primaryMarketId));
+
+        if (action.actionType == I_Solo.ActionType.Withdraw) {
+            I_Solo.WithdrawArgs memory data = abi.decode(action.data, (I_Solo.WithdrawArgs));
+            _verifyAssetAmount(data.amount);
+
+            // Compare withdrawal and action parameters.
+            require(data.amount.value == action.amount.value, "Amount value mismatch");
+            require(data.account.owner == account.owner, "Account owner mismatch");
+            require(data.account.number == account.number, "Account number mismatch");
+            require(data.market == action.primaryMarketId, "Market mismatch");
+
+            // Perform token transfer.
+            token.transfer(data.to, data.amount.value);
+        } else if (action.actionType == I_Solo.ActionType.Deposit) {
+            I_Solo.DepositArgs memory data = abi.decode(action.data, (I_Solo.DepositArgs));
+            _verifyAssetAmount(data.amount);
+
+            // Compare deposit and action parameters.
+            require(data.amount.value == action.amount.value, "Amount value mismatch");
+            require(data.account.owner == account.owner, "Account owner mismatch");
+            require(data.account.number == account.number, "Account number mismatch");
+            require(data.market == action.primaryMarketId, "Market mismatch");
+
+            // Perform token transfer.
+            token.transferFrom(data.from, address(this), data.amount.value);
+        } else {
+            revert("Expected action type to be Withdraw or Deposit");
+        }
+
         emit LogTestOperateCalled(accounts, actions);
+    }
+
+    /**
+     * Helper function to check asset amount parameters are as expected.
+     */
+    function _verifyAssetAmount(
+        I_Solo.AssetAmount memory amount
+    )
+        private
+        pure
+    {
+        require(amount.sign == true, "Expected amount to be positive");
+        require(
+            amount.denomination == I_Solo.AssetDenomination.Wei,
+            "Expected amount denominatino to be Wei"
+        );
+        require(amount.ref == I_Solo.AssetReference.Delta, "Expected amount reference to be Delta");
     }
 }

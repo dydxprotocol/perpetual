@@ -1,7 +1,16 @@
-import Web3 from 'web3';
-import { stripHexPrefix, combineHexStrings, addressesAreEqual } from './BytesHelper';
-import { address, SigningMethod, TypedSignature } from './types';
 import { promisify } from 'es6-promisify';
+import Web3 from 'web3';
+
+import {
+  addressesAreEqual,
+  combineHexStrings,
+  stripHexPrefix,
+} from './BytesHelper';
+import {
+  SigningMethod,
+  TypedSignature,
+  address,
+} from './types';
 
 export enum SIGNATURE_TYPES {
   NO_PREPEND = 0,
@@ -179,9 +188,9 @@ export function signatureToSolidityStruct(
   const rawSignature = typedSignature.slice(0, 132);
   const { v, r, s } = signatureToVRS(rawSignature);
   return {
+    vType: `0x${v}01`, // TODO
     r: `0x${r}`,
     s: `0x${s}`,
-    vType: `0x${v}01`, // TODO
   };
 }
 
