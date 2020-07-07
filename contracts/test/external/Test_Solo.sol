@@ -162,30 +162,11 @@ contract Test_Solo is
         // Get the ERC20 token.
         IERC20 token = IERC20(getMarketTokenAddress(action.primaryMarketId));
 
+        // Perform token transfer.
         if (action.actionType == I_Solo.ActionType.Withdraw) {
-            I_Solo.WithdrawArgs memory data = abi.decode(action.data, (I_Solo.WithdrawArgs));
-            _verifyAssetAmount(data.amount);
-
-            // Compare withdrawal and action parameters.
-            require(data.amount.value == action.amount.value, "Amount value mismatch");
-            require(data.account.owner == account.owner, "Account owner mismatch");
-            require(data.account.number == account.number, "Account number mismatch");
-            require(data.market == action.primaryMarketId, "Market mismatch");
-
-            // Perform token transfer.
-            token.transfer(data.to, data.amount.value);
+            token.transfer(action.otherAddress, action.amount.value);
         } else if (action.actionType == I_Solo.ActionType.Deposit) {
-            I_Solo.DepositArgs memory data = abi.decode(action.data, (I_Solo.DepositArgs));
-            _verifyAssetAmount(data.amount);
-
-            // Compare deposit and action parameters.
-            require(data.amount.value == action.amount.value, "Amount value mismatch");
-            require(data.account.owner == account.owner, "Account owner mismatch");
-            require(data.account.number == account.number, "Account number mismatch");
-            require(data.market == action.primaryMarketId, "Market mismatch");
-
-            // Perform token transfer.
-            token.transferFrom(data.from, address(this), data.amount.value);
+            token.transferFrom(action.otherAddress, address(this), action.amount.value);
         } else {
             revert("Expected action type to be Withdraw or Deposit");
         }

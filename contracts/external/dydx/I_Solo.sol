@@ -86,27 +86,6 @@ interface I_Solo {
         bytes data;
     }
 
-    /**
-     * Moves tokens from an address to Solo. Can either repay a borrow or provide additional supply.
-     */
-    struct DepositArgs {
-        AssetAmount amount;
-        AccountInfo account;
-        uint256 market;
-        address from;
-    }
-
-    /**
-     * Moves tokens from Solo to another address. Can either borrow tokens or reduce the amount
-     * previously supplied.
-     */
-    struct WithdrawArgs {
-        AssetAmount amount;
-        AccountInfo account;
-        uint256 market;
-        address to;
-    }
-
     // ============ Getter Functions ============
 
     /**

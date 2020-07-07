@@ -295,27 +295,10 @@ contract P1SoloBridgeProxy is
             value: transfer.amount
         });
         I_Solo.ActionType actionType;
-        bytes memory data;
         if (isWithdrawal) {
             actionType = I_Solo.ActionType.Withdraw;
-            data = abi.encode(
-                I_Solo.WithdrawArgs({
-                    amount: amount,
-                    account: soloAccount,
-                    market: transfer.soloMarketId,
-                    to: address(this)
-                })
-            );
         } else {
             actionType = I_Solo.ActionType.Deposit;
-            data = abi.encode(
-                I_Solo.DepositArgs({
-                    amount: amount,
-                    account: soloAccount,
-                    market: transfer.soloMarketId,
-                    from: address(this)
-                })
-            );
         }
         I_Solo.ActionArgs[] memory soloActions = new I_Solo.ActionArgs[](1);
         soloActions[0] = I_Solo.ActionArgs({
@@ -324,9 +307,9 @@ contract P1SoloBridgeProxy is
             amount: amount,
             primaryMarketId: transfer.soloMarketId,
             secondaryMarketId: 0,
-            otherAddress: address(0),
+            otherAddress: address(this),
             otherAccountId: 0,
-            data: data
+            data: ""
         });
 
         // Execute the withdrawal or deposit.
