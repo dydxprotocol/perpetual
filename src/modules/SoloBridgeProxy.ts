@@ -217,6 +217,12 @@ export class SoloBridgeProxy {
   public getTransferHash(
     transfer: SoloBridgeTransfer,
   ): string {
+    if (typeof transfer.expiration === 'undefined' || typeof transfer.salt === 'undefined') {
+      throw new Error(
+        'Must specify expiration and salt for the transfer before it can be hashed or signed',
+      );
+    }
+
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_TRANSFER_STRUCT_STRING) },
       { t: 'bytes32', v: addressToBytes32(transfer.account) },

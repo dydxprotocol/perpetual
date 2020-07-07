@@ -219,8 +219,8 @@ export interface SoloBridgeTransfer {
   soloMarketId: BigNumberable;
   toPerpetual: boolean; // Indicates whether the transfer is from Solo to Perpetual or vice versa.
   amount: BigNumberable;
-  expiration: BigNumberable;
-  salt: BigNumberable;
+  expiration?: BigNumberable;
+  salt?: BigNumberable;
 }
 
 export interface SignedSoloBridgeTransfer extends SoloBridgeTransfer {
