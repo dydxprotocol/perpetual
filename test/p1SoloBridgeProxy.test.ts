@@ -142,69 +142,90 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         );
       });
 
-      it('succeeds', async () => {
-        // Call the function.
-        const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
-          defaultTransferToPerpetualSigned,
-        );
+      describe('with signature', async () => {
 
-        // Check logs.
-        checkLogs(txResult, defaultTransferToPerpetual);
+        it('succeeds', async () => {
+          // Call the function.
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+            defaultTransferToPerpetualSigned,
+          );
 
-        // Check balances.
-        await expectTokenBalances(
-          ctx,
-          [account, perpetualAddress, soloAddress, proxyAddress],
-          [0, amount, 0, 0],
-        );
-        await expectMarginBalances(ctx, txResult, [account], [amount]);
+          // Check logs.
+          checkLogs(txResult, defaultTransferToPerpetual);
+
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, amount, 0, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [amount]);
+        });
+
+        it('fails if the Solo and Perpetual tokens do not match', async () => {
+          // Set up mock data.
+          const transfer = await getModifiedTransferToPerpetual(
+            { soloMarketId: SOLO_USDC_MARKET + 1 },
+          );
+
+          // Call the function.
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+            'Solo and Perpetual assets are not the same',
+          );
+        });
+
+        it('fails if the transfer has expired', async () => {
+          const transfer = await getModifiedTransferToPerpetual({ expiration: 1 });
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+            'Transfer has expired',
+          );
+        });
+
+        it('fails if the transfer was already executed', async () => {
+          const transfer = await getModifiedTransferToPerpetual({ amount: amount / 2 });
+          await ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer);
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+            'Transfer was already executed or canceled',
+          );
+        });
+
+        it('fails if the transfer was canceled', async () => {
+          await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+            defaultTransferToPerpetual,
+            { from: account },
+          );
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(defaultTransferToPerpetualSigned),
+            'Transfer was already executed or canceled',
+          );
+        });
       });
 
-      it('fails if the Solo and Perpetual tokens do not match', async () => {
-        // Set up mock data.
-        const transfer = await getModifiedTransferToPerpetual(
-          { soloMarketId: SOLO_USDC_MARKET + 1 },
-        );
+      describe('without signature', async () => {
 
-        // Call the function.
-        await expectThrow(
-          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
-          'Solo and Perpetual assets are not the same',
-        );
-      });
+        it('succeeds regardless of expiration, cancelation, or previous execution', async () => {
+          const transfer = await getModifiedTransferToPerpetual({
+            amount: amount / 2,
+            expiration: 1,
+          });
+          await ctx.perpetual.soloBridgeProxy.cancelTransfer(transfer, { from: account });
+          await ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer, { from: account });
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+            transfer,
+            { from: account },
+          );
 
-      it('fails if the transfer has expired', async () => {
-        const transfer = await getModifiedTransferToPerpetual({ expiration: 1 });
-        await expectThrow(
-          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
-          'Transfer has expired',
-        );
-      });
-
-      it('fails if the transfer was already executed', async () => {
-        const transfer = await getModifiedTransferToPerpetual({ amount: amount / 2 });
-        await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
-          transfer,
-          { from: account },
-        );
-        await expectThrow(
-          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
-          'Transfer was already executed or canceled',
-        );
-      });
-
-      it('fails if the transfer was canceled', async () => {
-        await ctx.perpetual.soloBridgeProxy.cancelTransfer(
-          defaultTransferToPerpetual,
-          { from: account },
-        );
-        await expectThrow(
-          ctx.perpetual.soloBridgeProxy.bridgeTransfer(defaultTransferToPerpetualSigned),
-          'Transfer was already executed or canceled',
-        );
-      });
-
-      describe('permissions', async () => {
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, amount, 0, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [amount]);
+        });
 
         it('succeeds for account owner', async () => {
           // Call the function.
@@ -316,68 +337,86 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         await mintAndDeposit(ctx, account, amount);
       });
 
-      it('succeeds', async () => {
-        const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
-          defaultTransferToSoloSigned,
-        );
+      describe('with signature', async () => {
 
-        // Check logs.
-        checkLogs(txResult, defaultTransferToSolo);
+        it('succeeds', async () => {
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+            defaultTransferToSoloSigned,
+          );
 
-        // Check balances.
-        await expectTokenBalances(
-          ctx,
-          [account, perpetualAddress, soloAddress, proxyAddress],
-          [0, 0, amount, 0],
-        );
-        await expectMarginBalances(ctx, txResult, [account], [0]);
+          // Check logs.
+          checkLogs(txResult, defaultTransferToSolo);
+
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, 0, amount, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [0]);
+        });
+
+        it('fails if the Solo and Perpetual tokens do not match', async () => {
+          // Set up mock data.
+          const transfer = await getModifiedTransferToSolo(
+            { soloMarketId: SOLO_USDC_MARKET + 1 },
+          );
+
+          // Call the function.
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+            'Solo and Perpetual assets are not the same',
+          );
+        });
+
+        it('fails if the transfer has expired', async () => {
+          const transfer = await getModifiedTransferToSolo({ expiration: 1 });
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+            'Transfer has expired',
+          );
+        });
+
+        it('fails if the transfer was already executed', async () => {
+          const transfer = await getModifiedTransferToSolo({ amount: amount / 2 });
+          await ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer);
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+            'Transfer was already executed or canceled',
+          );
+        });
+
+        it('fails if the transfer was canceled', async () => {
+          await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+            defaultTransferToSolo,
+            { from: account },
+          );
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(defaultTransferToSoloSigned),
+            'Transfer was already executed or canceled',
+          );
+        });
       });
 
-      it('fails if the Solo and Perpetual tokens do not match', async () => {
-        // Set up mock data.
-        const transfer = await getModifiedTransferToSolo(
-          { soloMarketId: SOLO_USDC_MARKET + 1 },
-        );
+      describe('without signature', async () => {
 
-        // Call the function.
-        await expectThrow(
-          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
-          'Solo and Perpetual assets are not the same',
-        );
-      });
+        it('succeeds regardless of expiration, cancelation, or previous execution', async () => {
+          const transfer = await getModifiedTransferToSolo({ amount: amount / 2, expiration: 1 });
+          await ctx.perpetual.soloBridgeProxy.cancelTransfer(transfer, { from: account });
+          await ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer, { from: account });
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+            transfer,
+            { from: account },
+          );
 
-      it('fails if the transfer has expired', async () => {
-        const transfer = await getModifiedTransferToSolo({ expiration: 1 });
-        await expectThrow(
-          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
-          'Transfer has expired',
-        );
-      });
-
-      it('fails if the transfer was already executed', async () => {
-        const transfer = await getModifiedTransferToSolo({ amount: amount / 2 });
-        await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
-          transfer,
-          { from: account },
-        );
-        await expectThrow(
-          ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
-          'Transfer was already executed or canceled',
-        );
-      });
-
-      it('fails if the transfer was canceled', async () => {
-        await ctx.perpetual.soloBridgeProxy.cancelTransfer(
-          defaultTransferToSolo,
-          { from: account },
-        );
-        await expectThrow(
-          ctx.perpetual.soloBridgeProxy.bridgeTransfer(defaultTransferToSoloSigned),
-          'Transfer was already executed or canceled',
-        );
-      });
-
-      describe('permissions', async () => {
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, 0, amount, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [0]);
+        });
 
         it('succeeds for account owner', async () => {
           // Call the function.

@@ -173,7 +173,8 @@ contract P1SoloBridgeProxy is
      * @dev Emits the LogTransferred event.
      *
      * @param  transfer   The transfer to execute.
-     * @param  signature  Signature for the transfer, required if sender is not the account owner.
+     * @param  signature  Signature for the transfer, required if sender does not have withdraw
+     *                    permissions for the account.
      */
     function bridgeTransfer(
         Transfer calldata transfer,
@@ -186,19 +187,22 @@ contract P1SoloBridgeProxy is
         I_Solo solo = I_Solo(_SOLO_MARGIN_);
         I_PerpetualV1 perpetual = I_PerpetualV1(transfer.perpetual);
 
+        // Permissions:
+        // Verify that either msg.sender has withdraw permissions or the signature is valid.
+        bool hasWithdrawPermissions = _hasWithdrawPermissions(solo, perpetual, transfer);
+        if (!hasWithdrawPermissions) {
+            _verifySignature(
+                transfer,
+                transferHash,
+                signature
+            );
+        }
+
         // Validations.
-        _verifyPermissions(
-            solo,
-            perpetual,
-            transfer,
-            transferHash,
-            signature
-        );
         _verifyTransfer(
             solo,
             perpetual,
-            transfer,
-            transferHash
+            transfer
         );
 
         // Execute the transfer.
@@ -218,8 +222,11 @@ contract P1SoloBridgeProxy is
             );
         }
 
-        // Mark the transfer as executed so it can't be executed again.
-        _HASH_USED_[transferHash] = true;
+        // If the signature was used to verify permissions, mark the transfer as executed so the
+        // signature can't be reused.
+        if (!hasWithdrawPermissions) {
+            _HASH_USED_[transferHash] = true;
+        }
 
         // Log the transfer.
         emit LogTransferred(
@@ -254,7 +261,9 @@ contract P1SoloBridgeProxy is
             );
         }
 
-        // Cancel the transfer.
+        // Mark this hash as used, to prevent futures transfers from using a signed transfer with
+        // the same parameters. This will not prevent any transfers initiated by a sender who has
+        // withdraw permissions for the account.
         bytes32 transferHash = _getTransferHash(transfer);
         _HASH_USED_[transferHash] = true;
 
@@ -317,11 +326,9 @@ contract P1SoloBridgeProxy is
     }
 
     /**
-     * Verify that either msg.sender has withdraw permissions or the signature is valid.
+     * Verify that the signature is valid and can be used for this transfer.
      */
-    function _verifyPermissions(
-        I_Solo solo,
-        I_PerpetualV1 perpetual,
+    function _verifySignature(
         Transfer memory transfer,
         bytes32 transferHash,
         TypedSignature.Signature memory signature
@@ -329,10 +336,20 @@ contract P1SoloBridgeProxy is
         private
         view
     {
-        bool hasWithdrawPermissions = _hasWithdrawPermissions(solo, perpetual, transfer);
+        // Verify expiration.
         require(
-            hasWithdrawPermissions ||
-                TypedSignature.recover(transferHash, signature) == transfer.account,
+            transfer.expiration >= block.timestamp || transfer.expiration == 0,
+            "Transfer has expired"
+        );
+
+        // Verify whether the transfer was previously executed or canceled.
+        require(
+            !_HASH_USED_[transferHash],
+            "Transfer was already executed or canceled"
+        );
+
+        require(
+            TypedSignature.recover(transferHash, signature) == transfer.account,
             "Sender does not have withdraw permissions and signature is invalid"
         );
     }
@@ -368,8 +385,7 @@ contract P1SoloBridgeProxy is
     function _verifyTransfer(
         I_Solo solo,
         I_PerpetualV1 perpetual,
-        Transfer memory transfer,
-        bytes32 transferHash
+        Transfer memory transfer
     )
         private
         view
@@ -378,18 +394,6 @@ contract P1SoloBridgeProxy is
         require(
             solo.getMarketTokenAddress(transfer.soloMarketId) == perpetual.getTokenContract(),
             "Solo and Perpetual assets are not the same"
-        );
-
-        // Verify expiration.
-        require(
-            transfer.expiration >= block.timestamp || transfer.expiration == 0,
-            "Transfer has expired"
-        );
-
-        // Verify status.
-        require(
-            !_HASH_USED_[transferHash],
-            "Transfer was already executed or canceled"
         );
     }
 
