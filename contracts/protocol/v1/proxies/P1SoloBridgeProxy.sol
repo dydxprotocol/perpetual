@@ -29,6 +29,7 @@ import { TypedSignature } from "../../lib/TypedSignature.sol";
 import { I_PerpetualV1 } from "../intf/I_PerpetualV1.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
+import { P1Proxy } from "./P1Proxy.sol";
 
 
 /**
@@ -37,7 +38,9 @@ import { P1Types } from "../lib/P1Types.sol";
  *
  * @notice Facilitates transfers between the PerpetualV1 and Solo smart contracts.
  */
-contract P1SoloBridgeProxy {
+contract P1SoloBridgeProxy is
+    P1Proxy
+{
     using BaseMath for uint256;
     using SafeMath for uint256;
     using SignedMath for SignedMath.Int;
@@ -163,25 +166,6 @@ contract P1SoloBridgeProxy {
 
         // Set the allowance to the highest possible value.
         tokenContract.safeApprove(solo, uint256(-1));
-    }
-
-    /**
-     * @notice Sets the maximum allowance on the Perpetual contract. Must be called at least once
-     *  on a given Perpetual before deposits can be made.
-     * @dev Cannot be run in the constructor due to technical restrictions in Solidity.
-     */
-    function approveMaximumOnPerpetual(
-        address perpetual
-    )
-        external
-    {
-        IERC20 tokenContract = IERC20(I_PerpetualV1(perpetual).getTokenContract());
-
-        // safeApprove requires unsetting the allowance first.
-        tokenContract.safeApprove(perpetual, 0);
-
-        // Set the allowance to the highest possible value.
-        tokenContract.safeApprove(perpetual, uint256(-1));
     }
 
     /**
