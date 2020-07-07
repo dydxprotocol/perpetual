@@ -186,9 +186,10 @@ export function signatureToSolidityStruct(
   s: string
 } {
   const rawSignature = typedSignature.slice(0, 132);
+  const signatureType = typedSignature.slice(132, 134);
   const { v, r, s } = signatureToVRS(rawSignature);
   return {
-    vType: `0x${v}01`, // TODO
+    vType: `0x${v}${signatureType}`,
     r: `0x${r}`,
     s: `0x${s}`,
   };
