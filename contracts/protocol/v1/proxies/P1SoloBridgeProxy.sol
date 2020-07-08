@@ -77,12 +77,18 @@ contract P1SoloBridgeProxy is
         "address perpetual,",
         "uint256 soloAccountNumber,",
         "uint256 soloMarketId,",
-        "bool toPerpetual,",
         "uint256 amount,",
-        "uint256 expiration,",
-        "bytes32 salt",
+        "bytes32 options",
         ")"
     ));
+
+    // Constants for the options field of the Transfer struct.
+    bytes32 private constant OPTIONS_MASK_TRANSFER_MODE = bytes32(uint256((1 << 8) - 1));
+    bytes32 private constant OPTIONS_MASK_EXPIRATION = bytes32(uint256((1 << 120) - 1));
+    uint256 private constant OPTIONS_OFFSET_EXPIRATION = 8;
+    bytes32 private constant TRANSFER_MODE_SOME_TO_PERPETUAL = bytes32(uint256(0));
+    bytes32 private constant TRANSFER_MODE_SOME_TO_SOLO = bytes32(uint256(1));
+    bytes32 private constant TRANSFER_MODE_ALL_TO_PERPETUAL = bytes32(uint256(2));
 
     // ============ Structs ============
 
@@ -91,10 +97,8 @@ contract P1SoloBridgeProxy is
         address perpetual;
         uint256 soloAccountNumber;
         uint256 soloMarketId;
-        bool toPerpetual; // Indicates whether the transfer is from Solo to Perpetual or vice versa.
         uint256 amount;
-        uint256 expiration;
-        bytes32 salt;
+        bytes32 options; // salt (16 bytes), expiration (15 bytes), transfer mode (1 byte)
     }
 
     // ============ Events ============
@@ -108,7 +112,7 @@ contract P1SoloBridgeProxy is
         uint256 amount
     );
 
-    event LogTransferCanceled(
+    event LogSignatureInvalidated(
         address indexed account,
         bytes32 transferHash
     );
@@ -124,7 +128,7 @@ contract P1SoloBridgeProxy is
     // ============ Mutable Storage ============
 
     // transfer hash => bool
-    mapping (bytes32 => bool) public _HASH_USED_;
+    mapping (bytes32 => bool) public _SIGNATURE_USED_;
 
     // ============ Constructor ============
 
@@ -173,8 +177,8 @@ contract P1SoloBridgeProxy is
      * @dev Emits the LogTransferred event.
      *
      * @param  transfer   The transfer to execute.
-     * @param  signature  Signature for the transfer, required if sender does not have withdraw
-     *                    permissions for the account.
+     * @param  signature  (Optional) Signature for the transfer, will be checked if sender does not
+     *                    have withdraw permissions for the account.
      */
     function bridgeTransfer(
         Transfer calldata transfer,
@@ -186,10 +190,21 @@ contract P1SoloBridgeProxy is
         bytes32 transferHash = _getTransferHash(transfer);
         I_Solo solo = I_Solo(_SOLO_MARGIN_);
         I_PerpetualV1 perpetual = I_PerpetualV1(transfer.perpetual);
+        address tokenAddress = perpetual.getTokenContract();
+        bytes32 transferMode = _getTransferMode(transfer);
+        bool toPerpetual = (
+            transferMode == TRANSFER_MODE_SOME_TO_PERPETUAL ||
+            transferMode == TRANSFER_MODE_ALL_TO_PERPETUAL
+        );
 
         // Permissions:
         // Verify that either msg.sender has withdraw permissions or the signature is valid.
-        bool hasWithdrawPermissions = _hasWithdrawPermissions(solo, perpetual, transfer);
+        bool hasWithdrawPermissions = _hasWithdrawPermissions(
+            solo,
+            perpetual,
+            transfer,
+            toPerpetual
+        );
         if (!hasWithdrawPermissions) {
             _verifySignature(
                 transfer,
@@ -198,34 +213,50 @@ contract P1SoloBridgeProxy is
             );
         }
 
-        // Validations.
-        _verifyTransfer(
+        // Other validations.
+        _verifySoloMarket(
             solo,
-            perpetual,
-            transfer
+            transfer,
+            tokenAddress
         );
 
         // Execute the transfer.
-        if (transfer.toPerpetual) {
+        uint256 amount;
+        if (toPerpetual) {
+
+            // Withdraw from Solo.
+            uint256 initialBalance = IERC20(tokenAddress).balanceOf(address(this));
             _doSoloOperation(
                 solo,
                 transfer,
-                true
+                true,
+                transferMode == TRANSFER_MODE_ALL_TO_PERPETUAL
             );
-            perpetual.deposit(transfer.account, transfer.amount);
-        } else {
-            perpetual.withdraw(transfer.account, address(this), transfer.amount);
+            uint256 finalBalance = IERC20(tokenAddress).balanceOf(address(this));
+
+            // Deposit to Perpetual.
+            amount = finalBalance.sub(initialBalance);
+            perpetual.deposit(transfer.account, amount);
+        } else if (transferMode == TRANSFER_MODE_SOME_TO_SOLO) {
+
+            // Withdraw from Perpetual.
+            amount = transfer.amount;
+            perpetual.withdraw(transfer.account, address(this), amount);
+
+            // Deposit to Solo.
             _doSoloOperation(
                 solo,
                 transfer,
+                false,
                 false
             );
+        } else {
+            revert("Invalid transfer mode");
         }
 
-        // If the signature was used to verify permissions, mark the transfer as executed so the
-        // signature can't be reused.
+        // If the signature was used to verify permissions, mark the signature as used.
         if (!hasWithdrawPermissions) {
-            _HASH_USED_[transferHash] = true;
+            _SIGNATURE_USED_[transferHash] = true;
         }
 
         // Log the transfer.
@@ -234,19 +265,18 @@ contract P1SoloBridgeProxy is
             transfer.perpetual,
             transfer.soloAccountNumber,
             transfer.soloMarketId,
-            transfer.toPerpetual,
-            transfer.amount
+            toPerpetual,
+            amount
         );
     }
 
     /**
-     * @notice Prevent a transfer from executing. Useful if a transfer was signed off-chain, and
-     *  authorization needs to be revoked.
-     * @dev Emits the LogTransferCanceled event.
+     * @notice Invalidate a signature, given the exact transfer parameters.
+     * @dev Emits the LogSignatureInvalidated event.
      *
-     * @param  transfer  The transfer that will be prevented from executing.
+     * @param  transfer  The parameters for the signature that will be invalidated.
      */
-    function cancelTransfer(
+    function invalidateSignature(
         Transfer calldata transfer
     )
         external
@@ -255,20 +285,28 @@ contract P1SoloBridgeProxy is
         if (msg.sender != transfer.account) {
             I_Solo solo = I_Solo(_SOLO_MARGIN_);
             I_PerpetualV1 perpetual = I_PerpetualV1(transfer.perpetual);
+            bytes32 transferMode = _getTransferMode(transfer);
+            bool toPerpetual = (
+                transferMode == TRANSFER_MODE_SOME_TO_PERPETUAL ||
+                transferMode == TRANSFER_MODE_ALL_TO_PERPETUAL
+            );
             require(
-                _hasWithdrawPermissions(solo, perpetual, transfer),
-                "Sender does not have permission to cancel"
+                _hasWithdrawPermissions(
+                    solo,
+                    perpetual,
+                    transfer,
+                    toPerpetual
+                ),
+                "Sender does not have permission to invalidate"
             );
         }
 
-        // Mark this hash as used, to prevent futures transfers from using a signed transfer with
-        // the same parameters. This will not prevent any transfers initiated by a sender who has
-        // withdraw permissions for the account.
+        // Mark this signature as used to prevent replay attacks.
         bytes32 transferHash = _getTransferHash(transfer);
-        _HASH_USED_[transferHash] = true;
+        _SIGNATURE_USED_[transferHash] = true;
 
-        // Log the cancelation.
-        emit LogTransferCanceled(
+        // Log the invalidation.
+        emit LogSignatureInvalidated(
             transfer.account,
             transferHash
         );
@@ -282,7 +320,8 @@ contract P1SoloBridgeProxy is
     function _doSoloOperation(
         I_Solo solo,
         Transfer memory transfer,
-        bool isWithdrawal
+        bool isWithdrawal,
+        bool withdrawToZero
     )
         private
     {
@@ -303,15 +342,13 @@ contract P1SoloBridgeProxy is
             ref: I_Solo.AssetReference.Delta,
             value: transfer.amount
         });
-        I_Solo.ActionType actionType;
-        if (isWithdrawal) {
-            actionType = I_Solo.ActionType.Withdraw;
-        } else {
-            actionType = I_Solo.ActionType.Deposit;
+        if (withdrawToZero) {
+            amount.ref = I_Solo.AssetReference.Target;
+            amount.value = 0;
         }
         I_Solo.ActionArgs[] memory soloActions = new I_Solo.ActionArgs[](1);
         soloActions[0] = I_Solo.ActionArgs({
-            actionType: actionType,
+            actionType: I_Solo.ActionType.Deposit,
             accountId: transfer.soloAccountNumber,
             amount: amount,
             primaryMarketId: transfer.soloMarketId,
@@ -320,13 +357,16 @@ contract P1SoloBridgeProxy is
             otherAccountId: 0,
             data: ""
         });
+        if (isWithdrawal) {
+            soloActions[0].actionType = I_Solo.ActionType.Withdraw;
+        }
 
         // Execute the withdrawal or deposit.
         solo.operate(soloAccounts, soloActions);
     }
 
     /**
-     * Verify that the signature is valid and can be used for this transfer.
+     * Verify that the signature is valid for the given hash and not used, invalidated, or expired.
      */
     function _verifySignature(
         Transfer memory transfer,
@@ -337,15 +377,16 @@ contract P1SoloBridgeProxy is
         view
     {
         // Verify expiration.
+        uint256 expiration = _getExpiration(transfer);
         require(
-            transfer.expiration >= block.timestamp || transfer.expiration == 0,
-            "Transfer has expired"
+            expiration >= block.timestamp || expiration == 0,
+            "Signature has expired"
         );
 
-        // Verify whether the transfer was previously executed or canceled.
+        // Check whether the signature was previously used or invalidated.
         require(
-            !_HASH_USED_[transferHash],
-            "Transfer was already executed or canceled"
+            !_SIGNATURE_USED_[transferHash],
+            "Signature was already used or invalidated"
         );
 
         require(
@@ -360,7 +401,8 @@ contract P1SoloBridgeProxy is
     function _hasWithdrawPermissions(
         I_Solo solo,
         I_PerpetualV1 perpetual,
-        Transfer memory transfer
+        Transfer memory transfer,
+        bool toPerpetual
     )
         private
         view
@@ -371,7 +413,7 @@ contract P1SoloBridgeProxy is
             return true;
         }
 
-        if (transfer.toPerpetual) {
+        if (toPerpetual) {
             return solo.getIsLocalOperator(transfer.account, msg.sender) ||
                 solo.getIsGlobalOperator(msg.sender);
         } else {
@@ -380,19 +422,19 @@ contract P1SoloBridgeProxy is
     }
 
     /**
-     * Verify token addresses and that the transfer is not executed, canceled, or expired.
+     * Verify token addresses.
      */
-    function _verifyTransfer(
+    function _verifySoloMarket(
         I_Solo solo,
-        I_PerpetualV1 perpetual,
-        Transfer memory transfer
+        Transfer memory transfer,
+        address tokenAddress
     )
         private
         view
     {
         // Verify that the Solo market asset matches the Perpetual margin asset.
         require(
-            solo.getMarketTokenAddress(transfer.soloMarketId) == perpetual.getTokenContract(),
+            solo.getMarketTokenAddress(transfer.soloMarketId) == tokenAddress,
             "Solo and Perpetual assets are not the same"
         );
     }
@@ -421,5 +463,25 @@ contract P1SoloBridgeProxy is
             _EIP712_DOMAIN_HASH_,
             structHash
         ));
+    }
+
+    function _getTransferMode(
+        Transfer memory transfer
+    )
+        private
+        pure
+        returns (bytes32)
+    {
+        return transfer.options & OPTIONS_MASK_TRANSFER_MODE;
+    }
+
+    function _getExpiration(
+        Transfer memory transfer
+    )
+        private
+        pure
+        returns (uint256)
+    {
+        return uint256((transfer.options >> OPTIONS_OFFSET_EXPIRATION) & OPTIONS_MASK_EXPIRATION);
     }
 }

@@ -153,39 +153,40 @@ contract Test_Solo is
         I_Solo.AccountInfo memory account = accounts[0];
         I_Solo.ActionArgs memory action = actions[0];
 
+        // Get the ERC20 token.
+        IERC20 token = IERC20(getMarketTokenAddress(action.primaryMarketId));
+
         // Compare account and action parameters.
         require(account.number == action.accountId, "Account ID mismatch");
 
         // Check amount parameters.
-        _verifyAssetAmount(action.amount);
-
-        // Get the ERC20 token.
-        IERC20 token = IERC20(getMarketTokenAddress(action.primaryMarketId));
-
-        // Perform token transfer.
-        if (action.actionType == I_Solo.ActionType.Withdraw) {
-            token.transfer(action.otherAddress, action.amount.value);
-        } else if (action.actionType == I_Solo.ActionType.Deposit) {
-            token.transferFrom(action.otherAddress, address(this), action.amount.value);
-        } else {
-            revert("Expected action type to be Withdraw or Deposit");
-        }
-    }
-
-    /**
-     * Helper function to check asset amount parameters are as expected.
-     */
-    function _verifyAssetAmount(
-        I_Solo.AssetAmount memory amount
-    )
-        private
-        pure
-    {
+        I_Solo.AssetAmount memory amount = action.amount;
         require(amount.sign == true, "Expected amount to be positive");
         require(
             amount.denomination == I_Solo.AssetDenomination.Wei,
-            "Expected amount denominatino to be Wei"
+            "Expected amount denomination to be Wei"
         );
-        require(amount.ref == I_Solo.AssetReference.Delta, "Expected amount reference to be Delta");
+        uint256 amountToTransfer;
+        if (amount.ref == I_Solo.AssetReference.Delta) {
+            amountToTransfer = amount.value;
+        } else {
+            require(amount.value == 0, "When using AssetReference.Target, expect value to be zero");
+            require(
+                action.actionType == I_Solo.ActionType.Withdraw,
+                "When using AssetReference.Target, expect action to be withdrawal"
+            );
+
+            // Assume that the whole token balance belongs to the sender.
+            amountToTransfer = token.balanceOf(address(this));
+        }
+
+        // Perform token transfer.
+        if (action.actionType == I_Solo.ActionType.Withdraw) {
+            token.transfer(action.otherAddress, amountToTransfer);
+        } else if (action.actionType == I_Solo.ActionType.Deposit) {
+            token.transferFrom(action.otherAddress, address(this), amountToTransfer);
+        } else {
+            revert("Expected action type to be Withdraw or Deposit");
+        }
     }
 }

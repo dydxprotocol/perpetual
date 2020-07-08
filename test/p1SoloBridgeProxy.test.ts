@@ -1,3 +1,4 @@
+import BigNumber from 'bignumber.js';
 import _ from 'lodash';
 
 import { expectThrow, expect, expectBN } from './helpers/Expect';
@@ -10,6 +11,7 @@ import {
   TxResult,
   SigningMethod,
   SignedSoloBridgeTransfer,
+  SoloBridgeTransferMode,
 } from '../src/lib/types';
 import {
   expectTokenBalances,
@@ -20,7 +22,9 @@ import {
 const SOLO_USDC_MARKET = 2;
 
 // Test parameters.
-const amount = 1e18;
+const futureTimestamp = Math.floor(Date.now() / 1000) + 15 * 60;
+const pastTimestamp = Math.floor(Date.now() / 1000) - 15 * 60;
+const amount = new BigNumber(1e18);
 const soloAccountNumber = 5;
 const defaultTransferToPerpetual: SoloBridgeTransfer = {
   soloAccountNumber,
@@ -28,9 +32,9 @@ const defaultTransferToPerpetual: SoloBridgeTransfer = {
   soloMarketId: SOLO_USDC_MARKET,
   account: ADDRESSES.ZERO, // Set later
   perpetual: ADDRESSES.ZERO, // Set later
-  toPerpetual: true,
-  salt: 234,
-  expiration: INTEGERS.ONE_YEAR_IN_SECONDS.times(100),
+  transferMode: SoloBridgeTransferMode.SOME_TO_PERPETUAL,
+  salt: INTEGERS.ONES_255,
+  expiration: futureTimestamp,
 };
 let defaultTransferToSolo: SoloBridgeTransfer; // Set later
 let defaultTransferToPerpetualSigned: SignedSoloBridgeTransfer;
@@ -60,7 +64,7 @@ async function init(ctx: ITestContext): Promise<void> {
   defaultTransferToPerpetual.perpetual = perpetualAddress;
   defaultTransferToSolo = {
     ...defaultTransferToPerpetual,
-    toPerpetual: false,
+    transferMode: SoloBridgeTransferMode.SOME_TO_SOLO,
   };
   defaultTransferToPerpetualSigned = await ctx.perpetual.soloBridgeProxy.getSignedTransfer(
     defaultTransferToPerpetual,
@@ -162,6 +166,69 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
           await expectMarginBalances(ctx, txResult, [account], [amount]);
         });
 
+        it('succeeds in transfer-all mode', async () => {
+          // Give some extra tokens to the proxy contract. These should be ignored by the transfer.
+          await ctx.perpetual.testing.token.mint(
+            ctx.perpetual.contracts.testToken.options.address,
+            proxyAddress,
+            12345,
+          );
+
+          // Create a transfer using transfer-all mode.
+          const transfer = await getModifiedTransferToPerpetual({
+            transferMode: SoloBridgeTransferMode.ALL_TO_PERPETUAL,
+            amount: 999, // Amount is ignored in transfer-all mode.
+          });
+
+          // Call the function.
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer);
+
+          // Check logs.
+          // Compare against the original transfer object with the amount specified.
+          checkLogs(txResult, defaultTransferToPerpetual);
+
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, amount, 0, 12345],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [amount]);
+        });
+
+        it('succeeds with default salt and expiration', async () => {
+          // Defaults to expiration of zero, indicating no expiration.
+          const transfer = await getModifiedTransferToPerpetual({
+            expiration: undefined,
+            salt: undefined,
+          });
+
+          // Call the function.
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer);
+
+          // Check logs.
+          checkLogs(txResult, defaultTransferToPerpetual);
+
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, amount, 0, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [amount]);
+        });
+
+        it('fails if the transfer amount is greater than the available balance', async () => {
+          // Set up mock data.
+          const transfer = await getModifiedTransferToPerpetual({ amount: amount.plus(1) });
+
+          // Call the function.
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+            'ERC20: transfer amount exceeds balance',
+          );
+        });
+
         it('fails if the Solo and Perpetual tokens do not match', async () => {
           // Set up mock data.
           const transfer = await getModifiedTransferToPerpetual(
@@ -176,42 +243,42 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         });
 
         it('fails if the transfer has expired', async () => {
-          const transfer = await getModifiedTransferToPerpetual({ expiration: 1 });
+          const transfer = await getModifiedTransferToPerpetual({ expiration: pastTimestamp });
           await expectThrow(
             ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
-            'Transfer has expired',
+            'Signature has expired',
           );
         });
 
-        it('fails if the transfer was already executed', async () => {
-          const transfer = await getModifiedTransferToPerpetual({ amount: amount / 2 });
+        it('fails if the signature was already used', async () => {
+          const transfer = await getModifiedTransferToPerpetual({ amount: amount.div(2) });
           await ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer);
           await expectThrow(
             ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
-            'Transfer was already executed or canceled',
+            'Signature was already used or invalidated',
           );
         });
 
-        it('fails if the transfer was canceled', async () => {
-          await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+        it('fails if the signature was invalidated', async () => {
+          await ctx.perpetual.soloBridgeProxy.invalidateSignature(
             defaultTransferToPerpetual,
             { from: account },
           );
           await expectThrow(
             ctx.perpetual.soloBridgeProxy.bridgeTransfer(defaultTransferToPerpetualSigned),
-            'Transfer was already executed or canceled',
+            'Signature was already used or invalidated',
           );
         });
       });
 
       describe('without signature', async () => {
 
-        it('succeeds regardless of expiration, cancelation, or previous execution', async () => {
+        it('succeeds regardless of expiration, invalidation, or previous execution', async () => {
           const transfer = await getModifiedTransferToPerpetual({
-            amount: amount / 2,
-            expiration: 1,
+            amount: amount.div(2),
+            expiration: pastTimestamp,
           });
-          await ctx.perpetual.soloBridgeProxy.cancelTransfer(transfer, { from: account });
+          await ctx.perpetual.soloBridgeProxy.invalidateSignature(transfer, { from: account });
           await ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer, { from: account });
           const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
             transfer,
@@ -356,6 +423,39 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
           await expectMarginBalances(ctx, txResult, [account], [0]);
         });
 
+        it('succeeds with default salt and expiration', async () => {
+          // Defaults to expiration of zero, indicating no expiration.
+          const transfer = await getModifiedTransferToSolo({
+            expiration: undefined,
+            salt: undefined,
+          });
+
+          // Call the function.
+          const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer);
+
+          // Check logs.
+          checkLogs(txResult, defaultTransferToSolo);
+
+          // Check balances.
+          await expectTokenBalances(
+            ctx,
+            [account, perpetualAddress, soloAddress, proxyAddress],
+            [0, 0, amount, 0],
+          );
+          await expectMarginBalances(ctx, txResult, [account], [0]);
+        });
+
+        it('fails if the transfer amount is greater than the available balance', async () => {
+          // Set up mock data.
+          const transfer = await getModifiedTransferToSolo({ amount: amount.plus(1) });
+
+          // Call the function.
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+            'SafeERC20: low-level call failed',
+          );
+        });
+
         it('fails if the Solo and Perpetual tokens do not match', async () => {
           // Set up mock data.
           const transfer = await getModifiedTransferToSolo(
@@ -370,39 +470,42 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         });
 
         it('fails if the transfer has expired', async () => {
-          const transfer = await getModifiedTransferToSolo({ expiration: 1 });
+          const transfer = await getModifiedTransferToSolo({ expiration: pastTimestamp });
           await expectThrow(
             ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
-            'Transfer has expired',
+            'Signature has expired',
           );
         });
 
-        it('fails if the transfer was already executed', async () => {
-          const transfer = await getModifiedTransferToSolo({ amount: amount / 2 });
+        it('fails if the signature was already used', async () => {
+          const transfer = await getModifiedTransferToSolo({ amount: amount.div(2) });
           await ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer);
           await expectThrow(
             ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
-            'Transfer was already executed or canceled',
+            'Signature was already used or invalidated',
           );
         });
 
-        it('fails if the transfer was canceled', async () => {
-          await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+        it('fails if the signature was invalidated', async () => {
+          await ctx.perpetual.soloBridgeProxy.invalidateSignature(
             defaultTransferToSolo,
             { from: account },
           );
           await expectThrow(
             ctx.perpetual.soloBridgeProxy.bridgeTransfer(defaultTransferToSoloSigned),
-            'Transfer was already executed or canceled',
+            'Signature was already used or invalidated',
           );
         });
       });
 
       describe('without signature', async () => {
 
-        it('succeeds regardless of expiration, cancelation, or previous execution', async () => {
-          const transfer = await getModifiedTransferToSolo({ amount: amount / 2, expiration: 1 });
-          await ctx.perpetual.soloBridgeProxy.cancelTransfer(transfer, { from: account });
+        it('succeeds regardless of expiration, invalidation, or previous execution', async () => {
+          const transfer = await getModifiedTransferToSolo({
+            amount: amount.div(2),
+            expiration: pastTimestamp,
+          });
+          await ctx.perpetual.soloBridgeProxy.invalidateSignature(transfer, { from: account });
           await ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer, { from: account });
           const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
             transfer,
@@ -522,13 +625,13 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
     });
   });
 
-  describe('cancelTransfer()', () => {
+  describe('invalidateSignature()', () => {
 
-    describe('canceling a transfer (Solo -> Perpetual)', async () => {
+    describe('invalidating a signature (Solo -> Perpetual)', async () => {
 
       it('succeeds for account owner', async () => {
         // Call the function.
-        const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+        const txResult = await ctx.perpetual.soloBridgeProxy.invalidateSignature(
           defaultTransferToPerpetual,
           { from: account },
         );
@@ -537,10 +640,33 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         const logs = await ctx.perpetual.logs.parseLogs(txResult);
         expect(logs.length).to.equal(1);
         const log = logs[0];
-        expect(log.name).to.equal('LogTransferCanceled');
+        expect(log.name).to.equal('LogSignatureInvalidated');
         expect(log.args.account).to.equal(defaultTransferToPerpetual.account);
         expect(log.args.transferHash).to.equal(
           ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToPerpetual),
+        );
+      });
+
+      it('succeeds for account owner (transfer-all mode)', async () => {
+        const transfer = await getModifiedTransferToPerpetual({
+          transferMode: SoloBridgeTransferMode.ALL_TO_PERPETUAL,
+          amount: 123, // Amount is ignored in transfer-all mode.
+        });
+
+        // Call the function.
+        const txResult = await ctx.perpetual.soloBridgeProxy.invalidateSignature(
+          transfer,
+          { from: account },
+        );
+
+        // Check logs.
+        const logs = await ctx.perpetual.logs.parseLogs(txResult);
+        expect(logs.length).to.equal(1);
+        const log = logs[0];
+        expect(log.name).to.equal('LogSignatureInvalidated');
+        expect(log.args.account).to.equal(transfer.account);
+        expect(log.args.transferHash).to.equal(
+          ctx.perpetual.soloBridgeProxy.getTransferHash(transfer),
         );
       });
 
@@ -549,7 +675,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         await ctx.perpetual.testing.solo.setIsLocalOperator(account, otherAddress, true);
 
         // Call the function.
-        const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+        const txResult = await ctx.perpetual.soloBridgeProxy.invalidateSignature(
           defaultTransferToPerpetual,
           { from: otherAddress },
         );
@@ -558,7 +684,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         const logs = await ctx.perpetual.logs.parseLogs(txResult);
         expect(logs.length).to.equal(1);
         const log = logs[0];
-        expect(log.name).to.equal('LogTransferCanceled');
+        expect(log.name).to.equal('LogSignatureInvalidated');
         expect(log.args.account).to.equal(defaultTransferToPerpetual.account);
         expect(log.args.transferHash).to.equal(
           ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToPerpetual),
@@ -570,7 +696,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         await ctx.perpetual.testing.solo.setIsGlobalOperator(otherAddress, true);
 
         // Call the function.
-        const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+        const txResult = await ctx.perpetual.soloBridgeProxy.invalidateSignature(
           defaultTransferToPerpetual,
           { from: otherAddress },
         );
@@ -579,7 +705,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         const logs = await ctx.perpetual.logs.parseLogs(txResult);
         expect(logs.length).to.equal(1);
         const log = logs[0];
-        expect(log.name).to.equal('LogTransferCanceled');
+        expect(log.name).to.equal('LogSignatureInvalidated');
         expect(log.args.account).to.equal(defaultTransferToPerpetual.account);
         expect(log.args.transferHash).to.equal(
           ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToPerpetual),
@@ -588,11 +714,11 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
 
       it('fails for non-owner non-operator account', async () => {
         await expectThrow(
-          ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          ctx.perpetual.soloBridgeProxy.invalidateSignature(
             defaultTransferToPerpetual,
             { from: otherAddress },
           ),
-          'Sender does not have permission to cancel',
+          'Sender does not have permission to invalidate',
         );
       });
 
@@ -602,11 +728,11 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
 
         // Call the function.
         await expectThrow(
-          ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          ctx.perpetual.soloBridgeProxy.invalidateSignature(
             defaultTransferToPerpetual,
             { from: otherAddress },
           ),
-          'Sender does not have permission to cancel',
+          'Sender does not have permission to invalidate',
         );
       });
 
@@ -616,20 +742,20 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
 
         // Call the function.
         await expectThrow(
-          ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          ctx.perpetual.soloBridgeProxy.invalidateSignature(
             defaultTransferToPerpetual,
             { from: otherAddress },
           ),
-          'Sender does not have permission to cancel',
+          'Sender does not have permission to invalidate',
         );
       });
     });
 
-    describe('canceling a transfer (Perpetual -> Solo)', async () => {
+    describe('invalidating a signature (Perpetual -> Solo)', async () => {
 
       it('succeeds for account owner', async () => {
         // Call the function.
-        const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+        const txResult = await ctx.perpetual.soloBridgeProxy.invalidateSignature(
           defaultTransferToSolo,
           { from: account },
         );
@@ -638,7 +764,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         const logs = await ctx.perpetual.logs.parseLogs(txResult);
         expect(logs.length).to.equal(1);
         const log = logs[0];
-        expect(log.name).to.equal('LogTransferCanceled');
+        expect(log.name).to.equal('LogSignatureInvalidated');
         expect(log.args.account).to.equal(defaultTransferToSolo.account);
         expect(log.args.transferHash).to.equal(
           ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToSolo),
@@ -650,7 +776,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         await ctx.perpetual.operator.setLocalOperator(otherAddress, true, { from: account });
 
         // Call the function.
-        const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+        const txResult = await ctx.perpetual.soloBridgeProxy.invalidateSignature(
           defaultTransferToSolo,
           { from: otherAddress },
         );
@@ -659,7 +785,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         const logs = await ctx.perpetual.logs.parseLogs(txResult);
         expect(logs.length).to.equal(1);
         const log = logs[0];
-        expect(log.name).to.equal('LogTransferCanceled');
+        expect(log.name).to.equal('LogSignatureInvalidated');
         expect(log.args.account).to.equal(defaultTransferToSolo.account);
         expect(log.args.transferHash).to.equal(
           ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToSolo),
@@ -671,7 +797,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         await ctx.perpetual.admin.setGlobalOperator(otherAddress, true, { from: admin });
 
         // Call the function.
-        const txResult = await ctx.perpetual.soloBridgeProxy.cancelTransfer(
+        const txResult = await ctx.perpetual.soloBridgeProxy.invalidateSignature(
           defaultTransferToSolo,
           { from: otherAddress },
         );
@@ -680,7 +806,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         const logs = await ctx.perpetual.logs.parseLogs(txResult);
         expect(logs.length).to.equal(1);
         const log = logs[0];
-        expect(log.name).to.equal('LogTransferCanceled');
+        expect(log.name).to.equal('LogSignatureInvalidated');
         expect(log.args.account).to.equal(defaultTransferToSolo.account);
         expect(log.args.transferHash).to.equal(
           ctx.perpetual.soloBridgeProxy.getTransferHash(defaultTransferToSolo),
@@ -689,11 +815,11 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
 
       it('fails for non-owner non-operator account', async () => {
         await expectThrow(
-          ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          ctx.perpetual.soloBridgeProxy.invalidateSignature(
             defaultTransferToSolo,
             { from: otherAddress },
           ),
-          'Sender does not have permission to cancel',
+          'Sender does not have permission to invalidate',
         );
       });
 
@@ -703,11 +829,11 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
 
         // Call the function.
         await expectThrow(
-          ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          ctx.perpetual.soloBridgeProxy.invalidateSignature(
             defaultTransferToSolo,
             { from: otherAddress },
           ),
-          'Sender does not have permission to cancel',
+          'Sender does not have permission to invalidate',
         );
       });
 
@@ -717,13 +843,21 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
 
         // Call the function.
         await expectThrow(
-          ctx.perpetual.soloBridgeProxy.cancelTransfer(
+          ctx.perpetual.soloBridgeProxy.invalidateSignature(
             defaultTransferToSolo,
             { from: otherAddress },
           ),
-          'Sender does not have permission to cancel',
+          'Sender does not have permission to invalidate',
         );
       });
+    });
+
+    it('fails if the transfer mode is invalid', async () => {
+      const transfer = await getModifiedTransferToPerpetual({ transferMode: 3 });
+      await expectThrow(
+        ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
+        'Invalid transfer mode',
+      );
     });
   });
 
@@ -754,34 +888,35 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
     transfer: SoloBridgeTransfer,
   ): void {
     const logs = ctx.perpetual.logs.parseLogs(txResult);
+    const toPerpetual = transfer.transferMode !== SoloBridgeTransferMode.SOME_TO_SOLO;
 
     const transferLogs = _.filter(logs, { name: 'LogTransferred' });
-    expect(transferLogs.length, 'transfer count').to.equal(1);
+    expect(transferLogs.length, 'log transfer count').to.equal(1);
     const transferLog = transferLogs[0];
-    expect(transferLog.args.account, 'account').to.equal(transfer.account);
-    expect(transferLog.args.perpetual, 'perpetual').to.equal(transfer.perpetual);
-    expectBN(transferLog.args.soloAccountNumber, 'soloAccountNumber').to.equal(
+    expect(transferLog.args.account, 'log account').to.equal(transfer.account);
+    expect(transferLog.args.perpetual, 'log perpetual').to.equal(transfer.perpetual);
+    expectBN(transferLog.args.soloAccountNumber, 'log soloAccountNumber').to.equal(
       transfer.soloAccountNumber,
     );
-    // expectBN(transferLog.args.soloMarketId, 'soloMarketId').to.equal(transfer.soloMarketId);
-    expect(transferLog.args.toPerpetual, 'toPerpetual').to.equal(transfer.toPerpetual);
-    expectBN(transferLog.args.amount, 'amount').to.equal(transfer.amount);
+    expectBN(transferLog.args.soloMarketId, 'log soloMarketId').to.equal(transfer.soloMarketId);
+    expect(transferLog.args.toPerpetual, 'log toPerpetual').to.equal(toPerpetual);
+    expectBN(transferLog.args.amount, 'log amount').to.equal(transfer.amount);
 
-    if (transfer.toPerpetual) {
+    if (toPerpetual) {
       const depositLogs = _.filter(logs, { name: 'LogDeposit' });
-      expect(depositLogs.length, 'deposit count').to.equal(1);
+      expect(depositLogs.length, 'log deposit count').to.equal(1);
       const depositLog = depositLogs[0];
-      expect(depositLog.args.account, 'deposit account').to.equal(transfer.account);
-      expectBN(depositLog.args.amount, 'deposit amount').to.equal(transfer.amount);
+      expect(depositLog.args.account, 'log deposit account').to.equal(transfer.account);
+      expectBN(depositLog.args.amount, 'log deposit amount').to.equal(transfer.amount);
     } else {
       const withdrawalLogs = _.filter(logs, { name: 'LogWithdraw' });
-      expect(withdrawalLogs.length, 'withdrawal count').to.equal(1);
+      expect(withdrawalLogs.length, 'log withdrawal count').to.equal(1);
       const withdrawalLog = withdrawalLogs[0];
-      expect(withdrawalLog.args.account, 'withdrawal account').to.equal(transfer.account);
-      expect(withdrawalLog.args.destination, 'withdrawal destination').to.equal(
+      expect(withdrawalLog.args.account, 'log withdrawal account').to.equal(transfer.account);
+      expect(withdrawalLog.args.destination, 'log withdrawal destination').to.equal(
         ctx.perpetual.soloBridgeProxy.address,
       );
-      expectBN(withdrawalLog.args.amount, 'withdrawal amount').to.equal(transfer.amount);
+      expectBN(withdrawalLog.args.amount, 'log withdrawal amount').to.equal(transfer.amount);
     }
   }
 });

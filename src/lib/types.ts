@@ -65,6 +65,12 @@ export interface OrderState {
   filledAmount: BigNumber;
 }
 
+export enum SoloBridgeTransferMode {
+  SOME_TO_PERPETUAL = 0,
+  SOME_TO_SOLO = 1,
+  ALL_TO_PERPETUAL = 2,
+}
+
 // ============ Constants ============
 
 export const Networks = {
@@ -217,8 +223,8 @@ export interface SoloBridgeTransfer {
   perpetual: address;
   soloAccountNumber: BigNumberable;
   soloMarketId: BigNumberable;
-  toPerpetual: boolean; // Indicates whether the transfer is from Solo to Perpetual or vice versa.
   amount: BigNumberable;
+  transferMode: SoloBridgeTransferMode;
   expiration?: BigNumberable;
   salt?: BigNumberable;
 }

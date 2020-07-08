@@ -21,7 +21,12 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from './Contracts';
-import { hashString, addressToBytes32, bnToBytes32, boolToBytes32 } from '../lib/BytesHelper';
+import {
+  hashString,
+  addressToBytes32,
+  bnToBytes32,
+  combineHexStrings,
+} from '../lib/BytesHelper';
 import {
   EIP712_DOMAIN_STRING,
   EIP712_DOMAIN_STRUCT,
@@ -51,10 +56,8 @@ const EIP712_TRANSFER_STRUCT_STRING =
   'address perpetual,' +
   'uint256 soloAccountNumber,' +
   'uint256 soloMarketId,' +
-  'bool toPerpetual,' +
   'uint256 amount,' +
-  'uint256 expiration,' +
-  'bytes32 salt' +
+  'bytes32 options' +
   ')';
 
 const EIP712_TRANSFER_STRUCT = [
@@ -62,10 +65,8 @@ const EIP712_TRANSFER_STRUCT = [
   { type: 'address', name: 'perpetual' },
   { type: 'uint256', name: 'soloAccountNumber' },
   { type: 'uint256', name: 'soloMarketId' },
-  { type: 'bool', name: 'toPerpetual' },
   { type: 'uint256', name: 'amount' },
-  { type: 'uint256', name: 'expiration' },
-  { type: 'bytes32', name: 'salt' },
+  { type: 'bytes32', name: 'options' },
 ];
 
 export class SoloBridgeProxy {
@@ -128,12 +129,12 @@ export class SoloBridgeProxy {
     );
   }
 
-  public async cancelTransfer(
+  public async invalidateSignature(
     transfer: SoloBridgeTransfer,
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
-      this.proxy.methods.cancelTransfer(
+      this.proxy.methods.invalidateSignature(
         this.transferToSolidity(transfer),
       ),
       options,
@@ -217,22 +218,15 @@ export class SoloBridgeProxy {
   public getTransferHash(
     transfer: SoloBridgeTransfer,
   ): string {
-    if (typeof transfer.expiration === 'undefined' || typeof transfer.salt === 'undefined') {
-      throw new Error(
-        'Must specify expiration and salt for the transfer before it can be hashed or signed',
-      );
-    }
-
+    const struct = this.transferToSolidity(transfer);
     const structHash = Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_TRANSFER_STRUCT_STRING) },
-      { t: 'bytes32', v: addressToBytes32(transfer.account) },
-      { t: 'bytes32', v: addressToBytes32(transfer.perpetual) },
-      { t: 'uint256', v: new BigNumber(transfer.soloAccountNumber).toFixed(0) },
-      { t: 'uint256', v: new BigNumber(transfer.soloMarketId).toFixed(0) },
-      { t: 'bytes32', v: boolToBytes32(transfer.toPerpetual) },
-      { t: 'uint256', v: new BigNumber(transfer.amount).toFixed(0) },
-      { t: 'uint256', v: new BigNumber(transfer.expiration).toFixed(0) },
-      { t: 'bytes32', v: bnToBytes32(transfer.salt) },
+      { t: 'bytes32', v: addressToBytes32(struct.account) },
+      { t: 'bytes32', v: addressToBytes32(struct.perpetual) },
+      { t: 'uint256', v: struct.soloAccountNumber },
+      { t: 'uint256', v: struct.soloMarketId },
+      { t: 'uint256', v: struct.amount },
+      { t: 'bytes32', v: struct.options },
     );
     return getEIP712Hash(this.getDomainHash(), structHash);
   }
@@ -254,16 +248,25 @@ export class SoloBridgeProxy {
 
   private transferToSolidity(
     transfer: SoloBridgeTransfer,
-  ): any {
+  ): {
+    account: string;
+    perpetual: string;
+    soloAccountNumber: string;
+    soloMarketId: string;
+    amount: string;
+    options: string;
+  } {
+    const transferMode = `0x0${transfer.transferMode}`; // 1 byte
+    const expiration = bnToBytes32(transfer.expiration || 0).slice(36); // 15 bytes
+    const salt = bnToBytes32(transfer.salt || 0).slice(34); // 16 bytes
+    const options = combineHexStrings(salt, expiration, transferMode);
     return {
+      options,
       account: transfer.account,
       perpetual: transfer.perpetual,
       soloAccountNumber: new BigNumber(transfer.soloAccountNumber).toFixed(0),
       soloMarketId: new BigNumber(transfer.soloMarketId).toFixed(0),
-      toPerpetual: transfer.toPerpetual,
       amount: new BigNumber(transfer.amount).toFixed(0),
-      expiration: new BigNumber(transfer.expiration).toFixed(0),
-      salt: bnToBytes32(transfer.salt),
     };
   }
 
