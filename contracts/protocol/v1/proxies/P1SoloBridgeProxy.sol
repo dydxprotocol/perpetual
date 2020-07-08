@@ -22,6 +22,7 @@ pragma experimental ABIEncoderV2;
 import { SafeMath } from "@openzeppelin/contracts/math/SafeMath.sol";
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { SafeERC20 } from "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import { P1Proxy } from "./P1Proxy.sol";
 import { I_Solo } from "../../../external/dydx/I_Solo.sol";
 import { BaseMath } from "../../lib/BaseMath.sol";
 import { SignedMath } from "../../lib/SignedMath.sol";
@@ -29,7 +30,6 @@ import { TypedSignature } from "../../lib/TypedSignature.sol";
 import { I_PerpetualV1 } from "../intf/I_PerpetualV1.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
-import { P1Proxy } from "./P1Proxy.sol";
 
 
 /**
