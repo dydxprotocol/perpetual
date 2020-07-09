@@ -5,7 +5,6 @@ import {
   BigNumberable,
   SendOptions,
   TxResult,
-  address,
 } from '../lib/types';
 import { Contracts } from './Contracts';
 import { Token } from './Token';
@@ -28,22 +27,23 @@ export class Weth extends Token {
   }
 
   public async wrap(
-    ownerAddress: address,
     amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
+    const amountBN = new BigNumber(amount);
+    if (typeof options.value !== 'undefined' && !amountBN.eq(options.value)) {
+      throw new Error('Weth.wrap: amount does not match options.value');
+    }
     return this.contracts.send(
       this.weth.methods.deposit(),
       {
         ...options,
-        from: ownerAddress,
-        value: new BigNumber(amount).toFixed(0),
+        value: amountBN.toFixed(0),
       },
     );
   }
 
   public async unwrap(
-    ownerAddress: address,
     amount: BigNumberable,
     options: SendOptions = {},
   ): Promise<TxResult> {
@@ -53,7 +53,6 @@ export class Weth extends Token {
       ),
       {
         ...options,
-        from: ownerAddress,
       },
     );
   }

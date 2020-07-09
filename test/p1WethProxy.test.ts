@@ -112,7 +112,7 @@ perpetualDescribe('P1WethProxy (with a Perpetual using WETH)', init(true), (ctx:
     beforeEach(async () => {
       // Create WETH and deposit it to the perpetual.
       await Promise.all([
-        ctx.perpetual.weth.wrap(account, amount),
+        ctx.perpetual.weth.wrap(amount, { from: account }),
         ctx.perpetual.weth.setMaximumPerpetualAllowance(ctx.perpetual.weth.address, account),
       ]);
       await ctx.perpetual.margin.deposit(account, amount, { from: account });
