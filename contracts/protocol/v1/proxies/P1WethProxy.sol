@@ -21,8 +21,8 @@ pragma experimental ABIEncoderV2;
 
 import { WETH9 } from "canonical-weth/contracts/WETH9.sol";
 import { P1Proxy } from "./P1Proxy.sol";
-import { I_PerpetualV1 } from "../intf/I_PerpetualV1.sol";
 import { ReentrancyGuard } from "../../lib/ReentrancyGuard.sol";
+import { I_PerpetualV1 } from "../intf/I_PerpetualV1.sol";
 
 
 /**
