@@ -36,7 +36,7 @@ export class WethProxy extends BaseProxy {
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
-      this.proxy.methods.deposit(
+      this.proxy.methods.depositEth(
         this.contracts.perpetualProxy.options.address,
         account,
       ),
@@ -54,7 +54,7 @@ export class WethProxy extends BaseProxy {
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
-      this.proxy.methods.withdraw(
+      this.proxy.methods.withdrawEth(
         this.contracts.perpetualProxy.options.address,
         account,
         destination,

@@ -73,7 +73,7 @@ contract P1WethProxy is
      * @param  perpetual  Address of the Perpetual contract to deposit to.
      * @param  account    The account on the Perpetual for which to credit the deposit.
      */
-    function deposit(
+    function depositEth(
         address perpetual,
         address account
     )
@@ -104,7 +104,7 @@ contract P1WethProxy is
      * @param  destination  The address to send the withdrawn ETH to.
      * @param  amount       The amount of ETH/WETH to withdraw.
      */
-    function withdraw(
+    function withdrawEth(
         address perpetual,
         address account,
         address payable destination,
