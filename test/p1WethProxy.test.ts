@@ -58,7 +58,7 @@ perpetualDescribe('P1WethProxy (with a Perpetual using WETH)', init(true), (ctx:
 
     it('succeeds', async () => {
       const initialEthBalance = new BigNumber(await ctx.perpetual.web3.eth.getBalance(account));
-      const txResult = await ctx.perpetual.wethProxy.deposit(
+      const txResult = await ctx.perpetual.wethProxy.depositEth(
         account,
         amount,
         { from: account },
@@ -83,7 +83,7 @@ perpetualDescribe('P1WethProxy (with a Perpetual using WETH)', init(true), (ctx:
 
     it('succeeds depositing to another account', async () => {
       const initialEthBalance = new BigNumber(await ctx.perpetual.web3.eth.getBalance(account));
-      const txResult = await ctx.perpetual.wethProxy.deposit(
+      const txResult = await ctx.perpetual.wethProxy.depositEth(
         otherAddress,
         amount,
         { from: account },
@@ -121,7 +121,7 @@ perpetualDescribe('P1WethProxy (with a Perpetual using WETH)', init(true), (ctx:
     it('succeeds for the account owner', async () => {
       // Call the function.
       const initialEthBalance = new BigNumber(await ctx.perpetual.web3.eth.getBalance(account));
-      const txResult = await ctx.perpetual.wethProxy.withdraw(
+      const txResult = await ctx.perpetual.wethProxy.withdrawEth(
         account,
         account,
         amount,
@@ -151,7 +151,7 @@ perpetualDescribe('P1WethProxy (with a Perpetual using WETH)', init(true), (ctx:
 
       // Call the function.
       const initialEthBalance = new BigNumber(await ctx.perpetual.web3.eth.getBalance(account));
-      const txResult = await ctx.perpetual.wethProxy.withdraw(
+      const txResult = await ctx.perpetual.wethProxy.withdrawEth(
         account,
         account,
         amount,
@@ -181,7 +181,7 @@ perpetualDescribe('P1WethProxy (with a Perpetual using WETH)', init(true), (ctx:
 
       // Call the function.
       const initialEthBalance = new BigNumber(await ctx.perpetual.web3.eth.getBalance(account));
-      const txResult = await ctx.perpetual.wethProxy.withdraw(
+      const txResult = await ctx.perpetual.wethProxy.withdrawEth(
         account,
         account,
         amount,
@@ -210,7 +210,7 @@ perpetualDescribe('P1WethProxy (with a Perpetual using WETH)', init(true), (ctx:
       const initialEthBalance = new BigNumber(
         await ctx.perpetual.web3.eth.getBalance(otherAddress),
       );
-      const txResult = await ctx.perpetual.wethProxy.withdraw(
+      const txResult = await ctx.perpetual.wethProxy.withdrawEth(
         account,
         otherAddress,
         amount,
@@ -236,14 +236,14 @@ perpetualDescribe('P1WethProxy (with a Perpetual using WETH)', init(true), (ctx:
 
     it('fails for an account without withdraw permissions', async () => {
       await expectThrow(
-        ctx.perpetual.wethProxy.withdraw(account, account, amount, { from: otherAddress }),
+        ctx.perpetual.wethProxy.withdrawEth(account, account, amount, { from: otherAddress }),
         'Sender does not have withdraw permissions for the account',
       );
     });
 
     it('fails if the amount is greater than the margin token balance', async () => {
       await expectThrow(
-        ctx.perpetual.wethProxy.withdraw(account, account, amount.plus(1), { from: account }),
+        ctx.perpetual.wethProxy.withdrawEth(account, account, amount.plus(1), { from: account }),
         'SafeERC20: low-level call failed',
       );
     });
@@ -264,14 +264,14 @@ perpetualDescribe('P1WethProxy (with a Perpetual NOT using WETH)', init(), (ctx:
 
   it('fails to deposit', async () => {
     await expectThrow(
-      ctx.perpetual.wethProxy.deposit(account, amount, { from: account }),
+      ctx.perpetual.wethProxy.depositEth(account, amount, { from: account }),
       'The perpetual does not use WETH for margin deposits',
     );
   });
 
   it('fails to withdraw', async () => {
     await expectThrow(
-      ctx.perpetual.wethProxy.withdraw(account, account, amount, { from: account }),
+      ctx.perpetual.wethProxy.withdrawEth(account, account, amount, { from: account }),
       'The perpetual does not use WETH for margin deposits',
     );
   });

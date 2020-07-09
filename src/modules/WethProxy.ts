@@ -30,7 +30,7 @@ export class WethProxy extends BaseProxy {
     super(contracts, contracts.p1WethProxy);
   }
 
-  public async deposit(
+  public async depositEth(
     account: address,
     amount: BigNumberable,
     options?: SendOptions,
@@ -47,7 +47,7 @@ export class WethProxy extends BaseProxy {
     );
   }
 
-  public async withdraw(
+  public async withdrawEth(
     account: address,
     destination: address,
     amount: BigNumberable,
