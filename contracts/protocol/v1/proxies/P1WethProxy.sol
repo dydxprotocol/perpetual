@@ -22,6 +22,7 @@ pragma experimental ABIEncoderV2;
 import { WETH9 } from "canonical-weth/contracts/WETH9.sol";
 import { P1Proxy } from "./P1Proxy.sol";
 import { I_PerpetualV1 } from "../intf/I_PerpetualV1.sol";
+import { ReentrancyGuard } from "../../lib/ReentrancyGuard.sol";
 
 
 /**
@@ -32,7 +33,8 @@ import { I_PerpetualV1 } from "../intf/I_PerpetualV1.sol";
  *  its margin token. The ETH will be wrapper and unwrapped by the proxy.
  */
 contract P1WethProxy is
-    P1Proxy
+    P1Proxy,
+    ReentrancyGuard
 {
     // ============ Storage ============
 
@@ -77,6 +79,7 @@ contract P1WethProxy is
     )
         external
         payable
+        nonReentrant
     {
         WETH9 weth = _WETH_;
         address marginToken = I_PerpetualV1(perpetual).getTokenContract();
@@ -108,6 +111,7 @@ contract P1WethProxy is
         uint256 amount
     )
         external
+        nonReentrant
     {
         WETH9 weth = _WETH_;
         address marginToken = I_PerpetualV1(perpetual).getTokenContract();
