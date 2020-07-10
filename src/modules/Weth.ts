@@ -51,9 +51,7 @@ export class Weth extends Token {
       this.weth.methods.withdraw(
         new BigNumber(amount).toFixed(0),
       ),
-      {
-        ...options,
-      },
+      options,
     );
   }
 }
