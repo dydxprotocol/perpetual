@@ -328,27 +328,20 @@ contract P1SoloBridgeProxy is
     )
         private
     {
-        // Create Solo account struct.
-        I_Solo.AccountInfo memory soloAccount = I_Solo.AccountInfo({
+        // Create Solo accounts array.
+        I_Solo.AccountInfo[] memory soloAccounts = new I_Solo.AccountInfo[](1);
+        soloAccounts[0] = I_Solo.AccountInfo({
             owner: transfer.account,
             number: transfer.soloAccountNumber
         });
 
-        // Create Solo accounts array.
-        I_Solo.AccountInfo[] memory soloAccounts = new I_Solo.AccountInfo[](1);
-        soloAccounts[0] = soloAccount;
-
         // Create Solo actions array.
         I_Solo.AssetAmount memory amount = I_Solo.AssetAmount({
-            sign: true,
+            sign: !isWithdrawal,
             denomination: I_Solo.AssetDenomination.Wei,
-            ref: I_Solo.AssetReference.Delta,
-            value: transfer.amount
+            ref: withdrawToZero ? I_Solo.AssetReference.Target : I_Solo.AssetReference.Delta,
+            value: withdrawToZero ? 0 : transfer.amount
         });
-        if (withdrawToZero) {
-            amount.ref = I_Solo.AssetReference.Target;
-            amount.value = 0;
-        }
         I_Solo.ActionArgs[] memory soloActions = new I_Solo.ActionArgs[](1);
         soloActions[0] = I_Solo.ActionArgs({
             actionType: isWithdrawal ? I_Solo.ActionType.Withdraw : I_Solo.ActionType.Deposit,

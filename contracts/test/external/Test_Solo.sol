@@ -161,7 +161,6 @@ contract Test_Solo is
 
         // Check amount parameters.
         I_Solo.AssetAmount memory amount = action.amount;
-        require(amount.sign == true, "Expected amount to be positive");
         require(
             amount.denomination == I_Solo.AssetDenomination.Wei,
             "Expected amount denomination to be Wei"
@@ -180,10 +179,15 @@ contract Test_Solo is
             amountToTransfer = token.balanceOf(address(this));
         }
 
-        // Perform token transfer.
         if (action.actionType == I_Solo.ActionType.Withdraw) {
+            require(!amount.sign, "Expected amount to be negative");
+
+            // Perform token transfer.
             token.transfer(action.otherAddress, amountToTransfer);
         } else if (action.actionType == I_Solo.ActionType.Deposit) {
+            require(amount.sign, "Expected amount to be positive");
+
+            // Perform token transfer.
             token.transferFrom(action.otherAddress, address(this), amountToTransfer);
         } else {
             revert("Expected action type to be Withdraw or Deposit");
