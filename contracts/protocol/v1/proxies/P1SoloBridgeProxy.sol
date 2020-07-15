@@ -30,6 +30,7 @@ import { TypedSignature } from "../../lib/TypedSignature.sol";
 import { I_PerpetualV1 } from "../intf/I_PerpetualV1.sol";
 import { P1BalanceMath } from "../lib/P1BalanceMath.sol";
 import { P1Types } from "../lib/P1Types.sol";
+import { ReentrancyGuard } from "../../lib/ReentrancyGuard.sol";
 
 
 /**
@@ -39,7 +40,8 @@ import { P1Types } from "../lib/P1Types.sol";
  * @notice Facilitates transfers between the PerpetualV1 and Solo smart contracts.
  */
 contract P1SoloBridgeProxy is
-    P1Proxy
+    P1Proxy,
+    ReentrancyGuard
 {
     using BaseMath for uint256;
     using SafeMath for uint256;
@@ -185,6 +187,7 @@ contract P1SoloBridgeProxy is
         TypedSignature.Signature calldata signature
     )
         external
+        nonReentrant
         returns (uint256)
     {
         bytes32 transferHash = _getTransferHash(transfer);
@@ -348,7 +351,7 @@ contract P1SoloBridgeProxy is
         }
         I_Solo.ActionArgs[] memory soloActions = new I_Solo.ActionArgs[](1);
         soloActions[0] = I_Solo.ActionArgs({
-            actionType: I_Solo.ActionType.Deposit,
+            actionType: isWithdrawal ? I_Solo.ActionType.Withdraw : I_Solo.ActionType.Deposit,
             accountId: transfer.soloAccountNumber,
             amount: amount,
             primaryMarketId: transfer.soloMarketId,
@@ -357,9 +360,6 @@ contract P1SoloBridgeProxy is
             otherAccountId: 0,
             data: ""
         });
-        if (isWithdrawal) {
-            soloActions[0].actionType = I_Solo.ActionType.Withdraw;
-        }
 
         // Execute the withdrawal or deposit.
         solo.operate(soloAccounts, soloActions);
