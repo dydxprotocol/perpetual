@@ -51,6 +51,7 @@
     "@openzeppelin/contracts": "2.5.0",
     "@openzeppelin/upgrades": "2.6.0",
     "bignumber.js": "^8.1.1",
+    "canonical-weth": "^1.4.0",
     "es6-promisify": "^6.0.2",
     "lodash": "^4.17.15",
     "web3": "1.2.4"

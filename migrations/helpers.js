@@ -117,6 +117,19 @@ function getTokenAddress(network) {
   throw new Error('Cannot find token address');
 }
 
+function getWethAddress(network, devContract) {
+  if (isMainnet(network)) {
+    return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+  }
+  if (isKovan(network)) {
+    return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
+  }
+  if (isDevNetwork(network)) {
+    return devContract.address;
+  }
+  throw new Error('Cannot find WETH address');
+}
+
 function getMinCollateralization(network) {
   if (isMainnet(network) || isKovan(network)) {
     return '1075000000000000000'; // 107.5%
@@ -175,6 +188,7 @@ module.exports = {
   getDeployerAddress,
   getOracleAdjustment,
   getTokenAddress,
+  getWethAddress,
   getMinCollateralization,
   getInsuranceFundAddress,
   getInsuranceFee,

@@ -27,6 +27,11 @@ import {
   Contract,
 } from 'web3-eth-contract';
 
+/**
+ * Client for the PerpetualProxy contract, which extends a version of the OpenZeppelin
+ * AdminUpgradeabilityProxy contract. This proxy is used to implement upgradability on the
+ * PerpetualV1 contract.
+ */
 export class Proxy {
   private contracts: Contracts;
   private proxy: Contract;

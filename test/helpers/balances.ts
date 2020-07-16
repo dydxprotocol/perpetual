@@ -49,8 +49,9 @@ export async function expectMarginBalances(
   // Contract solvency check
   if (fullySettled) {
     const accountSumMargin = actualMargins.reduce((a, b) => a.plus(b), INTEGERS.ZERO);
+    const perpetualMarginToken = await ctx.perpetual.getters.getTokenContract();
     const perpetualTokenBalance = await ctx.perpetual.testing.token.getBalance(
-      ctx.perpetual.contracts.testToken.options.address,
+      perpetualMarginToken,
       ctx.perpetual.contracts.perpetualV1.options.address,
     );
     expectBN(accountSumMargin, 'sum of margins equals token balance').eq(perpetualTokenBalance);
@@ -91,16 +92,17 @@ export async function expectPositions(
 }
 
 /**
- * Verify that the account test token balances match the expected values.
+ * Verify that the account token balances match the expected values.
  */
 export async function expectTokenBalances(
   ctx: ITestContext,
   accounts: address[],
   expectedBalances: BigNumberable[],
+  tokenAddress: address = ctx.perpetual.contracts.testToken.options.address,
 ): Promise<void> {
   const balances = await Promise.all(accounts.map((account: address) =>
     ctx.perpetual.testing.token.getBalance(
-      ctx.perpetual.contracts.testToken.options.address,
+      tokenAddress,
       account,
     ),
   ));
@@ -123,8 +125,9 @@ export async function expectContractSurplus(
     return ctx.perpetual.getters.getAccountBalance(account).then(balance => balance.margin);
   }));
   const accountSumMargin = marginBalances.reduce((a, b) => a.plus(b), INTEGERS.ZERO);
+  const perpetualMarginToken = await ctx.perpetual.getters.getTokenContract();
   const perpetualTokenBalance = await ctx.perpetual.testing.token.getBalance(
-    ctx.perpetual.contracts.testToken.options.address,
+    perpetualMarginToken,
     ctx.perpetual.contracts.perpetualV1.options.address,
   );
   const actualSurplus = perpetualTokenBalance.minus(accountSumMargin);

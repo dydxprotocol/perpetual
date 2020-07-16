@@ -23,6 +23,7 @@ const {
   getDeployerAddress,
   getOracleAdjustment,
   getTokenAddress,
+  getWethAddress,
   getMinCollateralization,
   getInsuranceFundAddress,
   getInsuranceFee,
@@ -50,6 +51,7 @@ const P1MakerOracle = artifacts.require('P1MakerOracle');
 // Proxies
 const P1CurrencyConverterProxy = artifacts.require('P1CurrencyConverterProxy');
 const P1LiquidatorProxy = artifacts.require('P1LiquidatorProxy');
+const P1WethProxy = artifacts.require('P1WethProxy');
 
 // Test Contracts
 const TestExchangeWrapper = artifacts.require('Test_ExchangeWrapper');
@@ -61,6 +63,7 @@ const TestP1Trader = artifacts.require('Test_P1Trader');
 const TestToken = artifacts.require('Test_Token');
 const TestToken2 = artifacts.require('Test_Token2');
 const TestMakerOracle = artifacts.require('Test_MakerOracle');
+const WETH9 = artifacts.require('WETH9');
 
 // ============ Main Migration ============
 
@@ -88,6 +91,7 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestToken),
       deployer.deploy(TestToken2),
       deployer.deploy(TestMakerOracle),
+      deployer.deploy(WETH9),
     ]);
   }
 }
@@ -154,6 +158,10 @@ async function deployTraders(deployer, network) {
       getInsuranceFundAddress(network),
       getInsuranceFee(network),
     ),
+    deployer.deploy(
+      P1WethProxy,
+      getWethAddress(network, WETH9),
+    ),
   ]);
 
   // initialize proxies on non-testnet
@@ -163,6 +171,9 @@ async function deployTraders(deployer, network) {
 
     const liquidatorProxy = await P1LiquidatorProxy.deployed();
     await liquidatorProxy.approveMaximumOnPerpetual();
+
+    const wethProxy = await P1WethProxy.deployed();
+    await wethProxy.approveMaximumOnPerpetual(PerpetualProxy.address);
   }
 
   // set global operators
@@ -173,6 +184,7 @@ async function deployTraders(deployer, network) {
     perpetual.setGlobalOperator(P1Liquidation.address, true),
     perpetual.setGlobalOperator(P1CurrencyConverterProxy.address, true),
     perpetual.setGlobalOperator(P1LiquidatorProxy.address, true),
+    perpetual.setGlobalOperator(P1WethProxy.address, true),
   ]);
   if (isDevNetwork(network)) {
     await perpetual.setGlobalOperator(TestP1Trader.address, true);

@@ -37,12 +37,14 @@ import { Deleveraging } from './modules/Deleveraging';
 import { Liquidation } from './modules/Liquidation';
 import { CurrencyConverterProxy } from './modules/CurrencyConverterProxy';
 import { LiquidatorProxy } from './modules/LiquidatorProxy';
+import { WethProxy } from './modules/WethProxy';
 import { Getters } from './modules/Getters';
 import { Margin } from './modules/Margin';
 import { Operator } from './modules/Operator';
 import { Orders } from './modules/Orders';
 import { Token } from './modules/Token';
 import { Trade } from './modules/Trade';
+import { Weth } from './modules/Weth';
 import { Api } from './modules/Api';
 
 export class Perpetual {
@@ -58,6 +60,7 @@ export class Perpetual {
   public liquidation: Liquidation;
   public currencyConverterProxy: CurrencyConverterProxy;
   public liquidatorProxy: LiquidatorProxy;
+  public wethProxy: WethProxy;
   public getters: Getters;
   public logs: Logs;
   public margin: Margin;
@@ -65,6 +68,7 @@ export class Perpetual {
   public orders: Orders;
   public token: Token;
   public trade: Trade;
+  public weth: Weth;
   public api: Api;
 
   constructor(
@@ -84,6 +88,7 @@ export class Perpetual {
     this.liquidation = new Liquidation(this.contracts);
     this.currencyConverterProxy = new CurrencyConverterProxy(this.contracts);
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
+    this.wethProxy = new WethProxy(this.contracts);
     this.getters = new Getters(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
     this.margin = new Margin(this.contracts);
@@ -91,6 +96,7 @@ export class Perpetual {
     this.orders = new Orders(this.contracts, this.web3);
     this.token = new Token(this.contracts);
     this.trade = new Trade(this.contracts, this.orders);
+    this.weth = new Weth(this.contracts);
     this.api = new Api(this.orders, options.apiOptions);
 
     if (options.accounts) {

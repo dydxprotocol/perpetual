@@ -47,8 +47,10 @@ import p1DeleveragingJson from '../../build/contracts/P1Deleveraging.json';
 import p1LiquidationJson from '../../build/contracts/P1Liquidation.json';
 import p1CurrencyConverterProxyJson from '../../build/contracts/P1CurrencyConverterProxy.json';
 import p1LiquidatorProxyJson from '../../build/contracts/P1LiquidatorProxy.json';
+import p1WethProxyJson from '../../build/contracts/P1WethProxy.json';
 import erc20Json from '../../build/contracts/ERC20.json';
 import makerOracleJson from '../../build/contracts/I_MakerOracle.json';
+import wethJson from '../../build/contracts/WETH9.json';
 
 enum OUTCOMES {
   INITIAL = 0,
@@ -87,8 +89,10 @@ export class Contracts {
   public p1Liquidation: Contract;
   public p1CurrencyConverterProxy: Contract;
   public p1LiquidatorProxy: Contract;
+  public p1WethProxy: Contract;
   public erc20: Contract;
   public makerOracle: Contract;
+  public weth: Contract;
 
   constructor(
     provider: Provider,
@@ -118,8 +122,10 @@ export class Contracts {
     this.p1Liquidation = this.addContract(p1LiquidationJson);
     this.p1CurrencyConverterProxy = this.addContract(p1CurrencyConverterProxyJson);
     this.p1LiquidatorProxy = this.addContract(p1LiquidatorProxyJson);
+    this.p1WethProxy = this.addContract(p1WethProxyJson);
     this.erc20 = this.addContract(erc20Json, true);
     this.makerOracle = this.addContract(makerOracleJson, true);
+    this.weth = this.addContract(wethJson, true);
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);

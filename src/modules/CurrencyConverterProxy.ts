@@ -17,7 +17,6 @@
 */
 
 import BigNumber from 'bignumber.js';
-import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from './Contracts';
 import {
@@ -27,16 +26,14 @@ import {
   TxResult,
   address,
 } from '../lib/types';
+import { BaseProxy } from './BaseProxy';
 
-export class CurrencyConverterProxy {
-  private contracts: Contracts;
-  private proxy: Contract;
+export class CurrencyConverterProxy extends BaseProxy {
 
   constructor(
     contracts: Contracts,
   ) {
-    this.contracts = contracts;
-    this.proxy = this.contracts.p1CurrencyConverterProxy;
+    super(contracts, contracts.p1CurrencyConverterProxy);
   }
 
   // ============ Getters ============
@@ -94,17 +91,6 @@ export class CurrencyConverterProxy {
   }
 
   // ============ State-Changing Functions ============
-
-  public async approveMaximumOnPerpetual(
-    options?: SendOptions,
-  ): Promise<TxResult> {
-    return this.contracts.send(
-      this.proxy.methods.approveMaximumOnPerpetual(
-        this.contracts.perpetualProxy.options.address,
-      ),
-      options,
-    );
-  }
 
   public async deposit(
     account: address,
