@@ -11,6 +11,7 @@ const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 const p1FundingOracleJson = require(`${jsonFolder}P1FundingOracle.json`);
 const p1MakerOracleJson = require(`${jsonFolder}P1MakerOracle.json`);
+const p1OracleInverterJson = require(`${jsonFolder}P1OracleInverter.json`);
 const p1OrdersJson = require(`${jsonFolder}P1Orders.json`);
 const p1DeleveragingJson = require(`${jsonFolder}P1Deleveraging.json`);
 const p1LiquidationJson = require(`${jsonFolder}P1Liquidation.json`);
@@ -60,6 +61,7 @@ export class TestContracts extends Contracts {
     this.perpetualV1 = this.addContract(perpetualV1Json);
     this.p1FundingOracle = this.addContract(p1FundingOracleJson);
     this.p1MakerOracle = this.addContract(p1MakerOracleJson);
+    this.p1OracleInverter = this.addContract(p1OracleInverterJson);
     this.p1Orders = this.addContract(p1OrdersJson);
     this.p1Deleveraging = this.addContract(p1DeleveragingJson);
     this.p1Liquidation = this.addContract(p1LiquidationJson);
