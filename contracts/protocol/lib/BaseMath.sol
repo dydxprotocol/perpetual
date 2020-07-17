@@ -107,32 +107,16 @@ library BaseMath {
     }
 
     /**
-     * @dev Divide a value by a base value (result is rounded up).
+     * @dev Returns a base value representing the reciprocal of another base value (result is
+     *  rounded down).
      */
-    function baseDivRoundUp(
-        uint256 value,
+    function baseReciprocal(
         uint256 baseValue
     )
         internal
         pure
         returns (uint256)
     {
-        if (value == 0) {
-            return 0;
-        }
-        return value.mul(BASE).sub(1).div(baseValue).add(1);
-    }
-
-    /**
-     * @dev Returns a base value representing the reciprocal of another base value.
-     */
-    function baseReciprocal(
-        uint256 value
-    )
-        internal
-        pure
-        returns (uint256)
-    {
-        return baseDiv(BASE, value);
+        return baseDiv(BASE, baseValue);
     }
 }
