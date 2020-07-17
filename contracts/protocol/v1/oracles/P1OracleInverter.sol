@@ -28,7 +28,7 @@ import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
  * @author dYdX
  *
  * @notice P1Oracle that returns the inverted price (i.e. flips base and quote currencies) of
- * another P1Oracle.
+ *  another P1Oracle.
  */
 contract P1OracleInverter is
     I_P1Oracle
