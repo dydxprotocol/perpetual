@@ -384,6 +384,10 @@ export class BaseValue {
     return new BaseValue(this.value.minus(value));
   }
 
+  public abs(): BaseValue {
+    return new BaseValue(this.value.abs());
+  }
+
   public negated(): BaseValue {
     return new BaseValue(this.value.negated());
   }

@@ -44,6 +44,7 @@ import p1FundingOracleJson from '../../build/contracts/P1FundingOracle.json';
 import p1MakerOracleJson from '../../build/contracts/P1MakerOracle.json';
 import p1OracleInverterJson from '../../build/contracts/P1OracleInverter.json';
 import p1OrdersJson from '../../build/contracts/P1Orders.json';
+import p1InverseOrdersJson from '../../build/contracts/P1InverseOrders.json';
 import p1DeleveragingJson from '../../build/contracts/P1Deleveraging.json';
 import p1LiquidationJson from '../../build/contracts/P1Liquidation.json';
 import p1CurrencyConverterProxyJson from '../../build/contracts/P1CurrencyConverterProxy.json';
@@ -88,6 +89,7 @@ export class Contracts {
   public p1MakerOracle: Contract;
   public p1OracleInverter: Contract;
   public p1Orders: Contract;
+  public p1InverseOrders: Contract;
   public p1Deleveraging: Contract;
   public p1Liquidation: Contract;
   public p1CurrencyConverterProxy: Contract;
@@ -123,6 +125,7 @@ export class Contracts {
     this.p1MakerOracle = this.addContract(p1MakerOracleJson);
     this.p1OracleInverter = this.addContract(p1OracleInverterJson);
     this.p1Orders = this.addContract(p1OrdersJson);
+    this.p1InverseOrders = this.addContract(p1InverseOrdersJson);
     this.p1Deleveraging = this.addContract(p1DeleveragingJson);
     this.p1Liquidation = this.addContract(p1LiquidationJson);
     this.p1CurrencyConverterProxy = this.addContract(p1CurrencyConverterProxyJson);

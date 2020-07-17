@@ -43,6 +43,7 @@ import { Getters } from './modules/Getters';
 import { Margin } from './modules/Margin';
 import { Operator } from './modules/Operator';
 import { Orders } from './modules/Orders';
+import { InverseOrders } from './modules/InverseOrders';
 import { Token } from './modules/Token';
 import { Trade } from './modules/Trade';
 import { Weth } from './modules/Weth';
@@ -68,8 +69,10 @@ export class Perpetual {
   public margin: Margin;
   public operator: Operator;
   public orders: Orders;
+  public inverseOrders: InverseOrders;
   public token: Token;
   public trade: Trade;
+  public inverseTrade: Trade;
   public weth: Weth;
   public api: Api;
 
@@ -101,6 +104,10 @@ export class Perpetual {
     this.trade = new Trade(this.contracts, this.orders);
     this.weth = new Weth(this.contracts);
     this.api = new Api(this.orders, options.apiOptions);
+
+    // TODO: Initialize orders and trade modules depending on the perpetual market.
+    this.inverseOrders = new InverseOrders(this.contracts, this.web3);
+    this.inverseTrade = new Trade(this.contracts, this.inverseOrders);
 
     if (options.accounts) {
       options.accounts.forEach(a => this.loadAccount(a));

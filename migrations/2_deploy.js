@@ -48,6 +48,7 @@ const P1FundingOracle = artifacts.require('P1FundingOracle');
 
 // Traders
 const P1Orders = artifacts.require('P1Orders');
+const P1InverseOrders = artifacts.require('P1InverseOrders');
 const P1Deleveraging = artifacts.require('P1Deleveraging');
 const P1Liquidation = artifacts.require('P1Liquidation');
 
@@ -161,6 +162,11 @@ async function deployTraders(deployer, network) {
       getChainId(network),
     ),
     deployer.deploy(
+      P1InverseOrders,
+      PerpetualProxy.address,
+      getChainId(network),
+    ),
+    deployer.deploy(
       P1Deleveraging,
       PerpetualProxy.address,
       getDeleveragingOperatorAddress(network),
@@ -213,6 +219,7 @@ async function deployTraders(deployer, network) {
   // set global operators
   const perpetual = await PerpetualV1.at(PerpetualProxy.address);
   await Promise.all([
+    // TODO: Approve either P1Orders or P1InverseOrders depending on the perpetual market.
     perpetual.setGlobalOperator(P1Orders.address, true),
     perpetual.setGlobalOperator(P1Deleveraging.address, true),
     perpetual.setGlobalOperator(P1Liquidation.address, true),

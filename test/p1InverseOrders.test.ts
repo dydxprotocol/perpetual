@@ -39,7 +39,7 @@ const defaultOrder: Order = {
   expiration: INTEGERS.ONE_YEAR_IN_SECONDS.times(100),
   salt: new BigNumber('425'),
 };
-const initialMargin = orderAmount.times(defaultOrder.limitPrice.value).times(2);
+const initialMargin = orderAmount.times(2);
 const fullFlagOrder: Order = {
   ...defaultOrder,
   isDecreaseOnly: true,
@@ -52,102 +52,45 @@ let admin: address;
 let otherUser: address;
 
 async function init(ctx: ITestContext) {
-  await initializePerpetual(ctx);
+  // Use the inverted oracle price.
+  await initializePerpetual(
+    ctx,
+    { oracle: ctx.perpetual.contracts.p1OracleInverter.options.address },
+  );
 
   defaultOrder.maker = fullFlagOrder.maker = ctx.accounts[5];
   defaultOrder.taker = fullFlagOrder.taker = ctx.accounts[1];
   admin = ctx.accounts[0];
   otherUser = ctx.accounts[8];
 
-  defaultSignedOrder = await ctx.perpetual.orders.getSignedOrder(defaultOrder, SigningMethod.Hash);
-  fullFlagSignedOrder = await ctx.perpetual.orders.getSignedOrder(
+  defaultSignedOrder = await ctx.perpetual.inverseOrders.getSignedOrder(
+    defaultOrder,
+    SigningMethod.Hash,
+  );
+  fullFlagSignedOrder = await ctx.perpetual.inverseOrders.getSignedOrder(
     fullFlagOrder,
     SigningMethod.Hash,
   );
 
-  // Set up initial balances:
   await Promise.all([
     mintAndDeposit(ctx, defaultOrder.maker, initialMargin),
     mintAndDeposit(ctx, defaultOrder.taker, initialMargin),
     setOraclePrice(ctx, limitPrice),
+    ctx.perpetual.admin.setGlobalOperator(
+      ctx.perpetual.inverseOrders.address,
+      true,
+      { from: admin },
+    ),
   ]);
 }
 
-perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
-
+perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
   describe('off-chain helpers', () => {
-    it('Signs correctly for hash', async () => {
-      const typedSignature = await ctx.perpetual.orders.signOrder(
-        defaultOrder,
-        SigningMethod.Hash,
-      );
-      const validSignature = ctx.perpetual.orders.orderHasValidSignature({
-        ...defaultOrder,
-        typedSignature,
-      });
-      expect(validSignature).to.be.true;
-    });
-
-    it('Signs correctly for typed data', async () => {
-      const typedSignature = await ctx.perpetual.orders.signOrder(
-        defaultOrder,
-        SigningMethod.TypedData,
-      );
-      const validSignature = ctx.perpetual.orders.orderHasValidSignature({
-        ...defaultOrder,
-        typedSignature,
-      });
-      expect(validSignature).to.be.true;
-    });
-
-    it('Signs an order cancelation', async () => {
-      const typedSignature = await ctx.perpetual.orders.signCancelOrder(
-        defaultOrder,
-        SigningMethod.TypedData,
-      );
-      const validTypedSignature = ctx.perpetual.orders.cancelOrderHasValidSignature(
-        defaultOrder,
-        typedSignature,
-      );
-      expect(validTypedSignature).to.be.true;
-
-      const hashSignature = await ctx.perpetual.orders.signCancelOrder(
-        defaultOrder,
-        SigningMethod.Hash,
-      );
-      const validHashSignature = ctx.perpetual.orders.cancelOrderHasValidSignature(
-        defaultOrder,
-        hashSignature,
-      );
-      expect(validHashSignature).to.be.true;
-    });
-
-    it('Recognizes invalid signatures', () => {
-      const badSignatures = [
-        `0x${'00'.repeat(63)}00`,
-        `0x${'ab'.repeat(63)}01`,
-        `0x${'01'.repeat(70)}01`,
-      ];
-      badSignatures.map((typedSignature) => {
-        const validSignature = ctx.perpetual.orders.orderHasValidSignature({
-          ...defaultOrder,
-          typedSignature,
-        });
-        expect(validSignature).to.be.false;
-
-        const validCancelSignature = ctx.perpetual.orders.cancelOrderHasValidSignature(
-          defaultOrder,
-          typedSignature,
-        );
-        expect(validCancelSignature).to.be.false;
-      });
-    });
-
     it('Estimates collateralization after executing orders', () => {
       // Buy 1e18 at price of 987.65432 with fee of 0.002.
       // position: 1e18 --> 1000e18 value at price of 1000
       // margin: -987.65632e18
-      const ratio1 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+      const ratio1 = ctx.perpetual.inverseOrders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
         new Price(1000),
         [defaultOrder, defaultOrder, defaultOrder],
@@ -155,7 +98,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       );
       expectBN(ratio1).to.equal(new BigNumber(1000).div(987.65432 * 1.002));
 
-      const ratio2 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+      const ratio2 = ctx.perpetual.inverseOrders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
         new Price(200),
         [defaultOrder, defaultOrder, defaultOrder],
@@ -167,7 +110,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     it('Estimates collateralization when negative balance is zero', () => {
       const price = new Price(100);
 
-      const ratio1 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+      const ratio1 = ctx.perpetual.inverseOrders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
         price,
         [],
@@ -175,7 +118,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       );
       expectBN(ratio1).to.equal(Infinity);
 
-      const ratio2 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+      const ratio2 = ctx.perpetual.inverseOrders.getAccountCollateralizationAfterMakingOrders(
         new Balance(initialMargin, orderAmount),
         price,
         [defaultOrder],
@@ -187,7 +130,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
   describe('approveOrder()', () => {
     it('Succeeds', async () => {
-      const txResult = await ctx.perpetual.orders.approveOrder(
+      const txResult = await ctx.perpetual.inverseOrders.approveOrder(
         fullFlagOrder,
         { from: fullFlagOrder.maker },
       );
@@ -197,27 +140,29 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       expect(logs.length).to.equal(1);
       expect(logs[0].name).to.equal('LogOrderApproved');
-      expect(logs[0].args.orderHash).to.equal(ctx.perpetual.orders.getOrderHash(fullFlagOrder));
+      expect(logs[0].args.orderHash).to.equal(
+        ctx.perpetual.inverseOrders.getOrderHash(fullFlagOrder),
+      );
       expect(logs[0].args.maker).to.equal(fullFlagOrder.maker);
     });
 
     it('Succeeds in double-approving order', async () => {
-      await ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker });
-      await ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await ctx.perpetual.inverseOrders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await ctx.perpetual.inverseOrders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker });
       await expectStatus(fullFlagOrder, OrderStatus.Approved);
     });
 
     it('Fails if caller is not the maker', async () => {
       await expectThrow(
-        ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.taker }),
+        ctx.perpetual.inverseOrders.approveOrder(fullFlagOrder, { from: fullFlagOrder.taker }),
         'Order cannot be approved by non-maker',
       );
     });
 
     it('Fails to approve canceled order', async () => {
-      await ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await ctx.perpetual.inverseOrders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
       await expectThrow(
-        ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker }),
+        ctx.perpetual.inverseOrders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker }),
         'Canceled order cannot be approved',
       );
     });
@@ -225,7 +170,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
   describe('cancelOrder()', () => {
     it('Succeeds', async () => {
-      const txResult = await ctx.perpetual.orders.cancelOrder(
+      const txResult = await ctx.perpetual.inverseOrders.cancelOrder(
         fullFlagOrder,
         { from: fullFlagOrder.maker },
       );
@@ -235,26 +180,28 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       const logs = ctx.perpetual.logs.parseLogs(txResult);
       expect(logs.length).to.equal(1);
       expect(logs[0].name).to.equal('LogOrderCanceled');
-      expect(logs[0].args.orderHash).to.equal(ctx.perpetual.orders.getOrderHash(fullFlagOrder));
+      expect(logs[0].args.orderHash).to.equal(
+        ctx.perpetual.inverseOrders.getOrderHash(fullFlagOrder),
+      );
       expect(logs[0].args.maker).to.equal(fullFlagOrder.maker);
     });
 
     it('Succeeds in double-canceling order', async () => {
-      await ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
-      await ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await ctx.perpetual.inverseOrders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await ctx.perpetual.inverseOrders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
       await expectStatus(fullFlagOrder, OrderStatus.Canceled);
     });
 
     it('Fails if caller is not the maker', async () => {
       await expectThrow(
-        ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.taker }),
+        ctx.perpetual.inverseOrders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.taker }),
         'Order cannot be canceled by non-maker',
       );
     });
 
     it('Succeeds in canceling approved order', async () => {
-      await ctx.perpetual.orders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker });
-      await ctx.perpetual.orders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await ctx.perpetual.inverseOrders.approveOrder(fullFlagOrder, { from: fullFlagOrder.maker });
+      await ctx.perpetual.inverseOrders.cancelOrder(fullFlagOrder, { from: fullFlagOrder.maker });
       await expectStatus(fullFlagOrder, OrderStatus.Canceled);
     });
   });
@@ -322,7 +269,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
 
       it('succeeds with an invalid signature for an order approved on-chain', async () => {
-        await ctx.perpetual.orders.approveOrder(defaultOrder, { from: defaultOrder.maker });
+        await ctx.perpetual.inverseOrders.approveOrder(defaultOrder, { from: defaultOrder.maker });
         const order = {
           ...defaultSignedOrder,
           typedSignature: `0xff${defaultSignedOrder.typedSignature.substr(4)}`,
@@ -340,7 +287,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fails for calls not from the perpetual contract', async () => {
         await expectThrow(
           ctx.perpetual.contracts.send(
-            ctx.perpetual.contracts.p1Orders.methods.trade(
+            ctx.perpetual.contracts.p1InverseOrders.methods.trade(
               admin,
               admin,
               admin,
@@ -373,7 +320,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
 
       it('fails for canceled order', async () => {
-        await ctx.perpetual.orders.cancelOrder(defaultOrder, { from: defaultOrder.maker });
+        await ctx.perpetual.inverseOrders.cancelOrder(defaultOrder, { from: defaultOrder.maker });
         await expectThrow(
           fillOrder(),
           'Order was already canceled',
@@ -381,7 +328,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
 
       it('fails for wrong maker', async () => {
-        const tradeData = ctx.perpetual.orders.fillToTradeData(
+        const tradeData = ctx.perpetual.inverseOrders.fillToTradeData(
           defaultSignedOrder,
           defaultOrder.amount,
           defaultOrder.limitPrice,
@@ -394,7 +341,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
               maker: otherUser,
               taker: defaultOrder.taker,
               data: tradeData,
-              trader: ctx.perpetual.orders.address,
+              trader: ctx.perpetual.inverseOrders.address,
             })
             .commit({ from: defaultOrder.taker }),
           'Order maker does not match maker',
@@ -402,7 +349,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
 
       it('fails for wrong taker', async () => {
-        const tradeData = ctx.perpetual.orders.fillToTradeData(
+        const tradeData = ctx.perpetual.inverseOrders.fillToTradeData(
           defaultSignedOrder,
           defaultOrder.amount,
           defaultOrder.limitPrice,
@@ -415,7 +362,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
               maker: defaultOrder.maker,
               taker: otherUser,
               data: tradeData,
-              trader: ctx.perpetual.orders.address,
+              trader: ctx.perpetual.inverseOrders.address,
             })
             .commit({ from: otherUser }),
           'Order taker does not match taker',
@@ -491,7 +438,10 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         //       +10 | trigger price, oracle price
         //        +5 | fill price
         // limit ask |
-        const triggerPrice = defaultOrder.limitPrice.plus(10);
+
+        // Due to the use of the oracle inverter, rounding errors may cause the oracle price to be
+        // very slightly higher than expected. Adjust the trigger price to account for this.
+        const triggerPrice = defaultOrder.limitPrice.plus(10).plus(1e-12);
         const fillPrice = defaultOrder.limitPrice.plus(5);
         const oraclePrice = defaultOrder.limitPrice.plus(10);
         await setOraclePrice(ctx, oraclePrice);
@@ -553,9 +503,9 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fills a bid', async () => {
         // Give the maker a short position.
         const { limitFee, limitPrice, maker, taker } = defaultOrder;
-        const fee = limitFee.times(limitPrice.value);
-        const cost = limitPrice.value.plus(fee.value).times(orderAmount);
-        await sell(ctx, maker, taker, orderAmount, cost);
+        const marginAmount = orderAmount.times(limitFee.plus(1).value);
+        const positionAmount = orderAmount.times(limitPrice.value);
+        await sell(ctx, maker, taker, positionAmount, marginAmount);
 
         // Fill the order to decrease the short position to zero.
         await fillOrder({ isDecreaseOnly: true });
@@ -564,9 +514,9 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fills an ask', async () => {
         // Give the maker a long position.
         const { limitFee, limitPrice, maker, taker } = defaultOrder;
-        const fee = limitFee.times(limitPrice.value).negated();
-        const cost = limitPrice.value.plus(fee.value).times(orderAmount);
-        await buy(ctx, maker, taker, orderAmount, cost);
+        const marginAmount = orderAmount.times(limitFee.plus(1).value);
+        const positionAmount = orderAmount.times(limitPrice.value);
+        await buy(ctx, maker, taker, positionAmount, marginAmount);
 
         // Fill the order to decrease the long position to zero.
         await fillOrder({ isBuy: false, isDecreaseOnly: true });
@@ -574,7 +524,9 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
       it('fails to fill a bid if maker position is positive', async () => {
         const { maker, taker } = defaultOrder;
-        await buy(ctx, maker, taker, new BigNumber(1), defaultOrder.limitPrice.value);
+
+        // Inverse perpetual: Selling position means buying the base currency.
+        await sell(ctx, maker, taker, new BigNumber(1), 0);
         await expectThrow(
           fillOrder({ isDecreaseOnly: true }),
           'Fill does not decrease position',
@@ -583,7 +535,9 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
       it('fails to fill an ask if maker position is negative', async () => {
         const { maker, taker } = defaultOrder;
-        await sell(ctx, maker, taker, new BigNumber(1), defaultOrder.limitPrice.value);
+
+        // Inverse perpetual: Buying position means selling the base currency.
+        await buy(ctx, maker, taker, new BigNumber(1), 0);
         await expectThrow(
           fillOrder({ isBuy: false, isDecreaseOnly: true }),
           'Fill does not decrease position',
@@ -591,9 +545,11 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
 
       it('fails to fill a bid if maker position would become positive', async () => {
-        const { maker, taker } = defaultOrder;
-        const cost = defaultOrder.limitPrice.value.times(orderAmount.minus(1));
-        await sell(ctx, maker, taker, orderAmount.minus(1), cost);
+        const { limitPrice, maker, taker } = defaultOrder;
+        const cost = orderAmount.minus(1).dividedBy(limitPrice.value);
+
+        // Inverse perpetual: Buying position means selling the base currency.
+        await buy(ctx, maker, taker, orderAmount.minus(1), cost);
         await expectThrow(
           fillOrder({ isDecreaseOnly: true }),
           'Fill does not decrease position',
@@ -601,9 +557,11 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
 
       it('fails to fill an ask if maker position would become negative', async () => {
-        const { maker, taker } = defaultOrder;
-        const cost = defaultOrder.limitPrice.value.times(orderAmount.minus(1));
-        await buy(ctx, maker, taker, orderAmount.minus(1), cost);
+        const { limitPrice, maker, taker } = defaultOrder;
+        const cost = orderAmount.minus(1).dividedBy(limitPrice.value);
+
+        // Inverse perpetual: Selling position means buying the base currency.
+        await sell(ctx, maker, taker, orderAmount.minus(1), cost);
         await expectThrow(
           fillOrder({ isBuy: false, isDecreaseOnly: true }),
           'Fill does not decrease position',
@@ -640,13 +598,11 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       ...defaultOrder,
       ...args,
     };
-    return ctx.perpetual.orders.getSignedOrder(newOrder, SigningMethod.Hash);
+    return ctx.perpetual.inverseOrders.getSignedOrder(newOrder, SigningMethod.Hash);
   }
 
   /**
-   * Fill an order.
-   *
-   * Check that logs and balance updates are as expected.
+   * Fill an order an check that the logs are as expected.
    */
   async function fillOrder(
     orderArgs: Partial<SignedOrder> = {},
@@ -673,8 +629,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     const { margin: makerMargin, position: makerPosition } = makerBalance;
     const { margin: takerMargin, position: takerPosition } = takerBalance;
 
-    // Fill the order.
-    const txResult = await ctx.perpetual.trade
+    const txResult = await ctx.perpetual.inverseTrade
       .initiate()
       .fillSignedOrder(
         order,
@@ -685,11 +640,16 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       .commit({ from: sender });
 
     // Calculate the effect of filling the order on the maker and taker's balances.
-    const feeFactor = (order.isBuy ? fillFee : fillFee.negated()).value.plus(1);
-    const marginAmount = fillAmount.times(fillPrice.value).times(feeFactor);
-    const positionAmount = fillAmount;
-    const makerMarginDelta = order.isBuy ? marginAmount.negated() : marginAmount;
-    const makerPositionDelta = order.isBuy ? positionAmount : positionAmount.negated();
+    //
+    // Inverse perpetual:
+    // - When isBuy is true, the maker is buying base currency (margin) and selling position.
+    // - The fill amount is denoted in margin and price is denoted in position per margin.
+    // - The fee is paid (or received) in margin and denoted in position per margin.
+    const feeFactor = (order.isBuy ? fillFee.negated() : fillFee).value.plus(1);
+    const marginAmount = fillAmount.times(feeFactor);
+    const positionAmount = fillAmount.times(fillPrice.value);
+    const makerMarginDelta = order.isBuy ? marginAmount : marginAmount.negated();
+    const makerPositionDelta = order.isBuy ? positionAmount.negated() : positionAmount;
 
     // Check final balances.
     await expectBalances(
@@ -705,7 +665,9 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     const filteredLogs = _.filter(logs, { name: 'LogOrderFilled' });
     expect(filteredLogs.length).to.equal(1);
     const [log] = filteredLogs;
-    expect(log.args.orderHash, 'log hash').to.equal(ctx.perpetual.orders.getOrderHash(order));
+    expect(log.args.orderHash, 'log hash').to.equal(
+      ctx.perpetual.inverseOrders.getOrderHash(order),
+    );
     expect(log.args.flags.isBuy, 'log isBuy').to.equal(order.isBuy);
     expect(log.args.flags.isDecreaseOnly, 'log isDecreaseOnly').to.equal(order.isDecreaseOnly);
     expect(log.args.flags.isNegativeLimitFee, 'log isNegativeLimitFee').to.equal(
@@ -725,7 +687,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     status: OrderStatus,
     filledAmount?: BigNumber,
   ) {
-    const statuses = await ctx.perpetual.orders.getOrdersStatus([order]);
+    const statuses = await ctx.perpetual.inverseOrders.getOrdersStatus([order]);
     expect(statuses[0].status).to.equal(status);
     if (filledAmount) {
       expectBN(statuses[0].filledAmount).to.equal(filledAmount);
@@ -734,8 +696,9 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 });
 
 /**
- * Update the oracle price.
+ * Update the oracle price on the underlying oracle used by the oracle inverter.
  */
 async function setOraclePrice(ctx: ITestContext, price: Price): Promise<void> {
-  await ctx.perpetual.testing.oracle.setPrice(price);
+  // Divide by 100 to account for the adjustment factor, set when deploying P1OracleInverter.
+  await ctx.perpetual.testing.makerOracle.setPrice(price.div(100));
 }

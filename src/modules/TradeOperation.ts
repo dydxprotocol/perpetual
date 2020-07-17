@@ -61,7 +61,7 @@ export class TradeOperation {
       maker: order.maker,
       taker: order.taker,
       data: tradeData,
-      trader: this.contracts.p1Orders.options.address,
+      trader: this.orders.address,
     });
   }
 
