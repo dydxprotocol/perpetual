@@ -1,7 +1,7 @@
 import BigNumber from 'bignumber.js';
 import _ from 'lodash';
 
-import { expectThrow, expect, expectBN } from './helpers/Expect';
+import { expectThrow, expect, expectBN, expectAssertFailure } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
@@ -854,9 +854,8 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
 
     it('fails if the transfer mode is invalid', async () => {
       const transfer = await getModifiedTransferToPerpetual({ transferMode: 3 });
-      await expectThrow(
+      await expectAssertFailure(
         ctx.perpetual.soloBridgeProxy.bridgeTransfer(transfer),
-        'Invalid transfer mode',
       );
     });
   });

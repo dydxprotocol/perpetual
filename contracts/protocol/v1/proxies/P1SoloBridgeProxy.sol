@@ -88,9 +88,14 @@ contract P1SoloBridgeProxy is
     bytes32 private constant OPTIONS_MASK_TRANSFER_MODE = bytes32(uint256((1 << 8) - 1));
     bytes32 private constant OPTIONS_MASK_EXPIRATION = bytes32(uint256((1 << 120) - 1));
     uint256 private constant OPTIONS_OFFSET_EXPIRATION = 8;
-    bytes32 private constant TRANSFER_MODE_SOME_TO_PERPETUAL = bytes32(uint256(0));
-    bytes32 private constant TRANSFER_MODE_SOME_TO_SOLO = bytes32(uint256(1));
-    bytes32 private constant TRANSFER_MODE_ALL_TO_PERPETUAL = bytes32(uint256(2));
+
+    // ============ Enums ============
+
+    enum TransferMode {
+        SomeToPerpetual,
+        SomeToSolo,
+        AllToPerpetual
+    }
 
     // ============ Structs ============
 
@@ -194,10 +199,10 @@ contract P1SoloBridgeProxy is
         I_Solo solo = I_Solo(_SOLO_MARGIN_);
         I_PerpetualV1 perpetual = I_PerpetualV1(transfer.perpetual);
         address tokenAddress = perpetual.getTokenContract();
-        bytes32 transferMode = _getTransferMode(transfer);
+        TransferMode transferMode = _getTransferMode(transfer);
         bool toPerpetual = (
-            transferMode == TRANSFER_MODE_SOME_TO_PERPETUAL ||
-            transferMode == TRANSFER_MODE_ALL_TO_PERPETUAL
+            transferMode == TransferMode.SomeToPerpetual ||
+            transferMode == TransferMode.AllToPerpetual
         );
 
         // Permissions:
@@ -233,14 +238,14 @@ contract P1SoloBridgeProxy is
                 solo,
                 transfer,
                 true,
-                transferMode == TRANSFER_MODE_ALL_TO_PERPETUAL
+                transferMode == TransferMode.AllToPerpetual
             );
             uint256 finalBalance = IERC20(tokenAddress).balanceOf(address(this));
 
             // Deposit to Perpetual.
             amount = finalBalance.sub(initialBalance);
             perpetual.deposit(transfer.account, amount);
-        } else if (transferMode == TRANSFER_MODE_SOME_TO_SOLO) {
+        } else { // transferMode == TransferMode.SomeToSolo
 
             // Withdraw from Perpetual.
             amount = transfer.amount;
@@ -253,8 +258,6 @@ contract P1SoloBridgeProxy is
                 false,
                 false
             );
-        } else {
-            revert("Invalid transfer mode");
         }
 
         // If the signature was used to verify permissions, mark the signature as used.
@@ -288,10 +291,10 @@ contract P1SoloBridgeProxy is
         if (msg.sender != transfer.account) {
             I_Solo solo = I_Solo(_SOLO_MARGIN_);
             I_PerpetualV1 perpetual = I_PerpetualV1(transfer.perpetual);
-            bytes32 transferMode = _getTransferMode(transfer);
+            TransferMode transferMode = _getTransferMode(transfer);
             bool toPerpetual = (
-                transferMode == TRANSFER_MODE_SOME_TO_PERPETUAL ||
-                transferMode == TRANSFER_MODE_ALL_TO_PERPETUAL
+                transferMode == TransferMode.SomeToPerpetual ||
+                transferMode == TransferMode.AllToPerpetual
             );
             require(
                 _hasWithdrawPermissions(
@@ -463,9 +466,9 @@ contract P1SoloBridgeProxy is
     )
         private
         pure
-        returns (bytes32)
+        returns (TransferMode)
     {
-        return transfer.options & OPTIONS_MASK_TRANSFER_MODE;
+        return TransferMode(uint256(transfer.options & OPTIONS_MASK_TRANSFER_MODE));
     }
 
     function _getExpiration(
