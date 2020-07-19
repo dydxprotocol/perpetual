@@ -205,8 +205,15 @@ contract P1SoloBridgeProxy is
             transferMode == TransferMode.AllToPerpetual
         );
 
-        // Permissions:
-        // Verify that either msg.sender has withdraw permissions or the signature is valid.
+        // Validations.
+        _verifySoloMarket(
+            solo,
+            transfer,
+            tokenAddress
+        );
+
+        // Verify permissions: Either msg.sender must have withdraw permissions or the signature
+        // must be valid.
         bool hasWithdrawPermissions = _hasWithdrawPermissions(
             solo,
             perpetual,
@@ -219,14 +226,8 @@ contract P1SoloBridgeProxy is
                 transferHash,
                 signature
             );
+            _SIGNATURE_USED_[transferHash] = true;
         }
-
-        // Other validations.
-        _verifySoloMarket(
-            solo,
-            transfer,
-            tokenAddress
-        );
 
         // Execute the transfer.
         uint256 amount;
@@ -258,11 +259,6 @@ contract P1SoloBridgeProxy is
                 false,
                 false
             );
-        }
-
-        // If the signature was used to verify permissions, mark the signature as used.
-        if (!hasWithdrawPermissions) {
-            _SIGNATURE_USED_[transferHash] = true;
         }
 
         // Log the transfer.
