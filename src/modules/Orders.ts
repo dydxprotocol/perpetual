@@ -1,4 +1,3 @@
-import { promisify } from 'es6-promisify';
 import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
 import { Contracts } from './Contracts';
@@ -7,7 +6,6 @@ import {
   bnToBytes32,
   hashString,
   addressesAreEqual,
-  stripHexPrefix,
   combineHexStrings,
 } from '../lib/BytesHelper';
 import {
@@ -16,6 +14,9 @@ import {
   EIP712_DOMAIN_STRUCT,
   createTypedSignature,
   ecRecoverTypedSignature,
+  ethSignTypedDataInternal,
+  hashHasValidSignature,
+  getEIP712Hash,
 } from '../lib/SignatureHelper';
 import {
   Balance,
@@ -44,6 +45,8 @@ const EIP712_ORDER_STRUCT = [
   { type: 'uint256', name: 'expiration' },
 ];
 
+const EIP712_DOMAIN_NAME = 'P1Orders';
+const EIP712_DOMAIN_VERSION = '1.0';
 const EIP712_ORDER_STRUCT_STRING =
   'Order(' +
   'bytes32 flags,' +
@@ -241,7 +244,7 @@ export class Orders {
         if (signingMethod === SigningMethod.UnsafeHash) {
           return unsafeHashSig;
         }
-        if (this.orderByHashHasValidSignature(orderHash, unsafeHashSig, order.maker)) {
+        if (hashHasValidSignature(orderHash, unsafeHashSig, order.maker)) {
           return unsafeHashSig;
         }
         return hashSig;
@@ -298,7 +301,7 @@ export class Orders {
         if (signingMethod === SigningMethod.UnsafeHash) {
           return unsafeHashSig;
         }
-        if (this.cancelOrderByHashHasValidSignature(orderHash, unsafeHashSig, signer)) {
+        if (hashHasValidSignature(orderHash, unsafeHashSig, signer)) {
           return unsafeHashSig;
         }
         return hashSig;
@@ -326,23 +329,11 @@ export class Orders {
   public orderHasValidSignature(
     order: SignedOrder,
   ): boolean {
-    return this.orderByHashHasValidSignature(
+    return hashHasValidSignature(
       this.getOrderHash(order),
       order.typedSignature,
       order.maker,
     );
-  }
-
-  /**
-   * Returns true if the order hash has a non-null valid signature from a particular signer.
-   */
-  public orderByHashHasValidSignature(
-    orderHash: string,
-    typedSignature: string,
-    expectedSigner: address,
-  ): boolean {
-    const signer = ecRecoverTypedSignature(orderHash, typedSignature);
-    return addressesAreEqual(signer, expectedSigner);
   }
 
   /**
@@ -391,7 +382,7 @@ export class Orders {
       { t: 'bytes32', v: addressToBytes32(order.taker) },
       { t: 'uint256', v: order.expiration.toFixed(0) },
     );
-    return this.getEIP712Hash(structHash);
+    return getEIP712Hash(this.getDomainHash(), structHash);
   }
 
   /**
@@ -405,7 +396,7 @@ export class Orders {
       { t: 'bytes32', v: hashString('Cancel Orders') },
       { t: 'bytes32', v: Web3.utils.soliditySha3({ t: 'bytes32', v: orderHash }) },
     );
-    return this.getEIP712Hash(structHash);
+    return getEIP712Hash(this.getDomainHash(), structHash);
   }
 
   /**
@@ -414,23 +405,10 @@ export class Orders {
   public getDomainHash(): string {
     return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
-      { t: 'bytes32', v: hashString('P1Orders') },
-      { t: 'bytes32', v: hashString('1.0') },
+      { t: 'bytes32', v: hashString(EIP712_DOMAIN_NAME) },
+      { t: 'bytes32', v: hashString(EIP712_DOMAIN_VERSION) },
       { t: 'uint256', v: `${this.contracts.networkId}` },
       { t: 'bytes32', v: addressToBytes32(this.contracts.p1Orders.options.address) },
-    );
-  }
-
-  /**
-   * Returns a signable EIP712 Hash of a struct
-   */
-  public getEIP712Hash(
-    structHash: string,
-  ): string {
-    return Web3.utils.soliditySha3(
-      { t: 'bytes2', v: '0x1901' },
-      { t: 'bytes32', v: this.getDomainHash() },
-      { t: 'bytes32', v: structHash },
     );
   }
 
@@ -490,8 +468,8 @@ export class Orders {
 
   private getDomainData() {
     return {
-      name: 'P1Orders',
-      version: '1.0',
+      name: EIP712_DOMAIN_NAME,
+      version: EIP712_DOMAIN_VERSION,
       chainId: this.contracts.networkId,
       verifyingContract: this.contracts.p1Orders.options.address,
     };
@@ -501,16 +479,7 @@ export class Orders {
     order: Order,
     signingMethod: SigningMethod,
   ): Promise<TypedSignature> {
-    const orderData = {
-      flags: this.getOrderFlags(order),
-      amount: order.amount.toFixed(0),
-      limitPrice: order.limitPrice.toSolidity(),
-      triggerPrice: order.triggerPrice.toSolidity(),
-      limitFee: order.limitFee.toSolidity(),
-      maker: order.maker,
-      taker: order.taker,
-      expiration: order.expiration.toFixed(0),
-    };
+    const orderData = this.orderToSolidity(order);
     const data = {
       types: {
         EIP712Domain: EIP712_DOMAIN_STRUCT,
@@ -520,7 +489,8 @@ export class Orders {
       primaryType: 'Order',
       message: orderData,
     };
-    return this.ethSignTypedDataInternal(
+    return ethSignTypedDataInternal(
+      this.web3.currentProvider,
       order.maker,
       data,
       signingMethod,
@@ -544,59 +514,12 @@ export class Orders {
         orderHashes: [orderHash],
       },
     };
-    return this.ethSignTypedDataInternal(
+    return ethSignTypedDataInternal(
+      this.web3.currentProvider,
       signer,
       data,
       signingMethod,
     );
-  }
-
-  private async ethSignTypedDataInternal(
-    signer: string,
-    data: any,
-    signingMethod: SigningMethod,
-  ): Promise<TypedSignature> {
-    let sendMethod: string;
-    let rpcMethod: string;
-    let rpcData: any;
-
-    switch (signingMethod) {
-      case SigningMethod.TypedData:
-        sendMethod = 'send';
-        rpcMethod = 'eth_signTypedData';
-        rpcData = data;
-        break;
-      case SigningMethod.MetaMask:
-        sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData_v3';
-        rpcData = JSON.stringify(data);
-        break;
-      case SigningMethod.MetaMaskLatest:
-        sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData_v4';
-        rpcData = JSON.stringify(data);
-        break;
-      case SigningMethod.CoinbaseWallet:
-        sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData';
-        rpcData = data;
-        break;
-      default:
-        throw new Error(`Invalid signing method ${signingMethod}`);
-    }
-
-    const provider = this.web3.currentProvider;
-    const sendAsync = promisify(provider[sendMethod]).bind(provider);
-    const response = await sendAsync({
-      method: rpcMethod,
-      params: [signer, rpcData],
-      jsonrpc: '2.0',
-      id: new Date().getTime(),
-    });
-    if (response.error) {
-      throw new Error(response.error.message);
-    }
-    return `0x${stripHexPrefix(response.result)}0${SIGNATURE_TYPES.NO_PREPEND}`;
   }
 
   private getOrderFlags(

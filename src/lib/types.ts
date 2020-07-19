@@ -65,6 +65,12 @@ export interface OrderState {
   filledAmount: BigNumber;
 }
 
+export enum SoloBridgeTransferMode {
+  SOME_TO_PERPETUAL = 0,
+  SOME_TO_SOLO = 1,
+  ALL_TO_PERPETUAL = 2,
+}
+
 // ============ Constants ============
 
 export const Networks = {
@@ -210,6 +216,21 @@ export interface MakerOracleMessage {
   price: Price;
   timestamp: BigNumber;
   signature: string;
+}
+
+export interface SoloBridgeTransfer {
+  account: address;
+  perpetual: address;
+  soloAccountNumber: BigNumberable;
+  soloMarketId: BigNumberable;
+  amount: BigNumberable;
+  transferMode: SoloBridgeTransferMode;
+  expiration?: BigNumberable;
+  salt?: BigNumberable;
+}
+
+export interface SignedSoloBridgeTransfer extends SoloBridgeTransfer {
+  typedSignature: string;
 }
 
 // ============ Helper Functions ============

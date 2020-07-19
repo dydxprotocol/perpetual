@@ -1,6 +1,16 @@
+import { promisify } from 'es6-promisify';
 import Web3 from 'web3';
-import { stripHexPrefix, combineHexStrings } from './BytesHelper';
-import { address } from './types';
+
+import {
+  addressesAreEqual,
+  combineHexStrings,
+  stripHexPrefix,
+} from './BytesHelper';
+import {
+  SigningMethod,
+  TypedSignature,
+  address,
+} from './types';
 
 export enum SIGNATURE_TYPES {
   NO_PREPEND = 0,
@@ -37,6 +47,20 @@ export function isValidSigType(
   }
 }
 
+/**
+ * Returns a signable EIP712 Hash of a struct, given the domain and struct hashes.
+ */
+export function getEIP712Hash(
+  domainHash: string,
+  structHash: string,
+): string {
+  return Web3.utils.soliditySha3(
+    { t: 'bytes2', v: '0x1901' },
+    { t: 'bytes32', v: domainHash },
+    { t: 'bytes32', v: structHash },
+  );
+}
+
 export function getPrependedHash(
   hash: string,
   sigType: SIGNATURE_TYPES,
@@ -57,6 +81,18 @@ export function getPrependedHash(
     default:
       throw Error(`invalid sigType ${sigType}`);
   }
+}
+
+/**
+ * Returns true if the hash has a non-null valid signature from a particular signer.
+ */
+export function hashHasValidSignature(
+  hash: string,
+  typedSignature: string,
+  expectedSigner: address,
+): boolean {
+  const signer = ecRecoverTypedSignature(hash, typedSignature);
+  return addressesAreEqual(signer, expectedSigner);
 }
 
 export function ecRecoverTypedSignature(
@@ -127,7 +163,7 @@ export function signatureToVRS(
 ): {
   v: string,
   r: string,
-  s:string,
+  s: string,
 } {
   const stripped = stripHexPrefix(signature);
 
@@ -140,4 +176,69 @@ export function signatureToVRS(
   const v = stripped.substr(128, 2);
 
   return { v, r, s };
+}
+
+export function signatureToSolidityStruct(
+  typedSignature: TypedSignature,
+): {
+  vType: string,
+  r: string;
+  s: string
+} {
+  const rawSignature = typedSignature.slice(0, 132);
+  const signatureType = typedSignature.slice(132, 134);
+  const { v, r, s } = signatureToVRS(rawSignature);
+  return {
+    vType: `0x${v}${signatureType}`,
+    r: `0x${r}`,
+    s: `0x${s}`,
+  };
+}
+
+export async function ethSignTypedDataInternal(
+  provider: any,
+  signer: string,
+  data: any,
+  signingMethod: SigningMethod,
+): Promise <TypedSignature> {
+  let sendMethod: string;
+  let rpcMethod: string;
+  let rpcData: any;
+
+  switch (signingMethod) {
+    case SigningMethod.TypedData:
+      sendMethod = 'send';
+      rpcMethod = 'eth_signTypedData';
+      rpcData = data;
+      break;
+    case SigningMethod.MetaMask:
+      sendMethod = 'sendAsync';
+      rpcMethod = 'eth_signTypedData_v3';
+      rpcData = JSON.stringify(data);
+      break;
+    case SigningMethod.MetaMaskLatest:
+      sendMethod = 'sendAsync';
+      rpcMethod = 'eth_signTypedData_v4';
+      rpcData = JSON.stringify(data);
+      break;
+    case SigningMethod.CoinbaseWallet:
+      sendMethod = 'sendAsync';
+      rpcMethod = 'eth_signTypedData';
+      rpcData = data;
+      break;
+    default:
+      throw new Error(`Invalid signing method ${signingMethod}`);
+  }
+
+  const sendAsync = promisify(provider[sendMethod]).bind(provider);
+  const response = await sendAsync({
+    method: rpcMethod,
+    params: [signer, rpcData],
+    jsonrpc: '2.0',
+    id: new Date().getTime(),
+  });
+  if (response.error) {
+    throw new Error(response.error.message);
+  }
+  return `0x${stripHexPrefix(response.result)}0${SIGNATURE_TYPES.NO_PREPEND}`;
 }

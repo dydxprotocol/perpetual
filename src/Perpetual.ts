@@ -37,6 +37,7 @@ import { Deleveraging } from './modules/Deleveraging';
 import { Liquidation } from './modules/Liquidation';
 import { CurrencyConverterProxy } from './modules/CurrencyConverterProxy';
 import { LiquidatorProxy } from './modules/LiquidatorProxy';
+import { SoloBridgeProxy } from './modules/SoloBridgeProxy';
 import { WethProxy } from './modules/WethProxy';
 import { Getters } from './modules/Getters';
 import { Margin } from './modules/Margin';
@@ -60,6 +61,7 @@ export class Perpetual {
   public liquidation: Liquidation;
   public currencyConverterProxy: CurrencyConverterProxy;
   public liquidatorProxy: LiquidatorProxy;
+  public soloBridgeProxy: SoloBridgeProxy;
   public wethProxy: WethProxy;
   public getters: Getters;
   public logs: Logs;
@@ -88,6 +90,7 @@ export class Perpetual {
     this.liquidation = new Liquidation(this.contracts);
     this.currencyConverterProxy = new CurrencyConverterProxy(this.contracts);
     this.liquidatorProxy = new LiquidatorProxy(this.contracts);
+    this.soloBridgeProxy = new SoloBridgeProxy(this.contracts, this.web3);
     this.wethProxy = new WethProxy(this.contracts);
     this.getters = new Getters(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);

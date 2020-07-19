@@ -29,7 +29,12 @@ const {
   getInsuranceFee,
   getDeleveragingOperatorAddress,
   getFundingRateProviderAddress,
+  getSoloAddress,
 } = require('./helpers');
+
+// ============ Constants ============
+
+const SOLO_USDC_MARKET = 2;
 
 // ============ Contracts ============
 
@@ -51,6 +56,7 @@ const P1MakerOracle = artifacts.require('P1MakerOracle');
 // Proxies
 const P1CurrencyConverterProxy = artifacts.require('P1CurrencyConverterProxy');
 const P1LiquidatorProxy = artifacts.require('P1LiquidatorProxy');
+const P1SoloBridgeProxy = artifacts.require('P1SoloBridgeProxy');
 const P1WethProxy = artifacts.require('P1WethProxy');
 
 // Test Contracts
@@ -60,6 +66,7 @@ const TestP1Funder = artifacts.require('Test_P1Funder');
 const TestP1Monolith = artifacts.require('Test_P1Monolith');
 const TestP1Oracle = artifacts.require('Test_P1Oracle');
 const TestP1Trader = artifacts.require('Test_P1Trader');
+const TestSolo = artifacts.require('Test_Solo');
 const TestToken = artifacts.require('Test_Token');
 const TestToken2 = artifacts.require('Test_Token2');
 const TestMakerOracle = artifacts.require('Test_MakerOracle');
@@ -88,6 +95,7 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestP1Monolith),
       deployer.deploy(TestP1Oracle),
       deployer.deploy(TestP1Trader),
+      deployer.deploy(TestSolo),
       deployer.deploy(TestToken),
       deployer.deploy(TestToken2),
       deployer.deploy(TestMakerOracle),
@@ -159,6 +167,11 @@ async function deployTraders(deployer, network) {
       getInsuranceFee(network),
     ),
     deployer.deploy(
+      P1SoloBridgeProxy,
+      getSoloAddress(network, TestSolo),
+      getChainId(network),
+    ),
+    deployer.deploy(
       P1WethProxy,
       getWethAddress(network, WETH9),
     ),
@@ -172,6 +185,10 @@ async function deployTraders(deployer, network) {
     const liquidatorProxy = await P1LiquidatorProxy.deployed();
     await liquidatorProxy.approveMaximumOnPerpetual();
 
+    const soloBridgeProxy = await P1SoloBridgeProxy.deployed();
+    await soloBridgeProxy.approveMaximumOnPerpetual(PerpetualProxy.address);
+    await soloBridgeProxy.approveMaximumOnSolo(SOLO_USDC_MARKET);
+
     const wethProxy = await P1WethProxy.deployed();
     await wethProxy.approveMaximumOnPerpetual(PerpetualProxy.address);
   }
@@ -184,6 +201,7 @@ async function deployTraders(deployer, network) {
     perpetual.setGlobalOperator(P1Liquidation.address, true),
     perpetual.setGlobalOperator(P1CurrencyConverterProxy.address, true),
     perpetual.setGlobalOperator(P1LiquidatorProxy.address, true),
+    perpetual.setGlobalOperator(P1SoloBridgeProxy.address, true),
     perpetual.setGlobalOperator(P1WethProxy.address, true),
   ]);
   if (isDevNetwork(network)) {
