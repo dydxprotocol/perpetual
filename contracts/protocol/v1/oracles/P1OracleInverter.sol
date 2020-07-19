@@ -46,6 +46,13 @@ contract P1OracleInverter is
     // A constant factor to adjust the price by, as a fixed-point number with 18 decimal places.
     uint256 public _ADJUSTMENT_;
 
+    // Compact storage for the above parameters.
+    mapping (address => bytes32) public _MAPPING_;
+
+    // ============ Constants ============
+
+    bytes32 private constant ADJUSTMENT_MASK = bytes32(uint256((1 << 96) - 1));
+
     // ============ Constructor ============
 
     constructor(
@@ -58,6 +65,9 @@ contract P1OracleInverter is
         _ORACLE_ = oracle;
         _READER_ = reader;
         _ADJUSTMENT_ = adjustment;
+
+        bytes32 oracleAndAdjustment = bytes32(bytes20(oracle)) | bytes32(adjustment);
+        _MAPPING_[reader] = oracleAndAdjustment;
     }
 
     // ============ Public Functions ============
@@ -72,13 +82,27 @@ contract P1OracleInverter is
         view
         returns (uint256)
     {
+        bytes32 oracleAndAdjustment = _MAPPING_[msg.sender];
         require(
-            msg.sender == _READER_,
+            oracleAndAdjustment != bytes32(0),
             "P1OracleInverter: Sender not authorized to get price"
         );
-        uint256 rawPrice = I_P1Oracle(_ORACLE_).getPrice();
+        (address oracle, uint256 adjustment) = splitOracleAndAdjustment(oracleAndAdjustment);
+        uint256 rawPrice = I_P1Oracle(oracle).getPrice();
         uint256 invertedPrice = rawPrice.baseReciprocal();
-        uint256 result = invertedPrice.baseMul(_ADJUSTMENT_);
+        uint256 result = invertedPrice.baseMul(adjustment);
         return result;
+    }
+
+    function splitOracleAndAdjustment(
+        bytes32 oracleAndAdjustment
+    )
+        private
+        pure
+        returns (address, uint256)
+    {
+        address oracle = address(bytes20(oracleAndAdjustment));
+        uint256 adjustment = uint256(oracleAndAdjustment & ADJUSTMENT_MASK);
+        return (oracle, adjustment);
     }
 }
