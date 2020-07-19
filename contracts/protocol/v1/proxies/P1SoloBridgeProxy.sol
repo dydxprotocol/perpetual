@@ -185,7 +185,7 @@ contract P1SoloBridgeProxy is
      *
      * @param  transfer   The transfer to execute.
      * @param  signature  (Optional) Signature for the transfer, will be checked if sender does not
-     *                    have withdraw permissions for the account.
+     *                    have permission to operate the account.
      */
     function bridgeTransfer(
         Transfer calldata transfer,
@@ -212,15 +212,15 @@ contract P1SoloBridgeProxy is
             tokenAddress
         );
 
-        // Verify permissions: Either msg.sender must have withdraw permissions or the signature
-        // must be valid.
-        bool hasWithdrawPermissions = _hasWithdrawPermissions(
+        // Verify permissions: Either msg.sender must be a valid operator of the account or the
+        // signature must be valid.
+        bool isValidOperator = _isValidOperator(
             solo,
             perpetual,
             transfer,
             toPerpetual
         );
-        if (!hasWithdrawPermissions) {
+        if (!isValidOperator) {
             _verifySignature(
                 transfer,
                 transferHash,
@@ -293,7 +293,7 @@ contract P1SoloBridgeProxy is
                 transferMode == TransferMode.AllToPerpetual
             );
             require(
-                _hasWithdrawPermissions(
+                _isValidOperator(
                     solo,
                     perpetual,
                     transfer,
@@ -383,14 +383,14 @@ contract P1SoloBridgeProxy is
 
         require(
             TypedSignature.recover(transferHash, signature) == transfer.account,
-            "Sender does not have withdraw permissions and signature is invalid"
+            "Sender does not have account permissions and signature is invalid"
         );
     }
 
     /**
-     * Check whether msg.sender has withdraw permissions.
+     * Check whether msg.sender has permission to operate the account.
      */
-    function _hasWithdrawPermissions(
+    function _isValidOperator(
         I_Solo solo,
         I_PerpetualV1 perpetual,
         Transfer memory transfer,
@@ -405,12 +405,16 @@ contract P1SoloBridgeProxy is
             return true;
         }
 
-        if (toPerpetual) {
-            return solo.getIsLocalOperator(transfer.account, msg.sender) ||
-                solo.getIsGlobalOperator(msg.sender);
-        } else {
-            return perpetual.hasAccountPermissions(transfer.account, msg.sender);
-        }
+        bool isSoloOperator =
+            solo.getIsGlobalOperator(msg.sender) ||
+            solo.getIsLocalOperator(transfer.account, msg.sender);
+
+        // Solo only accepts deposits from valid operators of an account, so require Solo operator
+        // permissions for either transfer direction. Only require Perpetual operator permissions to
+        // withdraw from Perpetual.
+        return
+            isSoloOperator &&
+            (toPerpetual || perpetual.hasAccountPermissions(transfer.account, msg.sender));
     }
 
     /**
