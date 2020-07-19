@@ -363,7 +363,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
               defaultTransferToPerpetual,
               { from: otherAddress },
             ),
-            'Sender does not have withdraw permissions and signature is invalid',
+            'Sender does not have account permissions and signature is invalid',
           );
         });
 
@@ -377,7 +377,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
               defaultTransferToPerpetual,
               { from: otherAddress },
             ),
-            'Sender does not have withdraw permissions and signature is invalid',
+            'Sender does not have account permissions and signature is invalid',
           );
         });
 
@@ -391,7 +391,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
               defaultTransferToPerpetual,
               { from: otherAddress },
             ),
-            'Sender does not have withdraw permissions and signature is invalid',
+            'Sender does not have account permissions and signature is invalid',
           );
         });
       });
@@ -540,9 +540,10 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
           await expectMarginBalances(ctx, txResult, [account], [0]);
         });
 
-        it('succeeds for Perpetual local operator', async () => {
+        it('succeeds for Perpetual and Solo local operator', async () => {
           // Set up.
           await ctx.perpetual.operator.setLocalOperator(otherAddress, true, { from: account });
+          await ctx.perpetual.testing.solo.setIsLocalOperator(account, otherAddress, true);
 
           // Call the function.
           const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
@@ -562,9 +563,10 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
           await expectMarginBalances(ctx, txResult, [account], [0]);
         });
 
-        it('succeeds for Perpetual global operator', async () => {
+        it('succeeds for Perpetual and Solo global operator', async () => {
           // Set up.
           await ctx.perpetual.admin.setGlobalOperator(otherAddress, true, { from: admin });
+          await ctx.perpetual.testing.solo.setIsGlobalOperator(otherAddress, true);
 
           // Call the function.
           const txResult = await ctx.perpetual.soloBridgeProxy.bridgeTransfer(
@@ -590,7 +592,35 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
               defaultTransferToSolo,
               { from: otherAddress },
             ),
-            'Sender does not have withdraw permissions and signature is invalid',
+            'Sender does not have account permissions and signature is invalid',
+          );
+        });
+
+        it('fails for Perpetual local operator', async () => {
+          // Set up.
+          await ctx.perpetual.operator.setLocalOperator(otherAddress, true, { from: account });
+
+          // Call the function.
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+              defaultTransferToSolo,
+              { from: otherAddress },
+            ),
+            'Sender does not have account permissions and signature is invalid',
+          );
+        });
+
+        it('fails for Perpetual global operator', async () => {
+          // Set up.
+          await ctx.perpetual.admin.setGlobalOperator(otherAddress, true, { from: admin });
+
+          // Call the function.
+          await expectThrow(
+            ctx.perpetual.soloBridgeProxy.bridgeTransfer(
+              defaultTransferToSolo,
+              { from: otherAddress },
+            ),
+            'Sender does not have account permissions and signature is invalid',
           );
         });
 
@@ -604,7 +634,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
               defaultTransferToSolo,
               { from: otherAddress },
             ),
-            'Sender does not have withdraw permissions and signature is invalid',
+            'Sender does not have account permissions and signature is invalid',
           );
         });
 
@@ -618,7 +648,7 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
               defaultTransferToSolo,
               { from: otherAddress },
             ),
-            'Sender does not have withdraw permissions and signature is invalid',
+            'Sender does not have account permissions and signature is invalid',
           );
         });
       });
@@ -771,9 +801,10 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         );
       });
 
-      it('succeeds for Perpetual local operator', async () => {
+      it('succeeds for Perpetual and Solo local operator', async () => {
         // Set up.
         await ctx.perpetual.operator.setLocalOperator(otherAddress, true, { from: account });
+        await ctx.perpetual.testing.solo.setIsLocalOperator(account, otherAddress, true);
 
         // Call the function.
         const txResult = await ctx.perpetual.soloBridgeProxy.invalidateSignature(
@@ -792,9 +823,10 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
         );
       });
 
-      it('succeeds for Perpetual global operator', async () => {
+      it('succeeds for Perpetual and Solo global operator', async () => {
         // Set up.
         await ctx.perpetual.admin.setGlobalOperator(otherAddress, true, { from: admin });
+        await ctx.perpetual.testing.solo.setIsGlobalOperator(otherAddress, true);
 
         // Call the function.
         const txResult = await ctx.perpetual.soloBridgeProxy.invalidateSignature(
@@ -814,6 +846,34 @@ perpetualDescribe('P1SoloBridgeProxy', init, (ctx: ITestContext) => {
       });
 
       it('fails for non-owner non-operator account', async () => {
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.invalidateSignature(
+            defaultTransferToSolo,
+            { from: otherAddress },
+          ),
+          'Sender does not have permission to invalidate',
+        );
+      });
+
+      it('fails for Perpetual local operator', async () => {
+        // Set up.
+        await ctx.perpetual.operator.setLocalOperator(otherAddress, true, { from: account });
+
+        // Call the function.
+        await expectThrow(
+          ctx.perpetual.soloBridgeProxy.invalidateSignature(
+            defaultTransferToSolo,
+            { from: otherAddress },
+          ),
+          'Sender does not have permission to invalidate',
+        );
+      });
+
+      it('fails for Perpetual global operator', async () => {
+        // Set up.
+        await ctx.perpetual.admin.setGlobalOperator(otherAddress, true, { from: admin });
+
+        // Call the function.
         await expectThrow(
           ctx.perpetual.soloBridgeProxy.invalidateSignature(
             defaultTransferToSolo,
