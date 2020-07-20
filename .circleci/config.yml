@@ -47,7 +47,7 @@ jobs:
           name: Lint
           command: npm run lint
   coverage:
-    machine:
+    docker:
       - image: dydxprotocol/node:10.16.3-alpine
     working_directory: ~/build
     steps:
@@ -55,7 +55,7 @@ jobs:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Coverage
-          command: python util/fix_contracts_for_coverage.py && npm run coverage
+          command: NODE_OPTIONS=--max_old_space_size=4096 npm run coverage
           no_output_timeout: 60m
       - run:
           name: Coveralls
