@@ -22,6 +22,7 @@ import {
 } from '../lib/SignatureHelper';
 import {
   Balance,
+  BigNumberable,
   CallOptions,
   Fee,
   Order,
@@ -32,7 +33,6 @@ import {
   SigningMethod,
   TypedSignature,
   address,
-  BaseValue,
 } from '../lib/types';
 import { ORDER_FLAGS } from '../lib/Constants';
 
@@ -176,35 +176,51 @@ export class Orders {
   ): BigNumber {
     const runningBalance: Balance = initialBalance.copy();
 
-    // For each order, determine the effect on the balance by following the math in P1Orders.sol.
+    // For each order, determine the effect on the balance by following the smart contract math.
     for (let i = 0; i < orders.length; i += 1) {
       const order = orders[i];
-      let positionFillAmount;
-      if (order.isBuy) {
-        positionFillAmount = makerTokenFillAmounts[i].dividedBy(order.limitPrice.value);
-      } else {
-        positionFillAmount = makerTokenFillAmounts[i];
-      }
+
+      const baseTokenFillAmount = order.isBuy
+        ? makerTokenFillAmounts[i].dividedBy(order.limitPrice.value)
+        : makerTokenFillAmounts[i];
 
       // Assume orders are filled at the limit price and limit fee.
-      // Order fee is denoted as a percentage of execution price.
-      const fee: BaseValue = order.limitFee.times(order.limitPrice.value);
-      const marginPerPosition: BaseValue = order.isBuy
-        ? order.limitPrice.plus(fee.value)
-        : order.limitPrice.minus(fee.value);
+      const { marginDelta, positionDelta } = this.getBalanceUpdatesAfterFillingOrder(
+        baseTokenFillAmount,
+        order.limitPrice,
+        order.limitFee,
+        order.isBuy,
+      );
 
-      const marginAmount: BigNumber = positionFillAmount.times(marginPerPosition.value);
-
-      if (order.isBuy) {
-        runningBalance.margin = runningBalance.margin.minus(marginAmount);
-        runningBalance.position = runningBalance.position.plus(positionFillAmount);
-      } else {
-        runningBalance.margin = runningBalance.margin.plus(marginAmount);
-        runningBalance.position = runningBalance.position.minus(positionFillAmount);
-      }
+      runningBalance.margin = runningBalance.margin.plus(marginDelta);
+      runningBalance.position = runningBalance.position.plus(positionDelta);
     }
 
     return runningBalance.getCollateralization(oraclePrice);
+  }
+
+  /**
+   * Calculate the effect of filling an order on the maker's balances.
+   */
+  public getBalanceUpdatesAfterFillingOrder(
+    fillAmount: BigNumberable,
+    fillPrice: Price,
+    fillFee: Fee,
+    isBuy: boolean,
+  ): {
+    marginDelta: BigNumber,
+    positionDelta: BigNumber,
+  } {
+    const amount = new BigNumber(fillAmount);
+    const feeFactor = (isBuy ? fillFee : fillFee.negated()).value.plus(1);
+    const marginAmount = amount.times(fillPrice.value).times(feeFactor);
+    const positionAmount = amount;
+    const marginDelta = isBuy ? marginAmount.negated() : marginAmount;
+    const positionDelta = isBuy ? positionAmount : positionAmount.negated();
+    return {
+      marginDelta,
+      positionDelta,
+    };
   }
 
   public getFeeForOrder(

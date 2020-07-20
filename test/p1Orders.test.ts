@@ -143,45 +143,98 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
     });
 
-    it('Estimates collateralization after executing orders', () => {
+    it('Estimates collateralization after executing buys', async () => {
       // Buy 1e18 at price of 987.65432 with fee of 0.002.
-      // position: 1e18 --> 1000e18 value at price of 1000
-      // margin: -987.65632e18
-      const ratio1 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+      // position: 1e18 -> worth 1200e18 of margin at price of 1200
+      // margin: -987.65432e18 * 1.002
+      const oraclePrice = new Price(1200);
+      const marginCost = orderAmount.times(limitPrice.value);
+      const ratio = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
-        new Price(1000),
+        oraclePrice,
         [defaultOrder, defaultOrder, defaultOrder],
-        [orderAmount.div(3), orderAmount.div(2), orderAmount.div(6)],
+        [marginCost.div(3), marginCost.div(2), marginCost.div(6)],
       );
-      expectBN(ratio1).to.equal(new BigNumber(1000).div(987.65432 * 1.002));
 
-      const ratio2 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+      // Execute the trade on the smart contract.
+      // First, withdraw maker margin so it has zero initial balance.
+      const { maker } = defaultOrder;
+      await Promise.all([
+        ctx.perpetual.margin.withdraw(maker, maker, initialMargin, { from: maker }),
+        setOraclePrice(ctx, oraclePrice),
+      ]);
+      await fillOrder();
+      const balance = await ctx.perpetual.getters.getAccountBalance(maker);
+      expectBN(ratio, 'simulated vs. on-chain').to.equal(balance.getCollateralization(oraclePrice));
+
+      // Compare with the expected result.
+      const expectedRatio = new BigNumber(1200).div(987.65432 * 1.002);
+      expectBN(ratio, 'simulated vs. expected').to.equal(expectedRatio);
+    });
+
+    it('Estimates collateralization after executing sells', async () => {
+      // Sell 1e18 at price of 987.65432 with fee of 0.002.
+      // position: -1e18 -> worth -200e18 of margin at price of 200
+      // margin: 987.65432e18 * 0.998
+      const oraclePrice = new Price(200);
+      const sellOrder = await getModifiedOrder({ isBuy: false });
+      const ratio = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
-        new Price(200),
-        [defaultOrder, defaultOrder, defaultOrder],
+        oraclePrice,
+        [sellOrder, sellOrder, sellOrder],
         [orderAmount.div(3), orderAmount.div(2), orderAmount.div(6)],
       );
-      expectBN(ratio2).to.equal(new BigNumber(200).div(987.65432 * 1.002));
+
+      // Execute the trade on the smart contract.
+      // First, withdraw maker margin so it has zero initial balance.
+      const { maker } = defaultOrder;
+      await Promise.all([
+        ctx.perpetual.margin.withdraw(maker, maker, initialMargin, { from: maker }),
+        setOraclePrice(ctx, oraclePrice),
+      ]);
+      await fillOrder(sellOrder);
+      const balance = await ctx.perpetual.getters.getAccountBalance(maker);
+      expectBN(ratio, 'simulated vs. on-chain').to.equal(balance.getCollateralization(oraclePrice));
+
+      // Compare with the expected result.
+      const expectedRatio = new BigNumber(987.65432 * 0.998).div(200);
+      expectBN(ratio, 'simulated vs. expected').to.equal(expectedRatio);
+    });
+
+    it('Estimates collateralization when positive balance is zero', async () => {
+      const order = await getModifiedOrder({ limitPrice: limitPrice.times(2) });
+      const marginCost = orderAmount.times(limitPrice.value.times(2));
+      const ratio = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+        new Balance(initialMargin, orderAmount.negated()),
+        limitPrice,
+        [order],
+        [marginCost],
+      );
+      expectBN(ratio).to.equal(0);
     });
 
     it('Estimates collateralization when negative balance is zero', () => {
-      const price = new Price(100);
+      const marginCost = orderAmount.times(limitPrice.value);
+      const ratio = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+        new Balance(initialMargin, orderAmount),
+        limitPrice,
+        [defaultOrder],
+        [marginCost.div(2)],
+      );
+      expectBN(ratio).to.equal(Infinity);
+    });
 
+    it('Estimates collateralization when balance is zero', async () => {
+      const buyOrder = await getModifiedOrder({ limitFee: new Fee(0) });
+      const sellOrder = await getModifiedOrder({ isBuy: false, limitFee: new Fee(0) });
+      const marginCost = orderAmount.times(limitPrice.value);
       const ratio1 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
-        price,
-        [],
-        [],
+        limitPrice,
+        [buyOrder, sellOrder],
+        [marginCost, orderAmount],
       );
       expectBN(ratio1).to.equal(Infinity);
-
-      const ratio2 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
-        new Balance(initialMargin, orderAmount),
-        price,
-        [defaultOrder],
-        [orderAmount.div(2)],
-      );
-      expectBN(ratio2).to.equal(Infinity);
     });
   });
 
@@ -552,7 +605,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     describe('in decrease-only mode', () => {
       it('fills a bid', async () => {
         // Give the maker a short position.
-        const { limitFee, limitPrice, maker, taker } = defaultOrder;
+        const { limitFee, maker, taker } = defaultOrder;
         const fee = limitFee.times(limitPrice.value);
         const cost = limitPrice.value.plus(fee.value).times(orderAmount);
         await sell(ctx, maker, taker, orderAmount, cost);
@@ -563,7 +616,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
 
       it('fills an ask', async () => {
         // Give the maker a long position.
-        const { limitFee, limitPrice, maker, taker } = defaultOrder;
+        const { limitFee, maker, taker } = defaultOrder;
         const fee = limitFee.times(limitPrice.value).negated();
         const cost = limitPrice.value.plus(fee.value).times(orderAmount);
         await buy(ctx, maker, taker, orderAmount, cost);
@@ -684,20 +737,22 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       )
       .commit({ from: sender });
 
-    // Calculate the effect of filling the order on the maker and taker's balances.
-    const feeFactor = (order.isBuy ? fillFee : fillFee.negated()).value.plus(1);
-    const marginAmount = fillAmount.times(fillPrice.value).times(feeFactor);
-    const positionAmount = fillAmount;
-    const makerMarginDelta = order.isBuy ? marginAmount.negated() : marginAmount;
-    const makerPositionDelta = order.isBuy ? positionAmount : positionAmount.negated();
-
     // Check final balances.
+    const {
+      marginDelta,
+      positionDelta,
+    } = ctx.perpetual.orders.getBalanceUpdatesAfterFillingOrder(
+      fillAmount,
+      fillPrice,
+      fillFee,
+      order.isBuy,
+    );
     await expectBalances(
       ctx,
       txResult,
       [order.maker, order.taker],
-      [makerMargin.plus(makerMarginDelta), takerMargin.minus(makerMarginDelta)],
-      [makerPosition.plus(makerPositionDelta), takerPosition.minus(makerPositionDelta)],
+      [makerMargin.plus(marginDelta), takerMargin.minus(marginDelta)],
+      [makerPosition.plus(positionDelta), takerPosition.minus(positionDelta)],
     );
 
     // Check logs.
