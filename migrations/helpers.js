@@ -107,6 +107,16 @@ function getOracleAdjustment(network) {
   throw new Error('Cannot find oracle adjustment');
 }
 
+function getInverseOracleAdjustment(network) {
+  if (isMainnet(network) || isKovan(network)) {
+    return '1000000000000000000'; // 1e18
+  }
+  if (isDevNetwork(network)) {
+    return '10000000000000000'; // 0.01e18
+  }
+  throw new Error('Cannot find inverse oracle adjustment');
+}
+
 function getTokenAddress(network) {
   if (isMainnet(network)) {
     return '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'; // USDC
@@ -200,6 +210,7 @@ module.exports = {
   getMakerPriceOracleAddress,
   getDeployerAddress,
   getOracleAdjustment,
+  getInverseOracleAdjustment,
   getTokenAddress,
   getWethAddress,
   getMinCollateralization,

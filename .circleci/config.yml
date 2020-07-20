@@ -56,6 +56,8 @@ jobs:
       - run:
           name: Coverage
           command: python util/fix_contracts_for_coverage.py && npm run coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
           no_output_timeout: 60m
       - run:
           name: Coveralls

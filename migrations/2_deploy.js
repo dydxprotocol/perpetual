@@ -22,6 +22,7 @@ const {
   getMakerPriceOracleAddress,
   getDeployerAddress,
   getOracleAdjustment,
+  getInverseOracleAdjustment,
   getTokenAddress,
   getWethAddress,
   getMinCollateralization,
@@ -52,6 +53,7 @@ const P1Liquidation = artifacts.require('P1Liquidation');
 
 // Price Oracles
 const P1MakerOracle = artifacts.require('P1MakerOracle');
+const P1OracleInverter = artifacts.require('P1OracleInverter');
 
 // Proxies
 const P1CurrencyConverterProxy = artifacts.require('P1CurrencyConverterProxy');
@@ -115,6 +117,7 @@ async function deployProtocol(deployer, network, accounts) {
 }
 
 async function deployOracles(deployer, network) {
+  // Deploy funding oracle and Maker oracle wrapper.
   await Promise.all([
     deployer.deploy(
       P1FundingOracle,
@@ -123,16 +126,30 @@ async function deployOracles(deployer, network) {
     deployer.deploy(P1MakerOracle),
   ]);
 
+  // Deploy oracle inverter.
+  await deployer.deploy(
+    P1OracleInverter,
+    P1MakerOracle.address,
+    PerpetualProxy.address, // TODO: Supply inverse perpetual address.
+    getInverseOracleAdjustment(network),
+  );
+
   const oracle = await P1MakerOracle.deployed();
   const makerOracle = getMakerPriceOracleAddress(network, TestMakerOracle);
-  await oracle.setRoute(
-    PerpetualProxy.address,
-    makerOracle,
-  );
-  await oracle.setAdjustment(
-    makerOracle,
-    getOracleAdjustment(network),
-  );
+  await Promise.all([
+    oracle.setRoute(
+      PerpetualProxy.address,
+      makerOracle,
+    ),
+    oracle.setRoute(
+      P1OracleInverter.address,
+      makerOracle,
+    ),
+    oracle.setAdjustment(
+      makerOracle,
+      getOracleAdjustment(network),
+    ),
+  ]);
 }
 
 async function deployTraders(deployer, network) {

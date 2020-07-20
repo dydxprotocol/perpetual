@@ -35,15 +35,20 @@ perpetualDescribe('Solidity libraries', init, (ctx: ITestContext) => {
     });
 
     it('baseMul()', async () => {
-      // Base value has implied decimals so it can encode extra precision.
       expectBN(await ctx.perpetual.testing.lib.baseMul(
         23456,
         new BaseValue('123.456').toSolidity(),
       )).to.equal(2895783);
     });
 
+    it('baseDivMul()', async () => {
+      expectBN(await ctx.perpetual.testing.lib.baseDivMul(
+        new BaseValue(23456).toSolidity(),
+        new BaseValue('123.456').toSolidity(),
+      )).to.equal(new BaseValue('2895783.936').toSolidity());
+    });
+
     it('baseMulRoundUp()', async () => {
-      // Base value has implied decimals so it can encode extra precision.
       expectBN(await ctx.perpetual.testing.lib.baseMulRoundUp(
         23456,
         new BaseValue('123.456').toSolidity(),
@@ -59,11 +64,41 @@ perpetualDescribe('Solidity libraries', init, (ctx: ITestContext) => {
         new BaseValue('5').toSolidity(),
       )).to.equal(0);
 
-      // If basedValue is zero.
+      // If baseValue is zero.
       expectBN(await ctx.perpetual.testing.lib.baseMulRoundUp(
         5,
         new BaseValue('0').toSolidity(),
       )).to.equal(0);
+    });
+
+    it('baseDiv()', async () => {
+      expectBN(await ctx.perpetual.testing.lib.baseDiv(
+        2895783,
+        new BaseValue('123.456').toSolidity(),
+      )).to.equal(23455);
+    });
+
+    it('baseDiv() reverts if denominator is zero', async () => {
+      await expectThrow(
+        ctx.perpetual.testing.lib.baseDiv(2895783, 0),
+        'SafeMath: division by zero',
+      );
+    });
+
+    it('baseReciprocal()', async () => {
+      expectBN(await ctx.perpetual.testing.lib.baseReciprocal(
+        new BaseValue('123.456').toSolidity(),
+      )).to.equal(new BaseValue('0.008100051840331778').toSolidity());
+      expectBN(await ctx.perpetual.testing.lib.baseReciprocal(
+        new BaseValue('0.00810005184').toSolidity(),
+      )).to.equal(new BaseValue('123.456000005056757760').toSolidity());
+    });
+
+    it('baseReciprocal() reverts if denominator is zero', async () => {
+      await expectThrow(
+        ctx.perpetual.testing.lib.baseReciprocal(0),
+        'SafeMath: division by zero',
+      );
     });
   });
 

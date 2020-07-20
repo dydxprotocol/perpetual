@@ -91,4 +91,32 @@ library BaseMath {
         }
         return value.mul(baseValue).sub(1).div(BASE).add(1);
     }
+
+    /**
+     * @dev Divide a value by a base value (result is rounded down).
+     */
+    function baseDiv(
+        uint256 value,
+        uint256 baseValue
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return value.mul(BASE).div(baseValue);
+    }
+
+    /**
+     * @dev Returns a base value representing the reciprocal of another base value (result is
+     *  rounded down).
+     */
+    function baseReciprocal(
+        uint256 baseValue
+    )
+        internal
+        pure
+        returns (uint256)
+    {
+        return baseDiv(BASE, baseValue);
+    }
 }

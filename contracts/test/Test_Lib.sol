@@ -54,24 +54,56 @@ contract Test_Lib is
 
     function baseMul(
         uint256 value,
-        uint256 basedValue
+        uint256 baseValue
     )
         external
         pure
         returns (uint256)
     {
-        return BaseMath.baseMul(value, basedValue);
+        return BaseMath.baseMul(value, baseValue);
+    }
+
+    function baseDivMul(
+        uint256 value,
+        uint256 baseValue
+    )
+        external
+        pure
+        returns (uint256)
+    {
+        return BaseMath.baseDivMul(value, baseValue);
     }
 
     function baseMulRoundUp(
         uint256 value,
-        uint256 basedValue
+        uint256 baseValue
     )
         external
         pure
         returns (uint256)
     {
-        return BaseMath.baseMulRoundUp(value, basedValue);
+        return BaseMath.baseMulRoundUp(value, baseValue);
+    }
+
+    function baseDiv(
+        uint256 value,
+        uint256 baseValue
+    )
+        external
+        pure
+        returns (uint256)
+    {
+        return BaseMath.baseDiv(value, baseValue);
+    }
+
+    function baseReciprocal(
+        uint256 baseValue
+    )
+        external
+        pure
+        returns (uint256)
+    {
+        return BaseMath.baseReciprocal(baseValue);
     }
 
     // ============ Math.sol ============

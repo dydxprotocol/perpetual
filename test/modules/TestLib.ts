@@ -56,6 +56,21 @@ export class TestLib {
     return new BigNumber(result);
   }
 
+  public async baseDivMul(
+    value: BigNumberable,
+    baseValue: BigNumberable,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: string = await this.contracts.call(
+      this.contracts.testLib.methods.baseDivMul(
+        new BigNumber(value).toFixed(0),
+        new BigNumber(baseValue).toFixed(0),
+      ),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
   public async baseMulRoundUp(
     value: BigNumberable,
     baseValue: BigNumberable,
@@ -64,6 +79,34 @@ export class TestLib {
     const result: string = await this.contracts.call(
       this.contracts.testLib.methods.baseMulRoundUp(
         new BigNumber(value).toFixed(0),
+        new BigNumber(baseValue).toFixed(0),
+      ),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
+  public async baseDiv(
+    value: BigNumberable,
+    baseValue: BigNumberable,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: string = await this.contracts.call(
+      this.contracts.testLib.methods.baseDiv(
+        new BigNumber(value).toFixed(0),
+        new BigNumber(baseValue).toFixed(0),
+      ),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
+  public async baseReciprocal(
+    baseValue: BigNumberable,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: string = await this.contracts.call(
+      this.contracts.testLib.methods.baseReciprocal(
         new BigNumber(baseValue).toFixed(0),
       ),
       options,
