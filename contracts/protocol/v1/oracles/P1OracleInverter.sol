@@ -49,16 +49,12 @@ contract P1OracleInverter is
     // Compact storage for the above parameters.
     mapping (address => bytes32) public _MAPPING_;
 
-    // ============ Constants ============
-
-    bytes32 private constant ADJUSTMENT_MASK = bytes32(uint256((1 << 96) - 1));
-
     // ============ Constructor ============
 
     constructor(
         address oracle,
         address reader,
-        uint256 adjustment
+        uint96 adjustment
     )
         public
     {
@@ -66,7 +62,7 @@ contract P1OracleInverter is
         _READER_ = reader;
         _ADJUSTMENT_ = adjustment;
 
-        bytes32 oracleAndAdjustment = bytes32(bytes20(oracle)) | bytes32(adjustment);
+        bytes32 oracleAndAdjustment = bytes32(bytes20(oracle)) | bytes32(uint256(adjustment));
         _MAPPING_[reader] = oracleAndAdjustment;
     }
 
@@ -102,7 +98,7 @@ contract P1OracleInverter is
         returns (address, uint256)
     {
         address oracle = address(bytes20(oracleAndAdjustment));
-        uint256 adjustment = uint256(oracleAndAdjustment & ADJUSTMENT_MASK);
+        uint256 adjustment = uint256(uint96(uint256(oracleAndAdjustment)));
         return (oracle, adjustment);
     }
 }
