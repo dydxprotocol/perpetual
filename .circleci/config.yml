@@ -55,7 +55,9 @@ jobs:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
       - run:
           name: Coverage
-          command: NODE_OPTIONS=--max_old_space_size=4096 npm run coverage
+          command: python util/fix_contracts_for_coverage.py && npm run coverage
+          environment:
+            NODE_OPTIONS: --max_old_space_size=4096
           no_output_timeout: 60m
       - run:
           name: Coveralls
