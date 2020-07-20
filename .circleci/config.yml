@@ -47,7 +47,7 @@ jobs:
           name: Lint
           command: npm run lint
   coverage:
-    docker:
+    machine:
       - image: dydxprotocol/node:10.16.3-alpine
     working_directory: ~/build
     steps:
