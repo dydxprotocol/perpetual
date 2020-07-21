@@ -242,7 +242,7 @@ contract P1InverseOrders is
         );
         _FILLED_AMOUNT_[orderHash] = newFilledAmount;
 
-        // Inverse perpetual: Fill amounts are denoted in base currency (the margin currency).
+        // Inverse perpetual: The fill amount is denoted in quote currency (position).
         emit LogOrderFilled(
             orderHash,
             tradeData.order.flags,
@@ -253,20 +253,24 @@ contract P1InverseOrders is
         // `isBuyOrder` is from the maker's perspective, and relative to the base currency.
         bool isBuyOrder = _isBuy(tradeData.order);
 
-        // Inverse perpetual: The fee is paid (or received) in the margin currency, which in this
-        // case is the base currency.
-        uint256 feeAmount = tradeData.fill.amount.baseMul(tradeData.fill.fee);
-        uint256 marginAmount = (isBuyOrder == tradeData.fill.isNegativeFee)
-            ? tradeData.fill.amount.add(feeAmount)
-            : tradeData.fill.amount.sub(feeAmount);
-        uint256 positionAmount = tradeData.fill.amount.baseMul(tradeData.fill.price);
+        // Inverse perpetual:
+        // - When isBuy is true, maker is buying base currency (margin) & selling quote (position).
+        // - The fill amount is denoted in quote currency (position).
+        // - Prices are denoted in quote currency per unit of base currency (position per margin).
+        // - The fee is paid (or received) in base currency (margin).
+        uint256 feeFactor = (isBuyOrder == tradeData.fill.isNegativeFee)
+            ? BaseMath.base().add(tradeData.fill.fee)
+            : BaseMath.base().sub(tradeData.fill.fee);
+        uint256 marginAmount = tradeData.fill.amount
+            .baseDiv(tradeData.fill.price)
+            .baseMul(feeFactor);
 
-        // Inverse perpetual: Buying the base currency means selling position and selling the base
-        // currency means buying position. Note that `isBuy` in the TradeResult is from the taker's
-        // perspective, and relative to the position currency.
+        // Inverse perpetual: Note that `isBuy` in the order is from the maker's perspective and
+        // relative to the base currency, whereas `isBuy` in the TradeResult is from the taker's
+        // perspective, and relative to the quote currency.
         return P1Types.TradeResult({
             marginAmount: marginAmount,
-            positionAmount: positionAmount,
+            positionAmount: tradeData.fill.amount,
             isBuy: isBuyOrder,
             traderFlags: TRADER_FLAG_ORDERS
         });
@@ -426,7 +430,7 @@ contract P1InverseOrders is
             // Inverse perpetual: Buying the base currency means selling position and selling the
             // base currency means buying position.
             require(
-                isBuyOrder != balance.positionIsPositive
+                isBuyOrder == balance.positionIsPositive
                 && tradeData.fill.amount <= balance.position,
                 "Fill does not decrease position"
             );

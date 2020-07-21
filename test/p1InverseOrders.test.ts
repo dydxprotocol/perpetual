@@ -25,7 +25,12 @@ import initializePerpetual from './helpers/initializePerpetual';
 import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 
-const orderAmount = new BigNumber('1e18');
+// Inverse perpetual:
+// - When isBuy is true, the maker is buying base currency(margin) and selling quote(position).
+// - The fill amount is denoted in quote currency(position).
+// - Prices are denoted in quote currency per unit of base currency(position per margin).
+// - The fee is paid(or received) in base currency(margin).
+const orderAmount = new BigNumber('987.65432e18');
 const limitPrice = new Price('987.65432');
 const defaultOrder: Order = {
   limitPrice,
@@ -39,7 +44,7 @@ const defaultOrder: Order = {
   expiration: INTEGERS.ONE_YEAR_IN_SECONDS.times(100),
   salt: new BigNumber('425'),
 };
-const initialMargin = orderAmount.times(2);
+const initialMargin = orderAmount.dividedBy(limitPrice.value).times(2);
 const fullFlagOrder: Order = {
   ...defaultOrder,
   isDecreaseOnly: true,
@@ -87,59 +92,66 @@ async function init(ctx: ITestContext) {
 perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
   describe('off-chain helpers', () => {
     it('Estimates collateralization after executing buys', async () => {
-      // Buy 1e18 at price of 987.65432 with fee of 0.002.
-      // base: 1e18 * 0.998 -> worth 1500e18 * 0.998 of quote currency at price of 1500
-      // quote: -987.65432e18
+      // Buy 1e18 BASE at price of 987.65432 QUOTE/BASE with fee of 0.002
+      // - base: 1e18 * 0.998 BASE -> worth 1500e18 * 0.998 QUOTE at oracle price of 1500
+      // - quote: -987.65432e18 QUOTE
       const oraclePrice = new Price(1500);
       const inversePrice = new Price(1).div(oraclePrice.value);
-      const quoteAmount = orderAmount.times(limitPrice.value);
       const ratio = ctx.perpetual.inverseOrders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
         inversePrice,
         [defaultOrder, defaultOrder, defaultOrder],
-        [quoteAmount.div(3), quoteAmount.div(2), quoteAmount.div(6)],
+        [orderAmount.div(3), orderAmount.div(2), orderAmount.div(6)],
       );
 
-      // Execute the trade on the smart contract.
+      // Execute the trades on the smart contract.
       // First, withdraw maker margin so it has zero initial balance.
       const { maker } = defaultOrder;
       await Promise.all([
         ctx.perpetual.margin.withdraw(maker, maker, initialMargin, { from: maker }),
         setOraclePrice(ctx, oraclePrice),
       ]);
-      await fillOrder();
+      await fillOrder({ amount: orderAmount.div(3) });
+      await fillOrder({ amount: orderAmount.div(2) });
+      await fillOrder({ amount: orderAmount.div(6) });
       const balance = await ctx.perpetual.getters.getAccountBalance(maker);
       expectBN(ratio, 'simulated vs. on-chain').to.equal(
         balance.getCollateralization(inversePrice),
       );
 
       // Compare with the expected result.
+      // There will be a slight difference since the fill amounts don't quite add up to the order
+      // amount, due to rounding.
       const expectedRatio = new BigNumber(1500 * 0.998).div(987.65432);
-      expectBN(ratio.dp(30), 'simulated vs. expected').to.equal(expectedRatio.dp(30));
+      const error = expectedRatio.minus(ratio).abs();
+      expectBN(error, 'simulated vs. expected (error)').to.be.lt(1e-15);
     });
 
     it('Estimates collateralization after executing sells', async () => {
-      // Sell 1e18 at price of 987.65432 with fee of 0.002.
-      // base: -1e18 * 1.002 -> worth -500e18 * 1.002 of quote currency at price of 500
-      // quote: 987.65432e18
+      // Sell 1e18 BASE at price of 987.65432 QUOTE/BASE with fee of 0.002
+      // - base: -1e18 * 1.002 BASE -> worth -500e18 * 1.002 QUOTE at oracle price of 500
+      // - quote: 987.65432e18 QUOTE
+      const sellOrder = await getModifiedOrder({ isBuy: false });
+      const marginAmount = orderAmount.dividedBy(limitPrice.value);
       const oraclePrice = new Price(500);
       const inversePrice = new Price(1).div(oraclePrice.value);
-      const sellOrder = await getModifiedOrder({ isBuy: false });
       const ratio = ctx.perpetual.inverseOrders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
         inversePrice,
         [sellOrder, sellOrder, sellOrder],
-        [orderAmount.div(3), orderAmount.div(2), orderAmount.div(6)],
+        [marginAmount.div(3), marginAmount.div(2), marginAmount.div(6)],
       );
 
-      // Execute the trade on the smart contract.
+      // Execute the trades on the smart contract.
       // First, withdraw maker margin so it has zero initial balance.
       const { maker } = defaultOrder;
       await Promise.all([
         ctx.perpetual.margin.withdraw(maker, maker, initialMargin, { from: maker }),
         setOraclePrice(ctx, oraclePrice),
       ]);
-      await fillOrder(sellOrder);
+      await fillOrder(sellOrder, { amount: orderAmount.div(3) });
+      await fillOrder(sellOrder, { amount: orderAmount.div(2) });
+      await fillOrder(sellOrder, { amount: orderAmount.div(6) });
       const balance = await ctx.perpetual.getters.getAccountBalance(maker);
       expectBN(ratio, 'simulated vs. on-chain').to.equal(
         balance.getCollateralization(inversePrice),
@@ -147,18 +159,16 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
 
       // Compare with the expected result.
       const expectedRatio = new BigNumber(987.65432).div(500 * 1.002);
-      expectBN(ratio, 'simulated vs. expected').to.equal(expectedRatio);
+      const error = expectedRatio.minus(ratio).abs();
+      expectBN(error, 'simulated vs. expected (error)').to.be.lt(1e-15);
     });
 
     it('Estimates collateralization when positive balance is zero', async () => {
-      // Inverse perpetual: The quote amount is the position amount.
-      const defaultQuoteAmount = orderAmount.times(limitPrice.value);
-
       // Inverse perpetual: Sell the base currency to sell margin token and buy position.
       const order = await getModifiedOrder({ limitPrice: limitPrice.div(2), isBuy: false });
 
       const ratio = ctx.perpetual.inverseOrders.getAccountCollateralizationAfterMakingOrders(
-        new Balance(initialMargin, defaultQuoteAmount.negated()),
+        new Balance(initialMargin, orderAmount.negated()),
         limitPrice,
         [order],
         [initialMargin],
@@ -167,14 +177,11 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
     });
 
     it('Estimates collateralization when negative balance is zero', () => {
-      // Inverse perpetual: The quote amount is the position amount.
-      const quoteAmount = orderAmount.times(limitPrice.value);
-
       const ratio = ctx.perpetual.inverseOrders.getAccountCollateralizationAfterMakingOrders(
-        new Balance(initialMargin, quoteAmount),
+        new Balance(initialMargin, orderAmount),
         limitPrice,
         [defaultOrder],
-        [quoteAmount.div(2)],
+        [orderAmount.div(2)],
       );
       expectBN(ratio).to.equal(Infinity);
     });
@@ -182,12 +189,12 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
     it('Estimates collateralization when balance is zero', async () => {
       const buyOrder = await getModifiedOrder({ limitFee: new Fee(0) });
       const sellOrder = await getModifiedOrder({ isBuy: false, limitFee: new Fee(0) });
-      const quoteAmount = orderAmount.times(limitPrice.value);
+      const marginAmount = orderAmount.dividedBy(limitPrice.value);
       const ratio1 = ctx.perpetual.inverseOrders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
         limitPrice,
         [buyOrder, sellOrder],
-        [quoteAmount, orderAmount],
+        [orderAmount, marginAmount],
       );
       expectBN(ratio1).to.equal(Infinity);
     });
@@ -284,14 +291,14 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
       it('fills a bid below the limit price', async () => {
         await fillOrder(
           {},
-          { price: defaultOrder.limitPrice.minus(25) },
+          { price: limitPrice.minus(25) },
         );
       });
 
       it('fills an ask above the limit price', async () => {
         await fillOrder(
           { isBuy: false },
-          { price: defaultOrder.limitPrice.plus(25) },
+          { price: limitPrice.plus(25) },
         );
       });
 
@@ -300,7 +307,7 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
           {},
           {
             fee: defaultOrder.limitFee.div(2),
-            price: defaultOrder.limitPrice.minus(25),
+            price: limitPrice.minus(25),
           },
         );
       });
@@ -310,7 +317,7 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
           { isBuy: false },
           {
             fee: defaultOrder.limitFee.div(2),
-            price: defaultOrder.limitPrice.plus(25),
+            price: limitPrice.plus(25),
           },
         );
       });
@@ -395,8 +402,8 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
       it('fails for wrong maker', async () => {
         const tradeData = ctx.perpetual.inverseOrders.fillToTradeData(
           defaultSignedOrder,
-          defaultOrder.amount,
-          defaultOrder.limitPrice,
+          orderAmount,
+          limitPrice,
           defaultOrder.limitFee,
         );
         await expectThrow(
@@ -416,8 +423,8 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
       it('fails for wrong taker', async () => {
         const tradeData = ctx.perpetual.inverseOrders.fillToTradeData(
           defaultSignedOrder,
-          defaultOrder.amount,
-          defaultOrder.limitPrice,
+          orderAmount,
+          limitPrice,
           defaultOrder.limitFee,
         );
         await expectThrow(
@@ -443,14 +450,14 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
 
       it('fails to fill a bid at a price above the limit price', async () => {
         await expectThrow(
-          fillOrder({}, { price: defaultOrder.limitPrice.plus(1) }),
+          fillOrder({}, { price: limitPrice.plus(1) }),
           'Fill price is invalid',
         );
       });
 
       it('fails to fill an ask at a price below the limit price', async () => {
         await expectThrow(
-          fillOrder({ isBuy: false }, { price: defaultOrder.limitPrice.minus(1) }),
+          fillOrder({ isBuy: false }, { price: limitPrice.minus(1) }),
           'Fill price is invalid',
         );
       });
@@ -464,13 +471,13 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
 
       it('fails to overfill order', async () => {
         await expectThrow(
-          fillOrder({}, { amount: defaultOrder.amount.plus(1) }),
+          fillOrder({}, { amount: orderAmount.plus(1) }),
           'Cannot overfill order',
         );
       });
 
       it('fails to overfill partially filled order', async () => {
-        const halfAmount = defaultOrder.amount.div(2);
+        const halfAmount = orderAmount.div(2);
         await fillOrder({}, { amount: halfAmount });
         await expectThrow(
           fillOrder({}, { amount: halfAmount.plus(1) }),
@@ -492,9 +499,9 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
         // limit bid |
         //        -5 | fill price
         //       -10 | trigger price, oracle price
-        const triggerPrice = defaultOrder.limitPrice.minus(10);
-        const fillPrice = defaultOrder.limitPrice.minus(5);
-        const oraclePrice = defaultOrder.limitPrice.minus(10);
+        const triggerPrice = limitPrice.minus(10);
+        const fillPrice = limitPrice.minus(5);
+        const oraclePrice = limitPrice.minus(10);
         await setOraclePrice(ctx, oraclePrice);
         await fillOrder({ triggerPrice }, { price: fillPrice });
       });
@@ -506,9 +513,9 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
 
         // Due to the use of the oracle inverter, rounding errors may cause the oracle price to be
         // very slightly higher than expected. Adjust the trigger price to account for this.
-        const triggerPrice = defaultOrder.limitPrice.plus(10).plus(1e-12);
-        const fillPrice = defaultOrder.limitPrice.plus(5);
-        const oraclePrice = defaultOrder.limitPrice.plus(10);
+        const triggerPrice = limitPrice.plus(10).plus(1e-12);
+        const fillPrice = limitPrice.plus(5);
+        const oraclePrice = limitPrice.plus(10);
         await setOraclePrice(ctx, oraclePrice);
         await fillOrder({ triggerPrice, isBuy: false }, { price: fillPrice });
       });
@@ -519,9 +526,9 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
         // limit bid |
         //        -5 | fill price
         //       -10 | trigger price
-        const triggerPrice = defaultOrder.limitPrice.minus(10);
-        const fillPrice = defaultOrder.limitPrice.minus(5);
-        const oraclePrice = defaultOrder.limitPrice.plus(10);
+        const triggerPrice = limitPrice.minus(10);
+        const fillPrice = limitPrice.minus(5);
+        const oraclePrice = limitPrice.plus(10);
         await setOraclePrice(ctx, oraclePrice);
         await fillOrder({ triggerPrice }, { price: fillPrice });
       });
@@ -532,9 +539,9 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
         // limit ask |
         //           |
         //       -10 | oracle price
-        const triggerPrice = defaultOrder.limitPrice.plus(10);
-        const fillPrice = defaultOrder.limitPrice.plus(5);
-        const oraclePrice = defaultOrder.limitPrice.minus(10);
+        const triggerPrice = limitPrice.plus(10);
+        const fillPrice = limitPrice.plus(5);
+        const oraclePrice = limitPrice.minus(10);
         await setOraclePrice(ctx, oraclePrice);
         await fillOrder({ triggerPrice, isBuy: false }, { price: fillPrice });
       });
@@ -543,7 +550,7 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
         // limit bid |
         //       -10 | trigger price
         //       -11 | oracle price
-        const triggerPrice = defaultOrder.limitPrice.minus(10);
+        const triggerPrice = limitPrice.minus(10);
         await setOraclePrice(ctx, triggerPrice.minus(1));
         await expectThrow(
           fillOrder({ triggerPrice }),
@@ -555,7 +562,7 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
         //       +11 | oracle price
         //       +10 | trigger price
         // limit ask |
-        const triggerPrice = defaultOrder.limitPrice.plus(10);
+        const triggerPrice = limitPrice.plus(10);
         await setOraclePrice(ctx, triggerPrice.plus(1));
         await expectThrow(
           fillOrder({ triggerPrice, isBuy: false }),
@@ -566,25 +573,31 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
 
     describe('in decrease-only mode', () => {
       it('fills a bid', async () => {
-        // Give the maker a short position.
-        const { limitFee, limitPrice, maker, taker } = defaultOrder;
-        const marginAmount = orderAmount.times(limitFee.plus(1).value);
-        const positionAmount = orderAmount.times(limitPrice.value);
-        await sell(ctx, maker, taker, positionAmount, marginAmount);
+        // Give the maker a short position (relative to the base token).
+        const { maker, taker } = defaultOrder;
+        const approximateMarginAmount = orderAmount.dividedBy(limitPrice.value);
+        await buy(ctx, maker, taker, orderAmount, approximateMarginAmount);
 
         // Fill the order to decrease the short position to zero.
         await fillOrder({ isDecreaseOnly: true });
+
+        // Sanity check ending position.
+        const finalPosition = (await ctx.perpetual.getters.getAccountBalance(maker)).position;
+        expectBN(finalPosition).to.equal(0);
       });
 
       it('fills an ask', async () => {
-        // Give the maker a long position.
-        const { limitFee, limitPrice, maker, taker } = defaultOrder;
-        const marginAmount = orderAmount.times(limitFee.plus(1).value);
-        const positionAmount = orderAmount.times(limitPrice.value);
-        await buy(ctx, maker, taker, positionAmount, marginAmount);
+        // Give the maker a long position (relative to the base token).
+        const { maker, taker } = defaultOrder;
+        const approximateMarginAmount = orderAmount.dividedBy(limitPrice.value);
+        await sell(ctx, maker, taker, orderAmount, approximateMarginAmount);
 
         // Fill the order to decrease the long position to zero.
         await fillOrder({ isBuy: false, isDecreaseOnly: true });
+
+        // Sanity check ending position.
+        const finalPosition = (await ctx.perpetual.getters.getAccountBalance(maker)).position;
+        expectBN(finalPosition).to.equal(0);
       });
 
       it('fails to fill a bid if maker position is positive', async () => {
@@ -681,7 +694,7 @@ perpetualDescribe('P1InverseOrders', init, (ctx: ITestContext) => {
     const order: SignedOrder = orderArgs.typedSignature
       ? orderArgs as SignedOrder
       : await getModifiedOrder(orderArgs);
-    const fillAmount = fillArgs.amount || order.amount;
+    const fillAmount = (fillArgs.amount || order.amount).dp(0, BigNumber.ROUND_DOWN);
     const fillPrice = fillArgs.price || order.limitPrice;
     const fillFee = fillArgs.fee || order.limitFee;
     const sender = fillArgs.sender || order.taker;

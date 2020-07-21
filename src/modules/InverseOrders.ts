@@ -2,8 +2,10 @@ import BigNumber from 'bignumber.js';
 import Web3 from 'web3';
 
 import {
+  Balance,
   BigNumberable,
   Fee,
+  Order,
   Price,
 } from '../lib/types';
 import { Contracts } from './Contracts';
@@ -11,6 +13,15 @@ import { Orders } from './Orders';
 
 const EIP712_DOMAIN_NAME = 'P1InverseOrders';
 
+/**
+ * Module for handling orders in an inverse perpetual market.
+ *
+ * Inverse perpetual:
+ * - When isBuy is true, the maker is buying base currency (margin) and selling quote (position).
+ * - The fill amount is denoted in quote currency (position).
+ * - Prices are denoted in quote currency per unit of base currency (position per margin).
+ * - The fee is paid (or received) in base currency (margin).
+ */
 export class InverseOrders extends Orders {
   constructor(
     contracts: Contracts,
@@ -20,12 +31,54 @@ export class InverseOrders extends Orders {
   }
 
   /**
-   * Calculate the effect of filling an order on the maker's balances.
+   * Estimate the maker's collateralization after executing a sequence of orders.
    *
-   * Inverse perpetual:
-   * - When isBuy is true, the maker is buying base currency (margin) and selling position.
-   * - The fill amount is denoted in margin and price is denoted in position per margin.
-   * - The fee is paid (or received) in margin and denoted in position per margin.
+   * The `maker` of every order must be the same. This function does not make any on-chain calls,
+   * so all information must be passed in, including the oracle price and remaining amounts
+   * on the orders. Orders are assumed to be filled at the limit price and limit fee.
+   *
+   * Returns the ending collateralization ratio for the account, or BigNumber(Infinity) if the
+   * account does not end with any negative balances.
+   *
+   * @param  initialBalance  The initial margin and position balances of the maker account.
+   * @param  oraclePrice     The price at which to calculate collateralization.
+   * @param  orders          A sequence of orders, with the same maker, to be hypothetically filled.
+   * @param  fillAmounts     The corresponding fill amount for each order, denominated in the token
+   *                         spent by the maker--quote currency when buying, and base when selling.
+   */
+  public getAccountCollateralizationAfterMakingOrders(
+    initialBalance: Balance,
+    oraclePrice: Price,
+    orders: Order[],
+    makerTokenFillAmounts: BigNumber[],
+  ): BigNumber {
+    const runningBalance: Balance = initialBalance.copy();
+
+    // For each order, determine the effect on the balance by following the smart contract math.
+    for (let i = 0; i < orders.length; i += 1) {
+      const order = orders[i];
+
+      const fillAmount = order.isBuy
+        ? makerTokenFillAmounts[i]
+        : makerTokenFillAmounts[i].times(order.limitPrice.value);
+
+      // Assume orders are filled at the limit price and limit fee.
+      const { marginDelta, positionDelta } = this.getBalanceUpdatesAfterFillingOrder(
+        fillAmount,
+        order.limitPrice,
+        order.limitFee,
+        order.isBuy,
+      );
+
+      runningBalance.margin = runningBalance.margin.plus(marginDelta);
+      runningBalance.position = runningBalance.position.plus(positionDelta);
+    }
+
+    return runningBalance.getCollateralization(oraclePrice);
+  }
+
+  /**
+   * Calculate the effect of filling an order on the maker's balances.
    */
   public getBalanceUpdatesAfterFillingOrder(
     fillAmount: BigNumberable,
@@ -36,12 +89,16 @@ export class InverseOrders extends Orders {
     marginDelta: BigNumber,
     positionDelta: BigNumber,
   } {
-    const amount = new BigNumber(fillAmount);
-    const feeFactor = (isBuy ? fillFee.negated() : fillFee).value.plus(1);
-    const marginAmount = amount.times(feeFactor);
-    const positionAmount = amount.times(fillPrice.value);
-    const marginDelta = isBuy ? marginAmount : marginAmount.negated();
+
+    const positionAmount = new BigNumber(fillAmount).dp(0, BigNumber.ROUND_DOWN);
     const positionDelta = isBuy ? positionAmount.negated() : positionAmount;
+    const feeFactor = (isBuy ? fillFee.negated() : fillFee).value.plus(1);
+    const marginAmount = positionAmount
+      .dividedBy(fillPrice.value)
+      .dp(0, BigNumber.ROUND_DOWN)
+      .times(feeFactor)
+      .dp(0, BigNumber.ROUND_DOWN);
+    const marginDelta = isBuy ? marginAmount : marginAmount.negated();
     return {
       marginDelta,
       positionDelta,

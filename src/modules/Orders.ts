@@ -180,13 +180,13 @@ export class Orders {
     for (let i = 0; i < orders.length; i += 1) {
       const order = orders[i];
 
-      const baseTokenFillAmount = order.isBuy
+      const fillAmount = order.isBuy
         ? makerTokenFillAmounts[i].dividedBy(order.limitPrice.value)
         : makerTokenFillAmounts[i];
 
       // Assume orders are filled at the limit price and limit fee.
       const { marginDelta, positionDelta } = this.getBalanceUpdatesAfterFillingOrder(
-        baseTokenFillAmount,
+        fillAmount,
         order.limitPrice,
         order.limitFee,
         order.isBuy,
@@ -211,12 +211,12 @@ export class Orders {
     marginDelta: BigNumber,
     positionDelta: BigNumber,
   } {
-    const amount = new BigNumber(fillAmount);
-    const feeFactor = (isBuy ? fillFee : fillFee.negated()).value.plus(1);
-    const marginAmount = amount.times(fillPrice.value).times(feeFactor);
-    const positionAmount = amount;
-    const marginDelta = isBuy ? marginAmount.negated() : marginAmount;
+    const positionAmount = new BigNumber(fillAmount).dp(0, BigNumber.ROUND_DOWN);
     const positionDelta = isBuy ? positionAmount : positionAmount.negated();
+    const fee = fillFee.times(fillPrice.value).value.dp(18, BigNumber.ROUND_DOWN);
+    const marginPerPosition = isBuy ? fillPrice.plus(fee) : fillPrice.minus(fee);
+    const marginAmount = positionAmount.times(marginPerPosition.value).dp(0, BigNumber.ROUND_DOWN);
+    const marginDelta = isBuy ? marginAmount.negated() : marginAmount;
     return {
       marginDelta,
       positionDelta,
