@@ -92,9 +92,8 @@ export class InverseOrders extends Orders {
     const positionAmount = new BigNumber(fillAmount).dp(0, BigNumber.ROUND_DOWN);
     const feeFactor = (isBuy ? fillFee.negated() : fillFee).value.plus(1);
     const marginAmount = positionAmount
-      .dividedBy(fillPrice.value)
-      .dp(0, BigNumber.ROUND_DOWN)
       .times(feeFactor)
+      .dividedBy(fillPrice.value)
       .dp(0, BigNumber.ROUND_DOWN);
     return {
       marginDelta: isBuy ? marginAmount : marginAmount.negated(),
