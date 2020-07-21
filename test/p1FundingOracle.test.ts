@@ -19,7 +19,7 @@ import {
   expectThrow,
 } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 
 const minUnit = INTEGERS.ONE.shiftedBy(-18);
 const oraclePrice = new Price(100);

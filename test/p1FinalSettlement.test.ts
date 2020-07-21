@@ -12,7 +12,7 @@ import { expectThrow, expect, expectAddressesEqual, expectBN } from './helpers/E
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 import { mineAvgBlock } from './helpers/EVM';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { buy } from './helpers/trade';
 
 // Note: initialPrice * positionSize = initialMargin * 2

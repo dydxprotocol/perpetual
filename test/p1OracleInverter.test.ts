@@ -4,7 +4,7 @@ import {
   expectThrow,
 } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 
 async function init(ctx: ITestContext): Promise<void> {
   await initializePerpetual(

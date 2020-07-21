@@ -3,7 +3,7 @@ import _ from 'lodash';
 
 import { expectThrow, expect, expectBN, expectAssertFailure } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { ADDRESSES, INTEGERS } from '../src/lib/Constants';
 import {
   address,

@@ -3,7 +3,7 @@ import _ from 'lodash';
 
 import initializePerpetual from './helpers/initializePerpetual';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { buy } from './helpers/trade';
 import { expect, expectBN, expectBaseValueEqual, expectThrow } from './helpers/Expect';
 import {

@@ -3,7 +3,7 @@ import Web3 from 'web3';
 import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from '../../src/modules/Contracts';
-import { Provider, SendOptions } from '../../src/lib/types';
+import { PerpetualMarket, Provider, SendOptions } from '../../src/lib/types';
 
 // JSON
 const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'build'}/contracts/`;
@@ -50,11 +50,12 @@ export class TestContracts extends Contracts {
 
   constructor(
     provider: Provider,
+    market: PerpetualMarket,
     networkId: number,
     web3: Web3,
     sendOptions: SendOptions = {},
   ) {
-    super(provider, networkId, web3, sendOptions);
+    super(provider, market, networkId, web3, sendOptions);
 
     // Re-assign the JSON for contracts
     this.contractsList = [];

@@ -4,7 +4,7 @@ import { mineAvgBlock } from './helpers/EVM';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
 import { expectMarginBalances, expectTokenBalances, mintAndDeposit } from './helpers/balances';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { sell } from './helpers/trade';
 import {
   address,

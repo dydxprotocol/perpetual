@@ -2,7 +2,7 @@ import BigNumber from 'bignumber.js';
 
 import { mintAndDeposit } from './helpers/balances';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { buy } from './helpers/trade';
 import {
   FUNDING_RATE_MAX_ABS_VALUE,

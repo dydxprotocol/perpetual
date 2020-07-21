@@ -4,7 +4,7 @@ import { expect, expectBN, expectBaseValueEqual, expectThrow } from './helpers/E
 import { BaseValue, address, Price } from '../src/lib/types';
 import { mintAndDeposit } from './helpers/balances';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { buy } from './helpers/trade';
 
 // Tolerance when comparing blockchain timestamp against local timestamp.

@@ -37,6 +37,11 @@ export type BigNumberable = BigNumber | number | string;
 
 // ============ Enums ============
 
+export enum PerpetualMarket {
+  PBTC_USDC = 'PBTC-USDC',
+  WETH_PUSD = 'WETH-PUSD',
+}
+
 export enum ConfirmationType {
   Hash = 0,
   Confirmed = 1,

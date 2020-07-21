@@ -5,7 +5,7 @@ import {
   BigNumberable,
 } from '../src/lib/types';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import { expectMarginBalances, mintAndDeposit } from './helpers/balances';
 

@@ -1,11 +1,21 @@
-import fs from 'fs';
 import { promisify } from 'es6-promisify';
-import contracts from './Artifacts';
+import fs from 'fs';
+
 import deployed from '../migrations/deployed.json';
+import { PerpetualMarket } from '../src/lib/types';
+import contracts from './Artifacts';
 
 const writeFileAsync = promisify(fs.writeFile);
 
-const NETWORK_IDS = ['1', '42'];
+const NETWORK_IDS = ['1'];
+
+const MARKET_PAIR = process.env.MARKET_PAIR as PerpetualMarket;
+if (!MARKET_PAIR) {
+  throw new Error('Required env var: MARKET_PAIR');
+}
+if (!Object.values(PerpetualMarket).includes(MARKET_PAIR)) {
+  throw new Error(`Unknown market pair: ${MARKET_PAIR}`);
+}
 
 async function run() {
 
@@ -15,8 +25,9 @@ async function run() {
     NETWORK_IDS.forEach((networkId) => {
       if (contract.networks[networkId]) {
         deployed[contractName] = deployed[contractName] || {};
+        deployed[contractName][networkId] = deployed[contractName][networkId] || {}
 
-        deployed[contractName][networkId] = {
+        deployed[contractName][networkId][MARKET_PAIR] = {
           links: contract.networks[networkId].links,
           address: contract.networks[networkId].address,
           transactionHash: contract.networks[networkId].transactionHash,

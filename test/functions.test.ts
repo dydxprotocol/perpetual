@@ -1,6 +1,6 @@
 import { expect } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 
 perpetualDescribe('Function Signatures', initializePerpetual, (ctx: ITestContext) => {
   it('Checks for collisions', async () => {

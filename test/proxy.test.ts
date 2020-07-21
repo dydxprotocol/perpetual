@@ -2,7 +2,7 @@ import { expect, expectThrow } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
 import { address, BaseValue } from '../src/lib/types';
 import { ADDRESSES } from '../src/lib/Constants';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 
 let admin: address;
 let rando: address;
