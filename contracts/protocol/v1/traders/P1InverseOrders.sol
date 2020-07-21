@@ -153,7 +153,7 @@ contract P1InverseOrders is
 
     // ============ Mutable Storage ============
 
-    // order hash => filled amount (in base currency)
+    // order hash => filled amount (in position amount)
     mapping (bytes32 => uint256) public _FILLED_AMOUNT_;
 
     // order hash => status
@@ -250,7 +250,7 @@ contract P1InverseOrders is
             tradeData.fill
         );
 
-        // `isBuyOrder` is from the maker's perspective, and relative to the base currency.
+        // `isBuyOrder` is from the maker's perspective.
         bool isBuyOrder = _isBuy(tradeData.order);
 
         // Inverse perpetual:
@@ -261,9 +261,8 @@ contract P1InverseOrders is
         uint256 feeFactor = (isBuyOrder == tradeData.fill.isNegativeFee)
             ? BaseMath.base().add(tradeData.fill.fee)
             : BaseMath.base().sub(tradeData.fill.fee);
-        uint256 marginAmount = tradeData.fill.amount
-            .baseDiv(tradeData.fill.price)
-            .baseMul(feeFactor);
+        // Note: Skip BaseMath since we multiply by a base value then divide by a base value.
+        uint256 marginAmount = tradeData.fill.amount.mul(feeFactor).div(tradeData.fill.price);
 
         // Inverse perpetual: Note that `isBuy` in the order is from the maker's perspective and
         // relative to the base currency, whereas `isBuy` in the TradeResult is from the taker's

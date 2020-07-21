@@ -212,14 +212,12 @@ export class Orders {
     positionDelta: BigNumber,
   } {
     const positionAmount = new BigNumber(fillAmount).dp(0, BigNumber.ROUND_DOWN);
-    const positionDelta = isBuy ? positionAmount : positionAmount.negated();
     const fee = fillFee.times(fillPrice.value).value.dp(18, BigNumber.ROUND_DOWN);
     const marginPerPosition = isBuy ? fillPrice.plus(fee) : fillPrice.minus(fee);
     const marginAmount = positionAmount.times(marginPerPosition.value).dp(0, BigNumber.ROUND_DOWN);
-    const marginDelta = isBuy ? marginAmount.negated() : marginAmount;
     return {
-      marginDelta,
-      positionDelta,
+      marginDelta: isBuy ? marginAmount.negated() : marginAmount,
+      positionDelta: isBuy ? positionAmount : positionAmount.negated(),
     };
   }
 

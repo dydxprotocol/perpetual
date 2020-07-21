@@ -89,19 +89,16 @@ export class InverseOrders extends Orders {
     marginDelta: BigNumber,
     positionDelta: BigNumber,
   } {
-
     const positionAmount = new BigNumber(fillAmount).dp(0, BigNumber.ROUND_DOWN);
-    const positionDelta = isBuy ? positionAmount.negated() : positionAmount;
     const feeFactor = (isBuy ? fillFee.negated() : fillFee).value.plus(1);
     const marginAmount = positionAmount
       .dividedBy(fillPrice.value)
       .dp(0, BigNumber.ROUND_DOWN)
       .times(feeFactor)
       .dp(0, BigNumber.ROUND_DOWN);
-    const marginDelta = isBuy ? marginAmount : marginAmount.negated();
     return {
-      marginDelta,
-      positionDelta,
+      marginDelta: isBuy ? marginAmount : marginAmount.negated(),
+      positionDelta: isBuy ? positionAmount.negated() : positionAmount,
     };
   }
 }
