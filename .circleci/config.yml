@@ -32,6 +32,9 @@ jobs:
       - run:
           name: Compile contracts
           command: npm run compile -- --all
+      - run:
+          name: Clean contracts JSON
+          command: npm run clean_contract_json
       - save_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
           paths:
@@ -87,8 +90,8 @@ jobs:
       - restore_cache:
           key: cache-completed-build-contracts-{{ .Environment.CIRCLE_SHA1 }}
       - run:
-          name: Build
-          command: npm run build
+          name: Build JS
+          command: npm run build:js
       - run:
           name: Copy over contracts
           command: rm -rf dist/build/contracts && mkdir -p dist/build/contracts && cp build/published_contracts/*.json dist/build/contracts

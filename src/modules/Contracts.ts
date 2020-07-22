@@ -257,10 +257,15 @@ export class Contracts {
     const json: Json = (contract === this.perpetualV1)
       ? _.find(this.contractsList, { contract: this.perpetualProxy }).json
       : contractJson;
-    const deployedInfo = json.networks[networkId] && json.networks[networkId][this.market];
+
+    // Use market-specific info if available, and fall back to non-market-specific info.
+    const deployedInfo =
+      (json.networks[this.market] && json.networks[this.market][networkId]) ||
+      json.networks[networkId];
     contract.options.address = deployedInfo && deployedInfo.address;
+
     if (!contract.options.address) {
-      console.error(`Unknown address for contract ${json.contractName}`);
+      console.error(`Warning: Unknown address for contract ${json.contractName}`);
     }
   }
 
