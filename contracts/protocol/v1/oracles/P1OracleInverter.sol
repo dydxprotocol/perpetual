@@ -85,14 +85,14 @@ contract P1OracleInverter is
             oracleAndExponent != bytes32(0),
             "P1OracleInverter: Sender not authorized to get price"
         );
-        (address oracle, uint256 adjustment) = splitOracleAndAdjustment(oracleAndExponent);
+        (address oracle, uint256 adjustment) = getOracleAndAdjustment(oracleAndExponent);
         uint256 rawPrice = I_P1Oracle(oracle).getPrice();
         uint256 invertedPrice = rawPrice.baseReciprocal();
         uint256 result = invertedPrice.baseMul(adjustment);
         return result;
     }
 
-    function splitOracleAndAdjustment(
+    function getOracleAndAdjustment(
         bytes32 oracleAndExponent
     )
         private
