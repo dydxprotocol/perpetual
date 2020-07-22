@@ -16,6 +16,7 @@ import { default as P1CurrencyConverterProxy } from '../build/contracts/P1Curren
 import { default as P1SoloBridgeProxy } from '../build/contracts/P1SoloBridgeProxy.json';
 import { default as P1WethProxy } from '../build/contracts/P1WethProxy.json';
 import { default as ERC20 } from '../build/contracts/ERC20.json';
+import { default as WETH9 } from '../build/contracts/WETH9.json';
 import { default as I_MakerOracle } from '../build/contracts/I_MakerOracle.json';
 
 export default {
@@ -33,5 +34,6 @@ export default {
   P1SoloBridgeProxy,
   P1WethProxy,
   ERC20,
+  WETH9,
   I_MakerOracle,
 };
