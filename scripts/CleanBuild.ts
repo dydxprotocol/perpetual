@@ -37,7 +37,7 @@ async function clean(): Promise<void> {
 
     // During testing, use the same instance of the contract regardless of market pair.
     Object.values(PerpetualMarket).forEach((market) => {
-      cleaned.networks[market] = {};
+      cleaned.networks[market] = cleaned.networks[market] || {};
       if (contract.networks[TEST_NETWORK_ID]) {
         cleaned.networks[market][TEST_NETWORK_ID] = _.pick(
           contract.networks[TEST_NETWORK_ID],
