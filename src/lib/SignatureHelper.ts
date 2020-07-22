@@ -1,4 +1,4 @@
-import { promisify } from 'es6-promisify';
+import util from 'util';
 import Web3 from 'web3';
 
 import {
@@ -230,7 +230,7 @@ export async function ethSignTypedDataInternal(
       throw new Error(`Invalid signing method ${signingMethod}`);
   }
 
-  const sendAsync = promisify(provider[sendMethod]).bind(provider);
+  const sendAsync = util.promisify(provider[sendMethod]).bind(provider);
   const response = await sendAsync({
     method: rpcMethod,
     params: [signer, rpcData],
