@@ -1,9 +1,18 @@
 {
     "I_MakerOracle": {
-        "1": {
-            "links": {},
-            "address": "0x064409168198A7E9108036D072eF59F923dEDC9A",
-            "transactionHash": "0xac10932332a67f1d6e2638d21723399c76bc32fe50629206612da9d31edb19c0"
+        "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x064409168198A7E9108036D072eF59F923dEDC9A",
+                "transactionHash": "0xac10932332a67f1d6e2638d21723399c76bc32fe50629206612da9d31edb19c0"
+            }
+        },
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0x729D19f657BD0614b4985Cf1D82531c67569197B",
+                "transactionHash": "0xc4addc3f012a3fe26a6c2c9d47e269ff315ab788fe131a49201137c0fd4851c8"
+            }
         }
     }
 }

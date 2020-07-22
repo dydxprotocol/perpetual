@@ -4,7 +4,7 @@ import _ from 'lodash';
 import { fastForward, mineAvgBlock } from './helpers/EVM';
 import initializePerpetual from './helpers/initializePerpetual';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 import { expect, expectBN, expectBaseValueEqual, expectThrow, expectAddressesEqual } from './helpers/Expect';
 import { address } from '../src';

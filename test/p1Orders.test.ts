@@ -22,7 +22,7 @@ import {
 import { expect, expectBN, expectThrow, expectBaseValueEqual } from './helpers/Expect';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 
 const orderAmount = new BigNumber('1e18');

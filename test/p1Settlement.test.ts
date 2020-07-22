@@ -6,7 +6,7 @@ import { BaseValue, Index, Price, TxResult, address } from '../src/lib/types';
 import { mineAvgBlock } from './helpers/EVM';
 import { expect, expectBN, expectBaseValueEqual } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 import { expectBalances, mintAndDeposit, expectMarginBalances, expectContractSurplus } from './helpers/balances';
 

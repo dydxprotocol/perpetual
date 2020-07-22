@@ -27,14 +27,15 @@ import {
   Contract,
 } from 'web3-eth-contract';
 import {
-  address,
-  ConfirmationType,
-  Provider,
-  TxResult,
-  TxOptions,
   CallOptions,
+  ConfirmationType,
   NativeSendOptions,
+  PerpetualMarket,
+  Provider,
   SendOptions,
+  TxOptions,
+  TxResult,
+  address,
 } from '../lib/types';
 
 // JSON
@@ -63,6 +64,7 @@ enum OUTCOMES {
 
 interface Json {
   abi: any;
+  contractName: string;
   networks: { [network: number]: any };
 }
 
@@ -80,8 +82,10 @@ export class Contracts {
 
   protected web3: Web3;
 
-  // Contract instances
+  public market: PerpetualMarket;
   public networkId: number;
+
+  // Contract instances
   public contractsList: ContractInfo[] = [];
   public perpetualProxy: Contract;
   public perpetualV1: Contract;
@@ -102,10 +106,12 @@ export class Contracts {
 
   constructor(
     provider: Provider,
+    market: PerpetualMarket,
     networkId: number,
     web3: Web3,
     sendOptions: SendOptions = {},
   ) {
+    this.market = market;
     this.web3 = web3;
     this.defaultOptions = {
       gas: null,
@@ -251,7 +257,16 @@ export class Contracts {
     const json: Json = (contract === this.perpetualV1)
       ? _.find(this.contractsList, { contract: this.perpetualProxy }).json
       : contractJson;
-    contract.options.address = json.networks[networkId] && json.networks[networkId].address;
+
+    // Use market-specific info if available, and fall back to non-market-specific info.
+    const deployedInfo =
+      (json.networks[this.market] && json.networks[this.market][networkId]) ||
+      json.networks[networkId];
+    contract.options.address = deployedInfo && deployedInfo.address;
+
+    if (!contract.options.address) {
+      console.error(`Warning: Unknown address for contract ${json.contractName}`);
+    }
   }
 
   private async _send( // tslint:disable-line:function-name

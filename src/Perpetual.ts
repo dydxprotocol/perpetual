@@ -22,6 +22,7 @@ import {
   EthereumAccount,
   Networks,
   Provider,
+  PerpetualMarket,
   PerpetualOptions,
   SendOptions,
 } from './lib/types';
@@ -69,20 +70,19 @@ export class Perpetual {
   public margin: Margin;
   public operator: Operator;
   public orders: Orders;
-  public inverseOrders: InverseOrders;
   public token: Token;
   public trade: Trade;
-  public inverseTrade: Trade;
   public weth: Weth;
   public api: Api;
 
   constructor(
     provider: Provider,
+    market: PerpetualMarket,
     networkId: number = Networks.MAINNET,
     options: PerpetualOptions = {},
   ) {
     this.web3 = new Web3(provider);
-    this.contracts = this.getContracts(provider, networkId, options.sendOptions);
+    this.contracts = this.getContracts(provider, market, networkId, options.sendOptions);
     this.proxy = new Proxy(this.contracts);
     this.admin = new Admin(this.contracts);
     this.finalSettlement = new FinalSettlement(this.contracts);
@@ -99,15 +99,17 @@ export class Perpetual {
     this.logs = new Logs(this.contracts, this.web3);
     this.margin = new Margin(this.contracts);
     this.operator = new Operator(this.contracts);
-    this.orders = new Orders(this.contracts, this.web3);
     this.token = new Token(this.contracts);
-    this.trade = new Trade(this.contracts, this.orders);
     this.weth = new Weth(this.contracts);
     this.api = new Api(this.orders, options.apiOptions);
 
-    // TODO: Initialize orders and trade modules depending on the perpetual market.
-    this.inverseOrders = new InverseOrders(this.contracts, this.web3);
-    this.inverseTrade = new Trade(this.contracts, this.inverseOrders);
+    // Use different Orders module depending on if the market is a linear or inverse perpetual.
+    if (market === PerpetualMarket.PBTC_USDC) {
+      this.orders = new Orders(this.contracts, this.web3);
+    } else {
+      this.orders = new InverseOrders(this.contracts, this.web3);
+    }
+    this.trade = new Trade(this.contracts, this.orders);
 
     if (options.accounts) {
       options.accounts.forEach(a => this.loadAccount(a));
@@ -156,11 +158,13 @@ export class Perpetual {
 
   protected getContracts(
     provider: Provider,
+    market: PerpetualMarket,
     networkId: number,
     sendOptions?: SendOptions,
   ): Contracts {
     return new Contracts(
       provider,
+      market,
       networkId,
       this.web3,
       sendOptions,

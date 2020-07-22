@@ -27,7 +27,7 @@
     "deploy": "truffle migrate --network=$NETWORK --reset && npm run save_deployed_addresses",
     "deploy_kovan": "NETWORK=kovan npm run deploy",
     "deploy_mainnet": "NETWORK=mainnet npm run deploy",
-    "deploy_test": "npm run reset_test_evm && NETWORK=test npm run deploy && npm run snapshot_test_evm",
+    "deploy_test": "npm run reset_test_evm && NETWORK=test npm run deploy && npm run clean_contract_json && npm run snapshot_test_evm",
     "migrate": "truffle migrate",
     "reset_test_evm": "node scripts/reset-test-evm.js",
     "save_deployed_addresses": "ts-node ./scripts/SaveDeployedAddresses.ts",
@@ -52,14 +52,12 @@
     "@openzeppelin/upgrades": "2.6.0",
     "bignumber.js": "^8.1.1",
     "canonical-weth": "^1.4.0",
-    "es6-promisify": "^6.0.2",
     "lodash": "^4.17.15",
     "web3": "1.2.4"
   },
   "devDependencies": {
     "@truffle/hdwallet-provider": "^1.0.33",
     "@types/chai": "^4.2.7",
-    "@types/es6-promisify": "^6.0.0",
     "@types/lodash": "^4.14.149",
     "@types/mocha": "^5.2.7",
     "babel-cli": "^6.26.0",

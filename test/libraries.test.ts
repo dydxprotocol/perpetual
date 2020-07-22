@@ -10,7 +10,7 @@ import {
 import { address, BaseValue, Balance, Price } from '../src/lib/types';
 import { expectBN, expectAddressesEqual, expectThrow, expect } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 
 let admin: address;
 

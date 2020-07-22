@@ -18,7 +18,7 @@
 
 import { snapshot, resetEVM, mineAvgBlock } from './EVM';
 import { getPerpetual } from './Perpetual';
-import { address } from '../../src/lib/types';
+import { PerpetualMarket, address } from '../../src/lib/types';
 import { TestPerpetual } from '../modules/TestPerpetual';
 
 export interface ITestContext {
@@ -29,11 +29,20 @@ export interface ITestContext {
 export type initFunction = (ctx: ITestContext) => Promise<void>;
 export type testsFunction = (ctx: ITestContext) => void;
 
-export default function perpetualDescribe(
+export function inversePerpetualDescribe(
   name: string,
   init: initFunction,
   tests: testsFunction,
-):void {
+): void {
+  return perpetualDescribe(name, init, tests, PerpetualMarket.WETH_PUSD);
+}
+
+export function perpetualDescribe(
+  name: string,
+  init: initFunction,
+  tests: testsFunction,
+  market: PerpetualMarket = PerpetualMarket.PBTC_USDC,
+): void {
   // Note that the function passed into describe() should not be async.
   describe(name, () => {
     const ctx: ITestContext = {};
@@ -43,7 +52,7 @@ export default function perpetualDescribe(
 
     // Runs before any before() calls made within the perpetualDescribe() call.
     before(async () => {
-      const { perpetual, accounts } = await getPerpetual();
+      const { perpetual, accounts } = await getPerpetual(market);
       ctx.perpetual = perpetual;
       ctx.accounts = accounts;
 

@@ -1,5 +1,6 @@
 import {
   Networks,
+  PerpetualMarket,
   PerpetualOptions,
   Provider,
   SendOptions,
@@ -15,10 +16,11 @@ export class TestPerpetual extends Perpetual {
 
   constructor(
     provider: Provider,
+    market: PerpetualMarket,
     networkId: number,
     options: PerpetualOptions = {},
   ) {
-    super(provider, networkId, options);
+    super(provider, market, networkId, options);
     this.testing = new Testing(provider, this.contracts, this.web3);
   }
 
@@ -32,11 +34,13 @@ export class TestPerpetual extends Perpetual {
 
   protected getContracts(
     provider: Provider,
+    market: PerpetualMarket,
     networkId: number,
     sendOptions?: SendOptions,
   ): Contracts {
     return new TestContracts(
       provider,
+      market,
       networkId,
       this.web3,
       sendOptions,

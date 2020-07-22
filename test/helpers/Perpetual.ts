@@ -1,34 +1,38 @@
 require('dotenv-flow').config();
 
-import { address } from '../../src/lib/types';
+import Web3 from 'web3';
+
+import { PerpetualMarket, address } from '../../src/lib/types';
 import { TestPerpetual } from '../modules/TestPerpetual';
 import provider from './Provider';
 
-let initialized = false;
 let accounts: address[];
 
-export const perpetual = new TestPerpetual(
-  provider,
-  0, // initialized in getPerpetual.
-  { sendOptions: { gas: 4000000 } },
-);
+const perpetuals: { [market: string]: TestPerpetual } = {};
 
 export async function getPerpetual(
+  market: PerpetualMarket,
 ): Promise<{
   perpetual: TestPerpetual,
   accounts: address[],
 }> {
-  if (!initialized) {
-    accounts = await perpetual.web3.eth.getAccounts();
+  if (!(market in perpetuals)) {
+    const networkId = await new Web3(provider).eth.net.getId();
+    const perpetual = new TestPerpetual(
+      provider,
+      market,
+      networkId,
+      { sendOptions: { gas: 4000000 } },
+    );
+    perpetuals[market] = perpetual;
+
+    if (!accounts) {
+      accounts = await perpetual.web3.eth.getAccounts();
+    }
     perpetual.setDefaultAccount(accounts[1]);
-
-    const networkId = await perpetual.web3.eth.net.getId();
-    perpetual.setProvider(provider, networkId);
-
-    initialized = true;
   }
   return {
-    perpetual,
     accounts,
+    perpetual: perpetuals[market],
   };
 }

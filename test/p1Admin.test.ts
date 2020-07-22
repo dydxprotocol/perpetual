@@ -2,7 +2,7 @@ import { ADDRESSES } from '../src/lib/Constants';
 import { BASE_DECIMALS, BaseValue, Price, address } from '../src/lib/types';
 import { expect, expectBN, expectAddressesEqual, expectThrow, expectBaseValueEqual } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { BigNumber } from '../src';
 
 const oraclePrice = new Price(100);
