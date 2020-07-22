@@ -67,8 +67,8 @@
         "WETH-PUSD": {
             "1": {
                 "links": {},
-                "address": "0xCb5d3e689F0a5E8caEA306BF87ffC2466A34FBe2",
-                "transactionHash": "0xad440f646a7c3794f3b53b7f5fe6eb52fea72c1c5c1b5be41ea7e79b4defacbd"
+                "address": "0x5DB3d2fcf17C4A5aE75F548288b2126768C5882f",
+                "transactionHash": "0xfe940bfb74cf6c64448735d8483287e7a42594cc075a91f76ba465815cb1a7ea"
             }
         }
     },
