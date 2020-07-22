@@ -1,5 +1,7 @@
-import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
+import Web3 from 'web3';
+import { Contract } from 'web3-eth-contract';
+
 import { Contracts } from './Contracts';
 import {
   addressToBytes32,
@@ -20,6 +22,7 @@ import {
 } from '../lib/SignatureHelper';
 import {
   Balance,
+  BigNumberable,
   CallOptions,
   Fee,
   Order,
@@ -30,7 +33,6 @@ import {
   SigningMethod,
   TypedSignature,
   address,
-  BaseValue,
 } from '../lib/types';
 import { ORDER_FLAGS } from '../lib/Constants';
 
@@ -45,7 +47,7 @@ const EIP712_ORDER_STRUCT = [
   { type: 'uint256', name: 'expiration' },
 ];
 
-const EIP712_DOMAIN_NAME = 'P1Orders';
+const DEFAULT_EIP712_DOMAIN_NAME = 'P1Orders';
 const EIP712_DOMAIN_VERSION = '1.0';
 const EIP712_ORDER_STRUCT_STRING =
   'Order(' +
@@ -73,15 +75,25 @@ const EIP712_CANCEL_ORDER_STRUCT_STRING =
 export class Orders {
   private contracts: Contracts;
   private web3: Web3;
+  private eip712DomainName: string;
+  private orders: Contract;
 
   // ============ Constructor ============
 
   constructor(
     contracts: Contracts,
     web3: Web3,
+    eip712DomainName: string = DEFAULT_EIP712_DOMAIN_NAME,
+    orders: Contract = contracts.p1Orders,
   ) {
-    this.web3 = web3;
     this.contracts = contracts;
+    this.web3 = web3;
+    this.eip712DomainName = eip712DomainName;
+    this.orders = orders;
+  }
+
+  get address(): address {
+    return this.orders.options.address;
   }
 
   // ============ On-Chain Approve / On-Chain Cancel ============
@@ -96,7 +108,7 @@ export class Orders {
   ): Promise<any> {
     const stringifiedOrder = this.orderToSolidity(order);
     return this.contracts.send(
-      this.contracts.p1Orders.methods.approveOrder(stringifiedOrder),
+      this.orders.methods.approveOrder(stringifiedOrder),
       options,
     );
   }
@@ -110,7 +122,7 @@ export class Orders {
   ): Promise<any> {
     const stringifiedOrder = this.orderToSolidity(order);
     return this.contracts.send(
-      this.contracts.p1Orders.methods.cancelOrder(stringifiedOrder),
+      this.orders.methods.cancelOrder(stringifiedOrder),
       options,
     );
   }
@@ -126,7 +138,7 @@ export class Orders {
   ): Promise<OrderState[]> {
     const orderHashes = orders.map(order => this.getOrderHash(order));
     const states: any[] = await this.contracts.call(
-      this.contracts.p1Orders.methods.getOrdersStatus(orderHashes),
+      this.orders.methods.getOrdersStatus(orderHashes),
       options,
     );
 
@@ -164,35 +176,49 @@ export class Orders {
   ): BigNumber {
     const runningBalance: Balance = initialBalance.copy();
 
-    // For each order, determine the effect on the balance by following the math in P1Orders.sol.
+    // For each order, determine the effect on the balance by following the smart contract math.
     for (let i = 0; i < orders.length; i += 1) {
       const order = orders[i];
-      let positionFillAmount;
-      if (order.isBuy) {
-        positionFillAmount = makerTokenFillAmounts[i].dividedBy(order.limitPrice.value);
-      } else {
-        positionFillAmount = makerTokenFillAmounts[i];
-      }
+
+      const fillAmount = order.isBuy
+        ? makerTokenFillAmounts[i].dividedBy(order.limitPrice.value)
+        : makerTokenFillAmounts[i];
 
       // Assume orders are filled at the limit price and limit fee.
-      // Order fee is denoted as a percentage of execution price.
-      const fee: BaseValue = order.limitFee.times(order.limitPrice.value);
-      const marginPerPosition: BaseValue = order.isBuy
-        ? order.limitPrice.plus(fee.value)
-        : order.limitPrice.minus(fee.value);
+      const { marginDelta, positionDelta } = this.getBalanceUpdatesAfterFillingOrder(
+        fillAmount,
+        order.limitPrice,
+        order.limitFee,
+        order.isBuy,
+      );
 
-      const marginAmount: BigNumber = positionFillAmount.times(marginPerPosition.value);
-
-      if (order.isBuy) {
-        runningBalance.margin = runningBalance.margin.minus(marginAmount);
-        runningBalance.position = runningBalance.position.plus(positionFillAmount);
-      } else {
-        runningBalance.margin = runningBalance.margin.plus(marginAmount);
-        runningBalance.position = runningBalance.position.minus(positionFillAmount);
-      }
+      runningBalance.margin = runningBalance.margin.plus(marginDelta);
+      runningBalance.position = runningBalance.position.plus(positionDelta);
     }
 
     return runningBalance.getCollateralization(oraclePrice);
+  }
+
+  /**
+   * Calculate the effect of filling an order on the maker's balances.
+   */
+  public getBalanceUpdatesAfterFillingOrder(
+    fillAmount: BigNumberable,
+    fillPrice: Price,
+    fillFee: Fee,
+    isBuy: boolean,
+  ): {
+    marginDelta: BigNumber,
+    positionDelta: BigNumber,
+  } {
+    const positionAmount = new BigNumber(fillAmount).dp(0, BigNumber.ROUND_DOWN);
+    const fee = fillFee.times(fillPrice.value).value.dp(18, BigNumber.ROUND_DOWN);
+    const marginPerPosition = isBuy ? fillPrice.plus(fee) : fillPrice.minus(fee);
+    const marginAmount = positionAmount.times(marginPerPosition.value).dp(0, BigNumber.ROUND_DOWN);
+    return {
+      marginDelta: isBuy ? marginAmount.negated() : marginAmount,
+      positionDelta: isBuy ? positionAmount : positionAmount.negated(),
+    };
   }
 
   public getFeeForOrder(
@@ -405,10 +431,10 @@ export class Orders {
   public getDomainHash(): string {
     return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
-      { t: 'bytes32', v: hashString(EIP712_DOMAIN_NAME) },
+      { t: 'bytes32', v: hashString(this.eip712DomainName) },
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_VERSION) },
       { t: 'uint256', v: `${this.contracts.networkId}` },
-      { t: 'bytes32', v: addressToBytes32(this.contracts.p1Orders.options.address) },
+      { t: 'bytes32', v: addressToBytes32(this.address) },
     );
   }
 
@@ -468,10 +494,10 @@ export class Orders {
 
   private getDomainData() {
     return {
-      name: EIP712_DOMAIN_NAME,
+      name: this.eip712DomainName,
       version: EIP712_DOMAIN_VERSION,
       chainId: this.contracts.networkId,
-      verifyingContract: this.contracts.p1Orders.options.address,
+      verifyingContract: this.address,
     };
   }
 

@@ -22,6 +22,7 @@ type IContractsByAddress = { [address: string]: Contract };
 
 const TUPLE_MAP = {
   'struct P1Orders.Fill': ['amount', 'price', 'fee', 'isNegativeFee'],
+  'struct P1InverseOrders.Fill': ['amount', 'price', 'fee', 'isNegativeFee'],
 };
 
 const OLD_LIQUIDATION_ADDRESSES = [
