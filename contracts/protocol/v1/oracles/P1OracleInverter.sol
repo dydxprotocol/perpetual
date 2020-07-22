@@ -58,13 +58,13 @@ contract P1OracleInverter is
     )
         public
     {
-        uint256 adjustment = 10 ** adjustmentExponent;
-
         _ORACLE_ = oracle;
         _READER_ = reader;
-        _ADJUSTMENT_ = adjustment;
+        _ADJUSTMENT_ = 10 ** uint256(adjustmentExponent);
 
-        bytes32 oracleAndAdjustment = bytes32(bytes20(oracle)) | bytes32(uint256(adjustment));
+        bytes32 oracleAndAdjustment =
+            bytes32(bytes20(oracle)) |
+            bytes32(uint256(adjustmentExponent));
         _MAPPING_[reader] = oracleAndAdjustment;
     }
 
@@ -80,12 +80,12 @@ contract P1OracleInverter is
         view
         returns (uint256)
     {
-        bytes32 oracleAndAdjustment = _MAPPING_[msg.sender];
+        bytes32 oracleAndExponent = _MAPPING_[msg.sender];
         require(
-            oracleAndAdjustment != bytes32(0),
+            oracleAndExponent != bytes32(0),
             "P1OracleInverter: Sender not authorized to get price"
         );
-        (address oracle, uint256 adjustment) = splitOracleAndAdjustment(oracleAndAdjustment);
+        (address oracle, uint256 adjustment) = splitOracleAndAdjustment(oracleAndExponent);
         uint256 rawPrice = I_P1Oracle(oracle).getPrice();
         uint256 invertedPrice = rawPrice.baseReciprocal();
         uint256 result = invertedPrice.baseMul(adjustment);
@@ -93,14 +93,14 @@ contract P1OracleInverter is
     }
 
     function splitOracleAndAdjustment(
-        bytes32 oracleAndAdjustment
+        bytes32 oracleAndExponent
     )
         private
         pure
         returns (address, uint256)
     {
-        address oracle = address(bytes20(oracleAndAdjustment));
-        uint256 adjustment = uint256(uint96(uint256(oracleAndAdjustment)));
-        return (oracle, adjustment);
+        address oracle = address(bytes20(oracleAndExponent));
+        uint256 exponent = uint256(uint96(uint256(oracleAndExponent)));
+        return (oracle, 10 ** exponent);
     }
 }
