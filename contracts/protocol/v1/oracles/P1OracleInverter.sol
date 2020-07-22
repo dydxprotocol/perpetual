@@ -54,10 +54,12 @@ contract P1OracleInverter is
     constructor(
         address oracle,
         address reader,
-        uint96 adjustment
+        uint96 adjustmentExponent
     )
         public
     {
+        uint256 adjustment = 10 ** adjustmentExponent;
+
         _ORACLE_ = oracle;
         _READER_ = reader;
         _ADJUSTMENT_ = adjustment;
