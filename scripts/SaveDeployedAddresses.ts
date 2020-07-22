@@ -8,12 +8,6 @@ import contracts from './Artifacts';
 const NETWORK_IDS = ['1', '42'];
 
 const MARKET_PAIR = process.env.MARKET_PAIR as PerpetualMarket;
-if (!MARKET_PAIR) {
-  throw new Error('Required env var: MARKET_PAIR');
-}
-if (!Object.values(PerpetualMarket).includes(MARKET_PAIR)) {
-  throw new Error(`Unknown market pair: ${MARKET_PAIR}`);
-}
 
 /**
  * Copy deployed contract info for public networks from build/contracts to deployed.json.
@@ -24,11 +18,19 @@ async function run() {
 
   Object.keys(contracts).forEach((contractName) => {
     const contract = contracts[contractName];
-    deployed[contractName] = deployed[contractName] || {};
-    deployed[contractName][MARKET_PAIR] = deployed[contractName][MARKET_PAIR] || {};
 
     NETWORK_IDS.forEach((networkId) => {
       if (contract.networks[networkId]) {
+        // Only validate MARKET_PAIR if it's actually used.
+        if (!MARKET_PAIR) {
+          throw new Error('Required env var: MARKET_PAIR');
+        }
+        if (!Object.values(PerpetualMarket).includes(MARKET_PAIR)) {
+          throw new Error(`Unknown market pair: ${MARKET_PAIR}`);
+        }
+
+        deployed[contractName] = deployed[contractName] || {};
+        deployed[contractName][MARKET_PAIR] = deployed[contractName][MARKET_PAIR] || {};
         deployed[contractName][MARKET_PAIR][networkId] = _.pick(
           contract.networks[networkId],
           ['links', 'address', 'transactionHash'],

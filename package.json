@@ -27,7 +27,7 @@
     "deploy": "truffle migrate --network=$NETWORK --reset && npm run save_deployed_addresses",
     "deploy_kovan": "NETWORK=kovan npm run deploy",
     "deploy_mainnet": "NETWORK=mainnet npm run deploy",
-    "deploy_test": "npm run reset_test_evm && NETWORK=test npm run deploy && npm run snapshot_test_evm",
+    "deploy_test": "npm run reset_test_evm && NETWORK=test npm run deploy && npm run clean_contract_json && npm run snapshot_test_evm",
     "migrate": "truffle migrate",
     "reset_test_evm": "node scripts/reset-test-evm.js",
     "save_deployed_addresses": "ts-node ./scripts/SaveDeployedAddresses.ts",
