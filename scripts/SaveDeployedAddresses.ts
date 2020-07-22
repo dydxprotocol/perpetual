@@ -42,7 +42,7 @@ async function run() {
   const json = `${JSON.stringify(deployed, null, 4)}\n`;
 
   const filepath = `${__dirname}/../migrations/deployed.json`;
-  await fs.writeFileSync(filepath, json);
+  fs.writeFileSync(filepath, json);
   console.log('Wrote deployed.json');
 }
 

@@ -55,7 +55,7 @@ async function clean(): Promise<void> {
     // Write cleaned JSON artifacts to build/published_contracts.
     const publishJson = JSON.stringify(cleaned, null, 4);
     const publishFilepath = `${publishDir}${contractName}.json`;
-    await fs.writeFileSync(publishFilepath, publishJson);
+    fs.writeFileSync(publishFilepath, publishJson);
     console.log(`Wrote ${publishFilepath}`);
 
     // Copy deployed contract information, with market pairs, to build/contracts.
@@ -65,7 +65,7 @@ async function clean(): Promise<void> {
       ...cleaned.networks,
     };
     const buildJson = JSON.stringify(contract, null, 4);
-    await fs.writeFileSync(buildFilepath, buildJson);
+    fs.writeFileSync(buildFilepath, buildJson);
     console.log(`Wrote ${buildFilepath}`);
   }));
 }
