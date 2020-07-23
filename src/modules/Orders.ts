@@ -363,6 +363,18 @@ export class Orders {
   }
 
   /**
+   * Returns true if the order hash has a non-null valid signature from a particular signer.
+   */
+  public orderByHashHasValidSignature(
+    orderHash: string,
+    typedSignature: string,
+    expectedSigner: address,
+  ): boolean {
+    const signer = ecRecoverTypedSignature(orderHash, typedSignature);
+    return addressesAreEqual(signer, expectedSigner);
+  }
+
+  /**
    * Returns true if the cancel order message has a valid signature.
    */
   public cancelOrderHasValidSignature(
