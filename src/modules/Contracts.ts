@@ -263,10 +263,6 @@ export class Contracts {
       (json.networks[this.market] && json.networks[this.market][networkId]) ||
       json.networks[networkId];
     contract.options.address = deployedInfo && deployedInfo.address;
-
-    if (!contract.options.address) {
-      console.error(`Warning: Unknown address for contract ${json.contractName}`);
-    }
   }
 
   private async _send( // tslint:disable-line:function-name
