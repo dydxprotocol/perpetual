@@ -14,6 +14,7 @@ import {
   LoggedFundingRate,
   Price,
   TxResult,
+  PerpetualMarket,
 } from '../lib/types';
 import { ORDER_FLAGS } from '../lib/Constants';
 import { addressesAreEqual } from '../lib/BytesHelper';
@@ -25,11 +26,11 @@ const TUPLE_MAP = {
   'struct P1InverseOrders.Fill': ['amount', 'price', 'fee', 'isNegativeFee'],
 };
 
+// Old contracts used by PBTC-USDC.
 const OLD_LIQUIDATION_ADDRESSES = [
   '0x1F8b4f89a5b8CA0BAa0eDbd0d928DD68B3357280',
   '0x18Ba3F12f9d3699dE7D451cA97ED55Cd33DD0f80',
 ].map(a => a.toLowerCase());
-
 const OLD_LIQUIDATOR_PROXY_ADDRESSES = [
   '0x51C72bEfAe54D365A9D0C08C486aee4F99285e08',
 ].map(a => a.toLowerCase());
@@ -52,10 +53,10 @@ export class Logs {
       this._contractsByAddress = {};
       for (const { contract, isTest } of this.contracts.contractsList) {
         if (isTest) {
-          continue; // ignore test contracts
+          continue; // Ignore test contracts.
         }
         if (!contract.options.address) {
-          throw new Error('Contract has not been deployed');
+          continue; // Ignore contracts which aren't deployed for this market pair and network ID.
         }
         this._contractsByAddress[contract.options.address.toLowerCase()] = contract;
       }
@@ -112,17 +113,19 @@ export class Logs {
       }
     }
 
-    // Check if the logs are coming from old contracts
-    if (OLD_LIQUIDATION_ADDRESSES.includes(logAddress.toLowerCase())) {
-      const parsedLog = this.parseLogWithContract(this.contracts.p1Liquidation, log);
-      if (parsedLog) {
-        return parsedLog;
+    // PBTC-USDC: Check if the logs are coming from old contracts.
+    if (this.contracts.market === PerpetualMarket.PBTC_USDC) {
+      if (OLD_LIQUIDATION_ADDRESSES.includes(logAddress.toLowerCase())) {
+        const parsedLog = this.parseLogWithContract(this.contracts.p1Liquidation, log);
+        if (parsedLog) {
+          return parsedLog;
+        }
       }
-    }
-    if (OLD_LIQUIDATOR_PROXY_ADDRESSES.includes(logAddress.toLowerCase())) {
-      const parsedLog = this.parseLogWithContract(this.contracts.p1LiquidatorProxy, log);
-      if (parsedLog) {
-        return parsedLog;
+      if (OLD_LIQUIDATOR_PROXY_ADDRESSES.includes(logAddress.toLowerCase())) {
+        const parsedLog = this.parseLogWithContract(this.contracts.p1LiquidatorProxy, log);
+        if (parsedLog) {
+          return parsedLog;
+        }
       }
     }
 
