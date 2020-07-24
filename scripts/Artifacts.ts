@@ -7,6 +7,7 @@ import { default as PerpetualV1 } from '../build/contracts/PerpetualV1.json';
 import { default as P1FundingOracle } from '../build/contracts/P1FundingOracle.json';
 import { default as P1InverseFundingOracle } from '../build/contracts/P1InverseFundingOracle.json';
 import { default as P1MakerOracle } from '../build/contracts/P1MakerOracle.json';
+import { default as P1MirrorOracleETHUSD } from '../build/contracts/P1MirrorOracleETHUSD.json';
 import { default as P1OracleInverter } from '../build/contracts/P1OracleInverter.json';
 import { default as P1Orders } from '../build/contracts/P1Orders.json';
 import { default as P1InverseOrders } from '../build/contracts/P1InverseOrders.json';
@@ -26,6 +27,7 @@ export default {
   P1FundingOracle,
   P1InverseFundingOracle,
   P1MakerOracle,
+  P1MirrorOracleETHUSD,
   P1OracleInverter,
   P1Orders,
   P1InverseOrders,

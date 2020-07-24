@@ -11,12 +11,13 @@ import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 const oraclePrice = new Price(100);
 
 async function init(ctx: ITestContext): Promise<void> {
-  await initializePerpetual(ctx);
-  await ctx.perpetual.testing.makerOracle.setPrice(oraclePrice);
-  await ctx.perpetual.admin.setOracle(
-    ctx.perpetual.contracts.p1MakerOracle.options.address,
-    { from: ctx.accounts[0] },
-  );
+  await Promise.all([
+    initializePerpetual(
+      ctx,
+      { oracle: ctx.perpetual.contracts.p1MakerOracle.options.address },
+    ),
+    ctx.perpetual.testing.makerOracle.setPrice(oraclePrice),
+  ]);
 }
 
 perpetualDescribe('P1MakerOracle', init, (ctx: ITestContext) => {

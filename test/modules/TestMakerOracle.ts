@@ -1,29 +1,42 @@
+import Web3 from 'web3';
+
 import {
   Price,
   TxResult,
   SendOptions,
 } from '../../src/lib/types';
+import { Relayer } from '../../src/modules/Relayer';
 import { TestContracts } from './TestContracts';
 
-export class TestMakerOracle {
-  private contracts: TestContracts;
+export class TestMakerOracle extends Relayer {
+  private testContracts: TestContracts;
 
   constructor(
-    contracts: TestContracts,
+    testContracts: TestContracts,
+    web3: Web3,
   ) {
-    this.contracts = contracts;
+    super(testContracts, web3, testContracts.testMakerOracle);
+    this.testContracts = testContracts;
   }
 
-  public get address(): string {
-    return this.contracts.testMakerOracle.options.address;
+  public async setAge(
+    newAge: Price,
+    options?: SendOptions,
+  ): Promise<TxResult> {
+    return this.testContracts.send(
+      this.testContracts.testMakerOracle.methods.setAge(
+        newAge.toSolidity(),
+      ),
+      options,
+    );
   }
 
   public async setPrice(
     newPrice: Price,
     options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.send(
-      this.contracts.testMakerOracle.methods.setPrice(
+    return this.testContracts.send(
+      this.testContracts.testMakerOracle.methods.setPrice(
         newPrice.toSolidity(),
       ),
       options,
@@ -34,8 +47,8 @@ export class TestMakerOracle {
     valid: boolean,
     options?: SendOptions,
   ): Promise<TxResult> {
-    return this.contracts.send(
-      this.contracts.testMakerOracle.methods.setValidity(valid),
+    return this.testContracts.send(
+      this.testContracts.testMakerOracle.methods.setValidity(valid),
       options,
     );
   }

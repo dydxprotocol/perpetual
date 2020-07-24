@@ -56,6 +56,7 @@ const P1Liquidation = artifacts.require('P1Liquidation');
 // Price Oracles
 const P1MakerOracle = artifacts.require('P1MakerOracle');
 const P1OracleInverter = artifacts.require('P1OracleInverter');
+const P1MirrorOracleETHUSD = artifacts.require('P1MirrorOracleETHUSD');
 
 // Proxies
 const P1CurrencyConverterProxy = artifacts.require('P1CurrencyConverterProxy');
@@ -140,8 +141,18 @@ async function deployOracles(deployer, network) {
     getInverseOracleAdjustmentExponent(network),
   );
 
-  const oracle = await P1MakerOracle.deployed();
+  // Deploy mirror oracle.
   const makerOracle = getMakerPriceOracleAddress(network, TestMakerOracle);
+  await deployer.deploy(
+    P1MirrorOracleETHUSD,
+    makerOracle,
+  );
+
+  // Configure routing and permissions.
+  const [oracle, mirror] = await Promise.all([
+    P1MakerOracle.deployed(),
+    P1MirrorOracleETHUSD.deployed(),
+  ]);
   await Promise.all([
     oracle.setRoute(
       PerpetualProxy.address,
@@ -154,6 +165,9 @@ async function deployOracles(deployer, network) {
     oracle.setAdjustment(
       makerOracle,
       getOracleAdjustment(network),
+    ),
+    mirror.kiss(
+      P1MakerOracle.address,
     ),
   ]);
 }

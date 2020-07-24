@@ -94,7 +94,7 @@ export class Perpetual {
     this.admin = new Admin(this.contracts);
     this.finalSettlement = new FinalSettlement(this.contracts);
     this.priceOracle = new PriceOracle(this.contracts);
-    this.relayer = new Relayer(this.contracts);
+    this.relayer = new Relayer(this.contracts, this.web3);
     this.deleveraging = new Deleveraging(this.contracts);
     this.liquidation = new Liquidation(this.contracts);
     this.currencyConverterProxy = new CurrencyConverterProxy(this.contracts);

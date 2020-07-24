@@ -44,6 +44,7 @@ import perpetualV1Json from '../../build/contracts/PerpetualV1.json';
 import p1FundingOracleJson from '../../build/contracts/P1FundingOracle.json';
 import p1InverseFundingOracleJson from '../../build/contracts/P1InverseFundingOracle.json';
 import p1MakerOracleJson from '../../build/contracts/P1MakerOracle.json';
+import p1MirrorOracleETHUSDJson from '../../build/contracts/P1MirrorOracleETHUSD.json';
 import p1OracleInverterJson from '../../build/contracts/P1OracleInverter.json';
 import p1OrdersJson from '../../build/contracts/P1Orders.json';
 import p1InverseOrdersJson from '../../build/contracts/P1InverseOrders.json';
@@ -93,6 +94,7 @@ export class Contracts {
   public p1FundingOracle: Contract;
   public p1InverseFundingOracle: Contract;
   public p1MakerOracle: Contract;
+  public p1MirrorOracle: Contract;
   public p1OracleInverter: Contract;
   public p1Orders: Contract;
   public p1InverseOrders: Contract;
@@ -132,6 +134,7 @@ export class Contracts {
     this.p1FundingOracle = this.addContract(p1FundingOracleJson);
     this.p1InverseFundingOracle = this.addContract(p1InverseFundingOracleJson);
     this.p1MakerOracle = this.addContract(p1MakerOracleJson);
+    this.p1MirrorOracle = this.addContract(p1MirrorOracleETHUSDJson);
     this.p1OracleInverter = this.addContract(p1OracleInverterJson);
     this.p1Orders = this.addContract(p1OrdersJson);
     this.p1InverseOrders = this.addContract(p1InverseOrdersJson);
