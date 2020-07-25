@@ -37,7 +37,7 @@ library P1IndexMath {
     // ============ Functions ============
 
     /**
-     * Returns a compressed bytes32 representation of the index for logging.
+     * @dev Returns a compressed bytes32 representation of the index for logging.
      */
     function toBytes32(
         P1Types.Index memory index

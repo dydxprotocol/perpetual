@@ -35,7 +35,7 @@ import { P1Types } from "../protocol/v1/lib/P1Types.sol";
  * @title Test_Lib
  * @author dYdX
  *
- * Exposes library functions for testing.
+ * @notice Exposes library functions for testing.
  */
 /* solium-disable-next-line camelcase */
 contract Test_Lib is
@@ -54,24 +54,56 @@ contract Test_Lib is
 
     function baseMul(
         uint256 value,
-        uint256 basedValue
+        uint256 baseValue
     )
         external
         pure
         returns (uint256)
     {
-        return BaseMath.baseMul(value, basedValue);
+        return BaseMath.baseMul(value, baseValue);
+    }
+
+    function baseDivMul(
+        uint256 value,
+        uint256 baseValue
+    )
+        external
+        pure
+        returns (uint256)
+    {
+        return BaseMath.baseDivMul(value, baseValue);
     }
 
     function baseMulRoundUp(
         uint256 value,
-        uint256 basedValue
+        uint256 baseValue
     )
         external
         pure
         returns (uint256)
     {
-        return BaseMath.baseMulRoundUp(value, basedValue);
+        return BaseMath.baseMulRoundUp(value, baseValue);
+    }
+
+    function baseDiv(
+        uint256 value,
+        uint256 baseValue
+    )
+        external
+        pure
+        returns (uint256)
+    {
+        return BaseMath.baseDiv(value, baseValue);
+    }
+
+    function baseReciprocal(
+        uint256 baseValue
+    )
+        external
+        pure
+        returns (uint256)
+    {
+        return BaseMath.baseReciprocal(baseValue);
     }
 
     // ============ Math.sol ============
@@ -173,7 +205,6 @@ contract Test_Lib is
 
     // ============ SignedMath.sol ============
 
-
     function add(
         SignedMath.Int calldata sint,
         uint256 value
@@ -194,6 +225,28 @@ contract Test_Lib is
         returns (SignedMath.Int memory)
     {
         return SignedMath.sub(sint, value);
+    }
+
+    function signedAdd(
+        SignedMath.Int calldata augend,
+        SignedMath.Int calldata addend
+    )
+        external
+        pure
+        returns (SignedMath.Int memory)
+    {
+        return SignedMath.signedAdd(augend, addend);
+    }
+
+    function signedSub(
+        SignedMath.Int calldata minuend,
+        SignedMath.Int calldata subtrahend
+    )
+        external
+        pure
+        returns (SignedMath.Int memory)
+    {
+        return SignedMath.signedSub(minuend, subtrahend);
     }
 
     // ============ Storage.sol ============

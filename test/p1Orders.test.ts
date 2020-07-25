@@ -9,7 +9,6 @@ import {
   SignedOrder,
   SigningMethod,
   OrderStatus,
-  TxResult,
   address,
 } from '../src/lib/types';
 import {
@@ -23,15 +22,16 @@ import {
 import { expect, expectBN, expectThrow, expectBaseValueEqual } from './helpers/Expect';
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 
 const orderAmount = new BigNumber('1e18');
+const limitPrice = new Price('987.65432');
 const defaultOrder: Order = {
+  limitPrice,
   isBuy: true,
   isDecreaseOnly: false,
   amount: orderAmount,
-  limitPrice: new Price('987.65432'),
   triggerPrice: PRICES.NONE,
   limitFee: Fee.fromBips(20),
   maker: ADDRESSES.ZERO,
@@ -39,7 +39,7 @@ const defaultOrder: Order = {
   expiration: INTEGERS.ONE_YEAR_IN_SECONDS.times(100),
   salt: new BigNumber('425'),
 };
-const initialMargin = orderAmount.times(defaultOrder.limitPrice.value).times(2);
+const initialMargin = orderAmount.times(limitPrice.value).times(2);
 const fullFlagOrder: Order = {
   ...defaultOrder,
   isDecreaseOnly: true,
@@ -69,6 +69,7 @@ async function init(ctx: ITestContext) {
   await Promise.all([
     mintAndDeposit(ctx, defaultOrder.maker, initialMargin),
     mintAndDeposit(ctx, defaultOrder.taker, initialMargin),
+    setOraclePrice(ctx, limitPrice),
   ]);
 }
 
@@ -102,13 +103,23 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     it('Signs an order cancelation', async () => {
       const typedSignature = await ctx.perpetual.orders.signCancelOrder(
         defaultOrder,
-        SigningMethod.Hash,
+        SigningMethod.TypedData,
       );
-      const validSignature = ctx.perpetual.orders.cancelOrderHasValidSignature(
+      const validTypedSignature = ctx.perpetual.orders.cancelOrderHasValidSignature(
         defaultOrder,
         typedSignature,
       );
-      expect(validSignature).to.be.true;
+      expect(validTypedSignature).to.be.true;
+
+      const hashSignature = await ctx.perpetual.orders.signCancelOrder(
+        defaultOrder,
+        SigningMethod.Hash,
+      );
+      const validHashSignature = ctx.perpetual.orders.cancelOrderHasValidSignature(
+        defaultOrder,
+        hashSignature,
+      );
+      expect(validHashSignature).to.be.true;
     });
 
     it('Recognizes invalid signatures', () => {
@@ -132,45 +143,104 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
     });
 
-    it('Estimates collateralization after executing orders', () => {
-      // Buy 1e18 at price of 987.65432 with fee of 0.002.
-      // position: 1e18 --> 1000e18 value at price of 1000
-      // margin: -987.65632e18
-      const ratio1 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+    it('Estimates collateralization after executing buys', async () => {
+      // Buy 1e18 BASE at price of 987.65432 QUOTE/BASE with fee of 0.002.
+      // - base: 1e18 BASE -> worth 1200e18 QUOTE at oracle price of 1200
+      // - quote: -987.65432e18 * 1.002 QUOTE
+      const oraclePrice = new Price(1200);
+      const marginCost = orderAmount.times(limitPrice.value);
+      const ratio = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
-        new Price(1000),
+        oraclePrice,
         [defaultOrder, defaultOrder, defaultOrder],
-        [orderAmount.div(3), orderAmount.div(2), orderAmount.div(6)],
+        [marginCost.div(3), marginCost.div(2), marginCost.div(6)],
       );
-      expectBN(ratio1).to.equal(new BigNumber(1000).div(987.65432 * 1.002));
 
-      const ratio2 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+      // Execute the trade on the smart contract.
+      // First, withdraw maker margin so it has zero initial balance.
+      const { maker } = defaultOrder;
+      await Promise.all([
+        ctx.perpetual.margin.withdraw(maker, maker, initialMargin, { from: maker }),
+        setOraclePrice(ctx, oraclePrice),
+      ]);
+      await fillOrder({ amount: orderAmount.div(3) });
+      await fillOrder({ amount: orderAmount.div(2) });
+      await fillOrder({ amount: orderAmount.div(6) });
+      const balance = await ctx.perpetual.getters.getAccountBalance(maker);
+      expectBN(ratio, 'simulated vs. on-chain').to.equal(balance.getCollateralization(oraclePrice));
+
+      // Compare with the expected result.
+      const expectedRatio = new BigNumber(1200).div(987.65432 * 1.002);
+      const error = expectedRatio.minus(ratio).abs();
+      expectBN(error, 'simulated vs. expected (error)').to.be.lt(1e-15);
+    });
+
+    it('Estimates collateralization after executing sells', async () => {
+      // Sell 1e18 BASE at price of 987.65432 QUOTE/BASE with fee of 0.002.
+      // - base: -1e18 BASE -> worth -200e18 QUOTE at oracle price of 200
+      // - quote: 987.65432e18 * 0.998 QUOTE
+      const oraclePrice = new Price(200);
+      const sellOrder = await getModifiedOrder({ isBuy: false });
+      const ratio = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
-        new Price(200),
-        [defaultOrder, defaultOrder, defaultOrder],
+        oraclePrice,
+        [sellOrder, sellOrder, sellOrder],
         [orderAmount.div(3), orderAmount.div(2), orderAmount.div(6)],
       );
-      expectBN(ratio2).to.equal(new BigNumber(200).div(987.65432 * 1.002));
+
+      // Execute the trade on the smart contract.
+      // First, withdraw maker margin so it has zero initial balance.
+      const { maker } = defaultOrder;
+      await Promise.all([
+        ctx.perpetual.margin.withdraw(maker, maker, initialMargin, { from: maker }),
+        setOraclePrice(ctx, oraclePrice),
+      ]);
+      await fillOrder(sellOrder, { amount: orderAmount.div(3) });
+      await fillOrder(sellOrder, { amount: orderAmount.div(2) });
+      await fillOrder(sellOrder, { amount: orderAmount.div(6) });
+      const balance = await ctx.perpetual.getters.getAccountBalance(maker);
+      expectBN(ratio, 'simulated vs. on-chain').to.equal(balance.getCollateralization(oraclePrice));
+
+      // Compare with the expected result.
+      const expectedRatio = new BigNumber(987.65432 * 0.998).div(200);
+      const error = expectedRatio.minus(ratio).abs();
+      expectBN(error, 'simulated vs. expected (error)').to.be.lt(1e-15);
+    });
+
+    it('Estimates collateralization when positive balance is zero', async () => {
+      const order = await getModifiedOrder({ limitPrice: limitPrice.times(2) });
+      const marginCost = orderAmount.times(limitPrice.value.times(2));
+      const ratio = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+        new Balance(initialMargin, orderAmount.negated()),
+        limitPrice,
+        [order],
+        [marginCost],
+      );
+      expectBN(ratio).to.equal(0);
     });
 
     it('Estimates collateralization when negative balance is zero', () => {
-      const price = new Price(100);
+      const marginCost = orderAmount.times(limitPrice.value);
+      const ratio = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
+        new Balance(initialMargin, orderAmount),
+        limitPrice,
+        [defaultOrder],
+        [marginCost.div(2)],
+      );
+      expectBN(ratio).to.equal(Infinity);
+    });
 
+    it('Estimates collateralization when balance is zero', async () => {
+      const buyOrder = await getModifiedOrder({ limitFee: new Fee(0) });
+      const sellOrder = await getModifiedOrder({ isBuy: false, limitFee: new Fee(0) });
+      const marginCost = orderAmount.times(limitPrice.value);
       const ratio1 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
         new Balance(0, 0),
-        price,
-        [],
-        [],
+        limitPrice,
+        [buyOrder, sellOrder],
+        [marginCost, orderAmount],
       );
       expectBN(ratio1).to.equal(Infinity);
-
-      const ratio2 = ctx.perpetual.orders.getAccountCollateralizationAfterMakingOrders(
-        new Balance(initialMargin, orderAmount),
-        price,
-        [defaultOrder],
-        [orderAmount.div(2)],
-      );
-      expectBN(ratio2).to.equal(Infinity);
     });
   });
 
@@ -251,131 +321,44 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
   describe('trade()', () => {
     describe('basic success cases', () => {
       it('fills a bid at the limit price', async () => {
-        const { expectedMarginAmount, txResult } = await fillOrder(defaultSignedOrder);
-        await expectBalances(
-          ctx,
-          txResult,
-          [defaultOrder.maker, defaultOrder.taker],
-          [initialMargin.minus(expectedMarginAmount), initialMargin.plus(expectedMarginAmount)],
-          [orderAmount, orderAmount.negated()],
-        );
-
-        // Check logs.
-        const logs = ctx.perpetual.logs.parseLogs(txResult);
-        const filteredLogs = _.filter(logs, { name: 'LogOrderFilled' });
-        expect(filteredLogs.length).to.equal(1);
-        expect(filteredLogs[0].args.orderHash).to.equal(
-          ctx.perpetual.orders.getOrderHash(defaultOrder),
-        );
-        expect(filteredLogs[0].args.flags.isBuy).to.equal(true);
-        expect(filteredLogs[0].args.flags.isDecreaseOnly).to.equal(false);
-        expect(filteredLogs[0].args.flags.isNegativeLimitFee).to.equal(false);
-        expectBN(filteredLogs[0].args.fill.amount).to.equal(defaultOrder.amount);
-        expectBaseValueEqual(
-          filteredLogs[0].args.fill.price,
-          defaultOrder.limitPrice,
-        );
-        expectBaseValueEqual(
-          filteredLogs[0].args.fill.fee,
-          defaultOrder.limitFee,
-        );
-        expect(filteredLogs[0].args.fill.isNegativeFee).to.equal(false);
+        await fillOrder();
       });
 
       it('fills an ask at the limit price', async () => {
-        const sellOrder = await getModifiedOrder({ isBuy: false });
-        const { expectedMarginAmount, txResult } = await fillOrder(sellOrder);
-        await expectBalances(
-          ctx,
-          txResult,
-          [defaultOrder.maker, defaultOrder.taker],
-          [initialMargin.plus(expectedMarginAmount), initialMargin.minus(expectedMarginAmount)],
-          [orderAmount.negated(), orderAmount],
-        );
-
-        // Check logs.
-        const logs = ctx.perpetual.logs.parseLogs(txResult);
-        const filteredLogs = _.filter(logs, { name: 'LogOrderFilled' });
-        expect(filteredLogs.length).to.equal(1);
-        expect(filteredLogs[0].args.orderHash).to.equal(
-          ctx.perpetual.orders.getOrderHash(sellOrder),
-        );
-        expect(filteredLogs[0].args.flags.isBuy).to.equal(false);
-        expect(filteredLogs[0].args.flags.isDecreaseOnly).to.equal(false);
-        expect(filteredLogs[0].args.flags.isNegativeLimitFee).to.equal(false);
-        expectBN(filteredLogs[0].args.fill.amount).to.equal(defaultOrder.amount);
-        expectBaseValueEqual(
-          filteredLogs[0].args.fill.price,
-          defaultOrder.limitPrice,
-        );
-        expectBaseValueEqual(
-          filteredLogs[0].args.fill.fee,
-          defaultOrder.limitFee,
-        );
-        expect(filteredLogs[0].args.fill.isNegativeFee).to.equal(false);
+        await fillOrder({ isBuy: false });
       });
 
       it('fills a bid below the limit price', async () => {
-        const fillPrice = defaultOrder.limitPrice.minus(25);
-        const { expectedMarginAmount, txResult } =
-          await fillOrder(defaultSignedOrder, { price: fillPrice });
-        await expectBalances(
-          ctx,
-          txResult,
-          [defaultOrder.maker, defaultOrder.taker],
-          [initialMargin.minus(expectedMarginAmount), initialMargin.plus(expectedMarginAmount)],
-          [orderAmount, orderAmount.negated()],
+        await fillOrder(
+          {},
+          { price: limitPrice.minus(25) },
         );
       });
 
       it('fills an ask above the limit price', async () => {
-        const sellOrder = await getModifiedOrder({ isBuy: false });
-        const fillPrice = defaultOrder.limitPrice.plus(25);
-        const { expectedMarginAmount, txResult } =
-          await fillOrder(sellOrder, { price: fillPrice });
-        await expectBalances(
-          ctx,
-          txResult,
-          [defaultOrder.maker, defaultOrder.taker],
-          [initialMargin.plus(expectedMarginAmount), initialMargin.minus(expectedMarginAmount)],
-          [orderAmount.negated(), orderAmount],
+        await fillOrder(
+          { isBuy: false },
+          { price: limitPrice.plus(25) },
         );
       });
 
       it('fills a bid with a fee less than the limit fee', async () => {
-        const { expectedMarginAmount, txResult } = await fillOrder(
-          defaultSignedOrder,
+        await fillOrder(
+          {},
           {
             fee: defaultOrder.limitFee.div(2),
-            price: defaultOrder.limitPrice.minus(25),
+            price: limitPrice.minus(25),
           },
-        );
-        await expectBalances(
-          ctx,
-          txResult,
-          [defaultOrder.maker, defaultOrder.taker],
-          [initialMargin.minus(expectedMarginAmount), initialMargin.plus(expectedMarginAmount)],
-          [orderAmount, orderAmount.negated()],
         );
       });
 
       it('fills an ask with a fee less than the limit fee', async () => {
-        const sellOrder = await getModifiedOrder({ isBuy: false });
-        const fillPrice = defaultOrder.limitPrice.plus(25);
-        const fillFee = defaultOrder.limitFee.div(2);
-        const { expectedMarginAmount, txResult } = await fillOrder(
-          sellOrder,
+        await fillOrder(
+          { isBuy: false },
           {
-            fee: fillFee,
-            price: fillPrice,
+            fee: defaultOrder.limitFee.div(2),
+            price: limitPrice.plus(25),
           },
-        );
-        await expectBalances(
-          ctx,
-          txResult,
-          [defaultOrder.maker, defaultOrder.taker],
-          [initialMargin.plus(expectedMarginAmount), initialMargin.minus(expectedMarginAmount)],
-          [orderAmount.negated(), orderAmount],
         );
       });
 
@@ -385,15 +368,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
           true,
           { from: defaultOrder.taker },
         );
-        const { expectedMarginAmount, txResult } =
-          await fillOrder(defaultSignedOrder, { sender: otherUser });
-        await expectBalances(
-          ctx,
-          txResult,
-          [defaultOrder.maker, defaultOrder.taker],
-          [initialMargin.minus(expectedMarginAmount), initialMargin.plus(expectedMarginAmount)],
-          [orderAmount, orderAmount.negated()],
-        );
+        await fillOrder({}, { sender: otherUser });
       });
 
       it('succeeds if sender is a global operator', async () => {
@@ -402,15 +377,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
           true,
           { from: admin },
         );
-        const { expectedMarginAmount, txResult } =
-          await fillOrder(defaultSignedOrder, { sender: otherUser });
-        await expectBalances(
-          ctx,
-          txResult,
-          [defaultOrder.maker, defaultOrder.taker],
-          [initialMargin.minus(expectedMarginAmount), initialMargin.plus(expectedMarginAmount)],
-          [orderAmount, orderAmount.negated()],
-        );
+        await fillOrder({}, { sender: otherUser });
       });
 
       it('succeeds with an invalid signature for an order approved on-chain', async () => {
@@ -419,32 +386,12 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
           ...defaultSignedOrder,
           typedSignature: `0xff${defaultSignedOrder.typedSignature.substr(4)}`,
         };
-        const { expectedMarginAmount, txResult } = await fillOrder(order);
-
-        await expectBalances(
-          ctx,
-          txResult,
-          [defaultOrder.maker, defaultOrder.taker],
-          [initialMargin.minus(expectedMarginAmount), initialMargin.plus(expectedMarginAmount)],
-          [orderAmount, orderAmount.negated()],
-        );
+        await fillOrder(order);
       });
 
       it('succeeds repeating an order (with a different salt)', async () => {
-        // Prevent undercollateralization.
-        await ctx.perpetual.testing.oracle.setPrice(new Price(100));
-
-        // Execute the same order twice, with different salts.
-        const repeatOrder = {
-          ...defaultOrder,
-          salt: defaultOrder.salt.plus(1),
-        };
-        const repeatSignedOrder = await ctx.perpetual.orders.getSignedOrder(
-          repeatOrder,
-          SigningMethod.Hash,
-        );
-        await fillOrder(defaultSignedOrder);
-        await fillOrder(repeatSignedOrder);
+        await fillOrder();
+        await fillOrder({ salt: defaultOrder.salt.plus(1) });
       });
     });
 
@@ -476,7 +423,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fails for bad signature', async () => {
         const order = {
           ...defaultSignedOrder,
-          typedSignature: `0xff${defaultSignedOrder.typedSignature.substr(4)}`,
+          typedSignature: `0xffff${defaultSignedOrder.typedSignature.substr(6)}`,
         };
         await expectThrow(
           fillOrder(order),
@@ -487,7 +434,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fails for canceled order', async () => {
         await ctx.perpetual.orders.cancelOrder(defaultOrder, { from: defaultOrder.maker });
         await expectThrow(
-          fillOrder(defaultSignedOrder),
+          fillOrder(),
           'Order was already canceled',
         );
       });
@@ -495,8 +442,8 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fails for wrong maker', async () => {
         const tradeData = ctx.perpetual.orders.fillToTradeData(
           defaultSignedOrder,
-          defaultOrder.amount,
-          defaultOrder.limitPrice,
+          orderAmount,
+          limitPrice,
           defaultOrder.limitFee,
         );
         await expectThrow(
@@ -506,7 +453,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
               maker: otherUser,
               taker: defaultOrder.taker,
               data: tradeData,
-              trader: ctx.perpetual.contracts.p1Orders.options.address,
+              trader: ctx.perpetual.orders.address,
             })
             .commit({ from: defaultOrder.taker }),
           'Order maker does not match maker',
@@ -516,8 +463,8 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       it('fails for wrong taker', async () => {
         const tradeData = ctx.perpetual.orders.fillToTradeData(
           defaultSignedOrder,
-          defaultOrder.amount,
-          defaultOrder.limitPrice,
+          orderAmount,
+          limitPrice,
           defaultOrder.limitFee,
         );
         await expectThrow(
@@ -527,7 +474,7 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
               maker: defaultOrder.maker,
               taker: otherUser,
               data: tradeData,
-              trader: ctx.perpetual.contracts.p1Orders.options.address,
+              trader: ctx.perpetual.orders.address,
             })
             .commit({ from: otherUser }),
           'Order taker does not match taker',
@@ -535,55 +482,53 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
       });
 
       it('fails if the order has expired', async () => {
-        const order = await getModifiedOrder({ expiration: new BigNumber(1) });
         await expectThrow(
-          fillOrder(order),
+          fillOrder({ expiration: new BigNumber(1) }),
           'Order has expired',
         );
       });
 
       it('fails to fill a bid at a price above the limit price', async () => {
         await expectThrow(
-          fillOrder(defaultSignedOrder, { price: defaultOrder.limitPrice.plus(1) }),
+          fillOrder({}, { price: limitPrice.plus(1) }),
           'Fill price is invalid',
         );
       });
 
       it('fails to fill an ask at a price below the limit price', async () => {
-        const sellOrder = await getModifiedOrder({ isBuy: false });
         await expectThrow(
-          fillOrder(sellOrder, { price: sellOrder.limitPrice.minus(1) }),
+          fillOrder({ isBuy: false }, { price: limitPrice.minus(1) }),
           'Fill price is invalid',
         );
       });
 
       it('fails if fee is greater than limit fee', async () => {
         await expectThrow(
-          fillOrder(defaultSignedOrder, { fee: defaultOrder.limitFee.plus(1) }),
+          fillOrder({}, { fee: defaultOrder.limitFee.plus(1) }),
           'Fill fee is invalid',
         );
       });
 
       it('fails to overfill order', async () => {
         await expectThrow(
-          fillOrder(defaultSignedOrder, { amount: defaultSignedOrder.amount.plus(1) }),
+          fillOrder({}, { amount: orderAmount.plus(1) }),
           'Cannot overfill order',
         );
       });
 
       it('fails to overfill partially filled order', async () => {
-        const halfAmount = defaultOrder.amount.div(2);
-        await fillOrder(defaultSignedOrder, { amount: halfAmount });
+        const halfAmount = orderAmount.div(2);
+        await fillOrder({}, { amount: halfAmount });
         await expectThrow(
-          fillOrder(defaultSignedOrder, { amount: halfAmount.plus(1) }),
+          fillOrder({}, { amount: halfAmount.plus(1) }),
           'Cannot overfill order',
         );
       });
 
       it('fails for an order that was already filled', async () => {
-        await fillOrder(defaultSignedOrder);
+        await fillOrder();
         await expectThrow(
-          fillOrder(defaultSignedOrder),
+          fillOrder(),
           'Cannot overfill order',
         );
       });
@@ -594,31 +539,22 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         // limit bid |
         //        -5 | fill price
         //       -10 | trigger price, oracle price
-        const triggerPrice = defaultOrder.limitPrice.minus(10);
-        const fillPrice = defaultOrder.limitPrice.minus(5);
-        const order = await getModifiedOrder({ triggerPrice });
-        await ctx.perpetual.testing.oracle.setPrice(triggerPrice);
-        const { txResult } = await fillOrder(order, { price: fillPrice });
-
-        // Check logs.
-        const logs = ctx.perpetual.logs.parseLogs(txResult);
-        const filteredLogs = _.filter(logs, { name: 'LogOrderFilled' });
-        expect(filteredLogs.length).to.equal(1);
-        expectBaseValueEqual(
-          filteredLogs[0].args.triggerPrice,
-          order.triggerPrice,
-        );
+        const triggerPrice = limitPrice.minus(10);
+        const fillPrice = limitPrice.minus(5);
+        const oraclePrice = limitPrice.minus(10);
+        await setOraclePrice(ctx, oraclePrice);
+        await fillOrder({ triggerPrice }, { price: fillPrice });
       });
 
       it('fills an ask with the oracle price at the trigger price', async () => {
         //       +10 | trigger price, oracle price
         //        +5 | fill price
         // limit ask |
-        const triggerPrice = defaultOrder.limitPrice.plus(10);
-        const fillPrice = defaultOrder.limitPrice.plus(5);
-        const sellOrder = await getModifiedOrder({ triggerPrice, isBuy: false });
-        await ctx.perpetual.testing.oracle.setPrice(triggerPrice);
-        await fillOrder(sellOrder, { price: fillPrice });
+        const triggerPrice = limitPrice.plus(10);
+        const fillPrice = limitPrice.plus(5);
+        const oraclePrice = limitPrice.plus(10);
+        await setOraclePrice(ctx, oraclePrice);
+        await fillOrder({ triggerPrice, isBuy: false }, { price: fillPrice });
       });
 
       it('fills a bid with the oracle price above the trigger price', async () => {
@@ -627,11 +563,11 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         // limit bid |
         //        -5 | fill price
         //       -10 | trigger price
-        const triggerPrice = defaultOrder.limitPrice.minus(10);
-        const fillPrice = defaultOrder.limitPrice.minus(5);
-        const order = await getModifiedOrder({ triggerPrice });
-        await ctx.perpetual.testing.oracle.setPrice(triggerPrice.plus(20));
-        await fillOrder(order, { price: fillPrice });
+        const triggerPrice = limitPrice.minus(10);
+        const fillPrice = limitPrice.minus(5);
+        const oraclePrice = limitPrice.plus(10);
+        await setOraclePrice(ctx, oraclePrice);
+        await fillOrder({ triggerPrice }, { price: fillPrice });
       });
 
       it('fills an ask with the oracle price below the trigger price', async () => {
@@ -640,22 +576,21 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         // limit ask |
         //           |
         //       -10 | oracle price
-        const triggerPrice = defaultOrder.limitPrice.plus(10);
-        const fillPrice = defaultOrder.limitPrice.plus(5);
-        const sellOrder = await getModifiedOrder({ triggerPrice, isBuy: false });
-        await ctx.perpetual.testing.oracle.setPrice(triggerPrice.minus(20));
-        await fillOrder(sellOrder, { price: fillPrice });
+        const triggerPrice = limitPrice.plus(10);
+        const fillPrice = limitPrice.plus(5);
+        const oraclePrice = limitPrice.minus(10);
+        await setOraclePrice(ctx, oraclePrice);
+        await fillOrder({ triggerPrice, isBuy: false }, { price: fillPrice });
       });
 
       it('fails to fill a bid if the oracle price is below the trigger price', async () => {
         // limit bid |
         //       -10 | trigger price
         //       -11 | oracle price
-        const triggerPrice = defaultOrder.limitPrice.minus(10);
-        await ctx.perpetual.testing.oracle.setPrice(triggerPrice.minus(1));
-        const order = await getModifiedOrder({ triggerPrice });
+        const triggerPrice = limitPrice.minus(10);
+        await setOraclePrice(ctx, triggerPrice.minus(1));
         await expectThrow(
-          fillOrder(order),
+          fillOrder({ triggerPrice }),
           'Trigger price has not been reached',
         );
       });
@@ -664,11 +599,10 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         //       +11 | oracle price
         //       +10 | trigger price
         // limit ask |
-        const triggerPrice = defaultOrder.limitPrice.plus(10);
-        await ctx.perpetual.testing.oracle.setPrice(triggerPrice.plus(1));
-        const sellOrder = await getModifiedOrder({ triggerPrice, isBuy: false });
+        const triggerPrice = limitPrice.plus(10);
+        await setOraclePrice(ctx, triggerPrice.plus(1));
         await expectThrow(
-          fillOrder(sellOrder),
+          fillOrder({ triggerPrice, isBuy: false }),
           'Trigger price has not been reached',
         );
       });
@@ -677,84 +611,60 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     describe('in decrease-only mode', () => {
       it('fills a bid', async () => {
         // Give the maker a short position.
-        const { limitFee, limitPrice, maker, taker } = defaultOrder;
+        const { limitFee, maker, taker } = defaultOrder;
         const fee = limitFee.times(limitPrice.value);
         const cost = limitPrice.value.plus(fee.value).times(orderAmount);
         await sell(ctx, maker, taker, orderAmount, cost);
 
         // Fill the order to decrease the short position to zero.
-        const buyOrder = await getModifiedOrder({ isDecreaseOnly: true });
-        const { txResult } = await fillOrder(buyOrder);
-
-        // Check balances.
-        await expectBalances(
-          ctx,
-          txResult,
-          [maker, taker],
-          [initialMargin, initialMargin],
-          [INTEGERS.ZERO, INTEGERS.ZERO],
-        );
+        await fillOrder({ isDecreaseOnly: true });
       });
 
       it('fills an ask', async () => {
         // Give the maker a long position.
-        const { limitFee, limitPrice, maker, taker } = defaultOrder;
+        const { limitFee, maker, taker } = defaultOrder;
         const fee = limitFee.times(limitPrice.value).negated();
         const cost = limitPrice.value.plus(fee.value).times(orderAmount);
         await buy(ctx, maker, taker, orderAmount, cost);
 
         // Fill the order to decrease the long position to zero.
-        const sellOrder = await getModifiedOrder({ isBuy: false, isDecreaseOnly: true });
-        const { txResult } = await fillOrder(sellOrder);
-
-        // Check balances.
-        await expectBalances(
-          ctx,
-          txResult,
-          [maker, taker],
-          [initialMargin, initialMargin],
-          [INTEGERS.ZERO, INTEGERS.ZERO],
-        );
+        await fillOrder({ isBuy: false, isDecreaseOnly: true });
       });
 
       it('fails to fill a bid if maker position is positive', async () => {
         const { maker, taker } = defaultOrder;
-        await buy(ctx, maker, taker, new BigNumber(1), defaultOrder.limitPrice.value);
-        const buyOrder = await getModifiedOrder({ isDecreaseOnly: true });
+        await buy(ctx, maker, taker, new BigNumber(1), limitPrice.value);
         await expectThrow(
-          fillOrder(buyOrder),
+          fillOrder({ isDecreaseOnly: true }),
           'Fill does not decrease position',
         );
       });
 
       it('fails to fill an ask if maker position is negative', async () => {
         const { maker, taker } = defaultOrder;
-        await sell(ctx, maker, taker, new BigNumber(1), defaultOrder.limitPrice.value);
-        const sellOrder = await getModifiedOrder({ isBuy: false, isDecreaseOnly: true });
+        await sell(ctx, maker, taker, new BigNumber(1), limitPrice.value);
         await expectThrow(
-          fillOrder(sellOrder),
+          fillOrder({ isBuy: false, isDecreaseOnly: true }),
           'Fill does not decrease position',
         );
       });
 
       it('fails to fill a bid if maker position would become positive', async () => {
         const { maker, taker } = defaultOrder;
-        const cost = defaultOrder.limitPrice.value.times(orderAmount.minus(1));
+        const cost = limitPrice.value.times(orderAmount.minus(1));
         await sell(ctx, maker, taker, orderAmount.minus(1), cost);
-        const buyOrder = await getModifiedOrder({ isDecreaseOnly: true });
         await expectThrow(
-          fillOrder(buyOrder),
+          fillOrder({ isDecreaseOnly: true }),
           'Fill does not decrease position',
         );
       });
 
       it('fails to fill an ask if maker position would become negative', async () => {
         const { maker, taker } = defaultOrder;
-        const cost = defaultOrder.limitPrice.value.times(orderAmount.minus(1));
+        const cost = limitPrice.value.times(orderAmount.minus(1));
         await buy(ctx, maker, taker, orderAmount.minus(1), cost);
-        const sellOrder = await getModifiedOrder({ isBuy: false, isDecreaseOnly: true });
         await expectThrow(
-          fillOrder(sellOrder),
+          fillOrder({ isBuy: false, isDecreaseOnly: true }),
           'Fill does not decrease position',
         );
       });
@@ -763,28 +673,12 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     describe('with negative limit fee', () => {
       it('fills a bid', async () => {
         const negativeFee = new Fee(defaultOrder.limitFee.value.abs().negated());
-        const order = await getModifiedOrder({ limitFee: negativeFee });
-        const { expectedMarginAmount, txResult } = await fillOrder(order);
-        await expectBalances(
-          ctx,
-          txResult,
-          [defaultOrder.maker, defaultOrder.taker],
-          [initialMargin.minus(expectedMarginAmount), initialMargin.plus(expectedMarginAmount)],
-          [orderAmount, orderAmount.negated()],
-        );
+        await fillOrder({ limitFee: negativeFee });
       });
 
       it('fills an ask', async () => {
         const negativeFee = new Fee(defaultOrder.limitFee.value.abs().negated());
-        const sellOrder = await getModifiedOrder({ isBuy: false, limitFee: negativeFee });
-        const { expectedMarginAmount, txResult } = await fillOrder(sellOrder);
-        await expectBalances(
-          ctx,
-          txResult,
-          [defaultOrder.maker, defaultOrder.taker],
-          [initialMargin.plus(expectedMarginAmount), initialMargin.minus(expectedMarginAmount)],
-          [orderAmount.negated(), orderAmount],
-        );
+        await fillOrder({ isBuy: false, limitFee: negativeFee });
       });
 
       it('fails if fee is greater than limit fee', async () => {
@@ -808,29 +702,37 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     return ctx.perpetual.orders.getSignedOrder(newOrder, SigningMethod.Hash);
   }
 
+  /**
+   * Fill an order.
+   *
+   * Check that logs and balance updates are as expected.
+   */
   async function fillOrder(
-    order: SignedOrder,
-    args: {
+    orderArgs: Partial<SignedOrder> = {},
+    fillArgs: {
       amount?: BigNumber,
       price?: Price,
       fee?: Fee,
       sender?: address,
     } = {},
-  ): Promise<{
-    expectedMarginAmount: BigNumber,
-    txResult: TxResult,
-  }> {
-    const fillAmount = args.amount || order.amount;
-    const fillPrice = args.price || order.limitPrice;
-    const fillFee = args.fee || order.limitFee;
+  ): Promise<void> {
+    const order: SignedOrder = orderArgs.typedSignature
+      ? orderArgs as SignedOrder
+      : await getModifiedOrder(orderArgs);
+    const fillAmount = (fillArgs.amount || order.amount).dp(0, BigNumber.ROUND_DOWN);
+    const fillPrice = fillArgs.price || order.limitPrice;
+    const fillFee = fillArgs.fee || order.limitFee;
+    const sender = fillArgs.sender || order.taker;
 
-    // Order fee is denoted as a percentage of execution price.
-    const feeAmount = fillFee.times(fillPrice.value);
-    const effectivePrice = order.isBuy
-      ? fillPrice.plus(feeAmount.value)
-      : fillPrice.minus(feeAmount.value);
-    const expectedMarginAmount = fillAmount.times(effectivePrice.value).dp(0);
+    // Get initial balances.
+    const [makerBalance, takerBalance] = await Promise.all([
+      ctx.perpetual.getters.getAccountBalance(order.maker),
+      ctx.perpetual.getters.getAccountBalance(order.taker),
+    ]);
+    const { margin: makerMargin, position: makerPosition } = makerBalance;
+    const { margin: takerMargin, position: takerPosition } = takerBalance;
 
+    // Fill the order.
     const txResult = await ctx.perpetual.trade
       .initiate()
       .fillSignedOrder(
@@ -839,11 +741,44 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         fillPrice,
         fillFee,
       )
-      .commit({ from: args.sender || order.taker });
-    return {
-      expectedMarginAmount,
+      .commit({ from: sender });
+
+    // Check final balances.
+    const {
+      marginDelta,
+      positionDelta,
+    } = ctx.perpetual.orders.getBalanceUpdatesAfterFillingOrder(
+      fillAmount,
+      fillPrice,
+      fillFee,
+      order.isBuy,
+    );
+    await expectBalances(
+      ctx,
       txResult,
-    };
+      [order.maker, order.taker],
+      [makerMargin.plus(marginDelta), takerMargin.minus(marginDelta)],
+      [makerPosition.plus(positionDelta), takerPosition.minus(positionDelta)],
+    );
+
+    // Check logs.
+    const logs = ctx.perpetual.logs.parseLogs(txResult);
+    const filteredLogs = _.filter(logs, { name: 'LogOrderFilled' });
+    expect(filteredLogs.length).to.equal(1);
+    const [log] = filteredLogs;
+    expect(log.args.orderHash, 'log hash').to.equal(ctx.perpetual.orders.getOrderHash(order));
+    expect(log.args.flags.isBuy, 'log isBuy').to.equal(order.isBuy);
+    expect(log.args.flags.isDecreaseOnly, 'log isDecreaseOnly').to.equal(order.isDecreaseOnly);
+    expect(log.args.flags.isNegativeLimitFee, 'log isNegativeLimitFee').to.equal(
+      order.limitFee.isNegative(),
+    );
+    expectBaseValueEqual(log.args.triggerPrice, order.triggerPrice, 'log trigger price');
+    expectBN(log.args.fill.amount, 'log fill amount').to.equal(fillAmount);
+    expectBaseValueEqual(log.args.fill.price, fillPrice, 'log fill price');
+    expectBaseValueEqual(log.args.fill.fee, fillFee.abs(), 'log fill fee');
+    expect(log.args.fill.isNegativeFee, 'log fill isNegativeLimitFee').to.equal(
+      order.limitFee.isNegative(),
+    );
   }
 
   async function expectStatus(
@@ -858,3 +793,10 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
     }
   }
 });
+
+/**
+ * Update the oracle price.
+ */
+async function setOraclePrice(ctx: ITestContext, price: Price): Promise<void> {
+  await ctx.perpetual.testing.oracle.setPrice(price);
+}

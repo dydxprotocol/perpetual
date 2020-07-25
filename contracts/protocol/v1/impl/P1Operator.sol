@@ -42,11 +42,12 @@ contract P1Operator is
     // ============ Functions ============
 
     /**
-     * @notice Approves or disapproves an other account to perform certain actions on behalf of the
-     * sender's account.
+     * @notice Grants or revokes permission for another account to perform certain actions on behalf
+     *  of the sender.
      * @dev Emits the LogSetLocalOperator event.
-     * @param operator The account that is approved or disapproved.
-     * @param approved True for approval, false for disapproval.
+     *
+     * @param  operator  The account that is approved or disapproved.
+     * @param  approved  True for approval, false for disapproval.
      */
     function setLocalOperator(
         address operator,

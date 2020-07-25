@@ -9,6 +9,7 @@ import {
   Price,
   SendOptions,
   SignedIntStruct,
+  TxResult,
   address,
   bnFromSoliditySignedInt,
   bnToSoliditySignedInt,
@@ -55,6 +56,21 @@ export class TestLib {
     return new BigNumber(result);
   }
 
+  public async baseDivMul(
+    value: BigNumberable,
+    baseValue: BigNumberable,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: string = await this.contracts.call(
+      this.contracts.testLib.methods.baseDivMul(
+        new BigNumber(value).toFixed(0),
+        new BigNumber(baseValue).toFixed(0),
+      ),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
   public async baseMulRoundUp(
     value: BigNumberable,
     baseValue: BigNumberable,
@@ -63,6 +79,34 @@ export class TestLib {
     const result: string = await this.contracts.call(
       this.contracts.testLib.methods.baseMulRoundUp(
         new BigNumber(value).toFixed(0),
+        new BigNumber(baseValue).toFixed(0),
+      ),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
+  public async baseDiv(
+    value: BigNumberable,
+    baseValue: BigNumberable,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: string = await this.contracts.call(
+      this.contracts.testLib.methods.baseDiv(
+        new BigNumber(value).toFixed(0),
+        new BigNumber(baseValue).toFixed(0),
+      ),
+      options,
+    );
+    return new BigNumber(result);
+  }
+
+  public async baseReciprocal(
+    baseValue: BigNumberable,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: string = await this.contracts.call(
+      this.contracts.testLib.methods.baseReciprocal(
         new BigNumber(baseValue).toFixed(0),
       ),
       options,
@@ -227,6 +271,36 @@ export class TestLib {
     return bnFromSoliditySignedInt(result);
   }
 
+  public async signedAdd(
+    augend: BigNumberable,
+    addend: BigNumberable,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: SignedIntStruct = await this.contracts.call(
+      this.contracts.testLib.methods.signedAdd(
+        bnToSoliditySignedInt(augend),
+        bnToSoliditySignedInt(addend),
+      ),
+      options,
+    );
+    return bnFromSoliditySignedInt(result);
+  }
+
+  public async signedSub(
+    minuend: BigNumberable,
+    subtrahend: BigNumberable,
+    options?: CallOptions,
+  ): Promise<BigNumber> {
+    const result: SignedIntStruct = await this.contracts.call(
+      this.contracts.testLib.methods.signedSub(
+        bnToSoliditySignedInt(minuend),
+        bnToSoliditySignedInt(subtrahend),
+      ),
+      options,
+    );
+    return bnFromSoliditySignedInt(result);
+  }
+
   // ============ Storage.sol ============
 
   public async load(
@@ -246,7 +320,7 @@ export class TestLib {
     slot: string,
     value: string,
     options?: SendOptions,
-  ): Promise<void> {
+  ): Promise<TxResult> {
     return this.contracts.send(
       this.contracts.testLib.methods.store(
         slot,

@@ -16,10 +16,10 @@
 
 */
 
-import BigNumber from 'bignumber.js';
 import { Contracts } from './Contracts';
 import {
   address,
+  BaseValue,
   CallOptions,
   SendOptions,
 } from '../lib/types';
@@ -27,6 +27,11 @@ import {
   Contract,
 } from 'web3-eth-contract';
 
+/**
+ * Client for the PerpetualProxy contract, which extends a version of the OpenZeppelin
+ * AdminUpgradeabilityProxy contract. This proxy is used to implement upgradability on the
+ * PerpetualV1 contract.
+ */
 export class Proxy {
   private contracts: Contracts;
   private proxy: Contract;
@@ -51,7 +56,7 @@ export class Proxy {
     );
   }
 
-  public async implementation(
+  public async getImplementation(
     options?: CallOptions,
   ): Promise<address> {
     return this.contracts.call(
@@ -66,7 +71,7 @@ export class Proxy {
     token: address,
     oracle: address,
     funder: address,
-    minCollateral: BigNumber,
+    minCollateral: BaseValue,
     options?: SendOptions,
   ): Promise<any> {
     return this.contracts.send(
@@ -74,7 +79,7 @@ export class Proxy {
         token,
         oracle,
         funder,
-        minCollateral.toFixed(),
+        minCollateral.toSolidity(),
       ),
       options,
     );

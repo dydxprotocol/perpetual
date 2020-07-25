@@ -29,15 +29,19 @@ pragma experimental ABIEncoderV2;
 library P1Types {
     // ============ Structs ============
 
-    // Used for the Global Index and Cached Index per account.
-    // Used to settle funding paymennts on a per-account basis.
+    /**
+     * @dev Used to represent the global index and each account's cached index.
+     *  Used to settle funding paymennts on a per-account basis.
+     */
     struct Index {
         uint32 timestamp;
         bool isPositive;
         uint128 value;
     }
 
-    // Used to track the signed Margin Balance and Position Balance values for each account.
+    /**
+     * @dev Used to track the signed margin balance and position balance values for each account.
+     */
     struct Balance {
         bool marginIsPositive;
         bool positionIsPositive;
@@ -45,14 +49,18 @@ library P1Types {
         uint120 position;
     }
 
-    // Used to cache commonly-used variables that are relatively expensive to obtain once.
+    /**
+     * @dev Used to cache commonly-used variables that are relatively gas-intensive to obtain.
+     */
     struct Context {
         uint256 price;
         uint256 minCollateral;
         Index index;
     }
 
-    // Used by P1Trader contracts to return the result of a trade.
+    /**
+     * @dev Used by contracts implementing the I_P1Trader interface to return the result of a trade.
+     */
     struct TradeResult {
         uint256 marginAmount;
         uint256 positionAmount;

@@ -33,7 +33,11 @@ import { P1Types } from "./lib/P1Types.sol";
  * @title PerpetualV1
  * @author dYdX
  *
- * @notice Main Perpetual implementation contract that inherits from other contracts.
+ * @notice A market for a perpetual contract, a financial derivative which may be traded on margin
+ *  and which aims to closely track the spot price of an underlying asset. The underlying asset is
+ *  specified via the price oracle which reports its spot price. Tethering of the perpetual market
+ *  price is supported by a funding oracle which governs funding payments between longs and shorts.
+ * @dev Main perpetual market implementation contract that inherits from other contracts.
  */
 contract PerpetualV1 is
     P1FinalSettlement,
@@ -49,12 +53,13 @@ contract PerpetualV1 is
 
     /**
      * @dev Once-only initializer function that replaces the constructor since this contract is
-     * proxied. Uses a non-colliding storage slot to store if this version has been initialized yet.
+     *  proxied. Uses a non-colliding storage slot to store if this version has been initialized.
      * @dev Can only be called once and can only be called by the admin of this contract.
-     * @param token The address of the token to use for margin-deposits.
-     * @param oracle The address of the price oracle contract.
-     * @param funder The address of the funder contract.
-     * @param minCollateral The minimum allowed initial collateralization percentage.
+     *
+     * @param  token          The address of the token to use for margin-deposits.
+     * @param  oracle         The address of the price oracle contract.
+     * @param  funder         The address of the funder contract.
+     * @param  minCollateral  The minimum allowed initial collateralization percentage.
      */
     function initializeV1(
         address token,

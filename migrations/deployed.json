@@ -1,86 +1,166 @@
 {
     "PerpetualProxy": {
-        "1": {
-            "links": {},
-            "address": "0xD029c869dEc40A3a53a3799A1181306B0f747AdD",
-            "transactionHash": "0x0bc8c31a0395fe09bed9945aaf4b56f1dd1c21199688114dad06bb81e21afb4f"
+        "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x07aBe965500A49370D331eCD613c7AC47dD6e547",
+                "transactionHash": "0xb50455ad54d77e18450d55ad9f3b9b50e203a9157b131e97ca9b55fe7f350c85"
+            }
         },
-        "42": {
-            "links": {},
-            "address": "0x7454dF5d0758D4E7A538c3aCF4841FA9137F0f74",
-            "transactionHash": "0x4ebe1e17dc5b280b735aa59210cfd4cdedfc1d1f4cae1f761c40263c1163a26f"
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0x09403FD14510F8196F7879eF514827CD76960B5d",
+                "transactionHash": "0xf52e7ed79128fa470423b23a347d8d3d82caeb34f466ea610e20a5894ab71f15"
+            }
         }
     },
     "PerpetualV1": {
-        "1": {
-            "links": {},
-            "address": "0x553112f69AEEF7808Ec30d9b115b3139EbF883f7",
-            "transactionHash": "0xe3bdb7158d349e5abf204a2dd5985dfdc02b581af2bc42c1d7444f5899ea71fa"
+        "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0xE883b3efdaE637fC599b467478a23199778F2cCf",
+                "transactionHash": "0x47363365c2f28f4e7082c6a0ed7be04d5e0a5636e13dc622dd5e426cb6c48c86"
+            }
         },
-        "42": {
-            "links": {},
-            "address": "0x401dca7116d1CACb3c3bc1B4acE16fC87f7EfaBa",
-            "transactionHash": "0x58d3eb807698184dda7aaee76388ed9276fe9e2eb5452ad8b52052735a8fcab0"
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0xE883b3efdaE637fC599b467478a23199778F2cCf",
+                "transactionHash": "0x47363365c2f28f4e7082c6a0ed7be04d5e0a5636e13dc622dd5e426cb6c48c86"
+            }
         }
     },
     "P1FundingOracle": {
-        "1": {
-            "links": {},
-            "address": "0x240E98fFF0373e76dB303cE2E3Ebe24446CE36BE",
-            "transactionHash": "0x77c3d53f4f96d22687fc8731bab37ed6ad5033c529f9eab9f2de753aff5fe472"
+        "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x4525D2B71f7f018c9EBddFcD336852A85404e75B",
+                "transactionHash": "0x4c28d4cde296e23aa06eae7a69e0d7b92afb366771d548f014d835e4f3de5515"
+            }
         },
-        "42": {
-            "links": {},
-            "address": "0x04A9CbC623847dFFA6b48448D84C8594a8CFAeF6",
-            "transactionHash": "0x7559ef92d5e191bf5dc80c2402d1b2a290aa445295b8e4f97fc329f1f9be57f3"
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0x0119b84Bd8B114a60a5cC2e4A74708857a290213",
+                "transactionHash": "0x305d1377a6abdafe605b44e5f578b7a3c2c656d1d5186c546e512ec297dc56de"
+            }
         }
     },
     "P1MakerOracle": {
-        "1": {
-            "links": {},
-            "address": "0x5CcE8343d9051e62f5Ce5eF98c6648f7b855d54f",
-            "transactionHash": "0xe2e62af5c0f9a2e6d59342ab7d4a6968a64fe7b29e85687abaea1eff8fd99254"
+        "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x538038E526517680735568f9C5342c6E68bbDA12",
+                "transactionHash": "0x0edf3c0cd9832ea4e6c0def02d95a22bdd967f702df3e3c84b41c59a65c2525a"
+            }
         },
-        "42": {
-            "links": {},
-            "address": "0x36c6655ddBF0a6c48C5b93C18A7cCc5650B167be",
-            "transactionHash": "0x290757cd3938d6a60d77ad6b46742cfb8eefadde0313ea1f5ec76c642d9b9614"
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0x45bB943f763411dedEcc6890657F94ED061b73C8",
+                "transactionHash": "0xf5eade731056084cb391bf5968397ae4f7c6eddf647c520905180f41b803e434"
+            }
+        }
+    },
+    "P1OracleInverter": {
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0x5DB3d2fcf17C4A5aE75F548288b2126768C5882f",
+                "transactionHash": "0xfe940bfb74cf6c64448735d8483287e7a42594cc075a91f76ba465815cb1a7ea"
+            }
         }
     },
     "P1Orders": {
-        "1": {
-            "links": {},
-            "address": "0x6779c1C4033ffD75a563CfB1BbC86C12D732591f",
-            "transactionHash": "0x1d062df40f582a90f1f13e391201ba245a445995663f3ab0039df595002d1699"
-        },
-        "42": {
-            "links": {},
-            "address": "0x29d4Df1885B8da83a2E40DB1e5a7E671e1A9a230",
-            "transactionHash": "0x49e6cb04b5b4a33ac0da696699574c1f32f30536a13da9c245eeb202c05f4e00"
+        "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x3ea6F88eC8F7b24Bb3Ad206fa80124210e8e28F3",
+                "transactionHash": "0xc7ba3cbde3a89f4a34e0f7a323ffb6439a86e2431c3011d0a01ce5aebd7b5d66"
+            }
+        }
+    },
+    "P1InverseOrders": {
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0x1d3ccceEE6d9f9c3b79ed5fAdD98E32B5d48b22E",
+                "transactionHash": "0x16eed01238b1cb21dd3b7d262af31a575df9bf3e70fa0aa24aaf5e9b5c09318e"
+            }
         }
     },
     "P1Deleveraging": {
-        "1": {
-            "links": {},
-            "address": "0x9ED1800709713b8f04b4b2283202cEc78DCC45cD",
-            "transactionHash": "0xd624148432c5eec9784f9a40a83374bd8549e8b67aa22e53262eb8527ecc4545"
+        "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0xa4e4A9ae84882BE5049E450A3500ba1CD012F0C5",
+                "transactionHash": "0xfbbd02bccef8f30c6e60edfd8323b30e76e24d2ec8e52213d8393f433d616b00"
+            }
         },
-        "42": {
-            "links": {},
-            "address": "0xaEE83ca85Ad63DFA04993adcd76CB2B3589eCa49",
-            "transactionHash": "0x24ed842b28db37dd1dba6effa469a1ca1e7ac45c33bb695c1d35161094130e35"
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0xb9689e3F25c16173a552a7ac0dD5c1F6D47FCC88",
+                "transactionHash": "0xc477fee2f71b4350c1409f867f06908315c8be14f767e65f24406d220ab1fb76"
+            }
         }
     },
     "P1Liquidation": {
-        "1": {
-            "links": {},
-            "address": "0x30eCCA81AdeB5e8C0B3B506df84eF2dEc2f6593c",
-            "transactionHash": "0xaabdd65a5587b3077116b204743361b36dfb80cf977878d539a46ab412de39de"
+        "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x9b1289dd794F10AF38A3117fE933836D685f7339",
+                "transactionHash": "0x4eabdf1b32ae3b0364818ae10df41fd4a6d284480d1d78a32ffd52ea72fc49b4"
+            }
         },
-        "42": {
-            "links": {},
-            "address": "0xDEf136D9884528e1EB302f39457af0E4d3AD24EB",
-            "transactionHash": "0xa0aaebd59e5f6c63f1e3e0e53b98bc801427cba5de521896a7ee1c750e5d7068"
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0x05f370CA0B6c156845f73A9115F35edCdE052803",
+                "transactionHash": "0x0c1939143e60ef023d40234c308196c00b17e92936a62d8b219d9dd50283b5b8"
+            }
+        }
+    },
+    "P1LiquidatorProxy": {
+        "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0xA179038Ae1534E4492164BA38ac809e29770ca5F",
+                "transactionHash": "0x96a9e89570c1251e719017a500089f3b2348a547482b8ec33ddb0d94bf634af3"
+            }
+        },
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0xD47743b863039DFF52B4d836426894a9b012310d",
+                "transactionHash": "0x14a8c4e45793361642ea459a87522598cfa8ff6d9797eb4ca69382419bc5542d"
+            }
+        }
+    },
+    "P1CurrencyConverterProxy": {
+        "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0xA0d885316Be23dE8bB19E7C53F6d483279E3467D",
+                "transactionHash": "0xebf5df9bd9e7a35896f4e3c69b781b85f7c35a7b2f32500f634f7837bce74fdf"
+            }
+        },
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0xA0d885316Be23dE8bB19E7C53F6d483279E3467D",
+                "transactionHash": "0xebf5df9bd9e7a35896f4e3c69b781b85f7c35a7b2f32500f634f7837bce74fdf"
+            }
+        }
+    },
+    "P1WethProxy": {
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0x17ac4cC32696987CEa1737343188716b1D827E7B",
+                "transactionHash": "0x79ac6ef29c10681802b5993b1fe4235dde4d47d358201ff2d82a853715367bde"
+            }
         }
     }
 }

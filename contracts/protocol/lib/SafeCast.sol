@@ -30,13 +30,12 @@ library SafeCast {
 
     /**
      * @dev Returns the downcasted uint128 from uint256, reverting on
-     * overflow (when the input is greater than largest uint128).
+     *  overflow (i.e. when the input is greater than largest uint128).
      *
-     * Counterpart to Solidity's `uint128` operator.
+     *  Counterpart to Solidity's `uint128` operator.
      *
-     * Requirements:
-     *
-     * - input must fit into 128 bits
+     *  Requirements:
+     *  - `value` must fit into 128 bits.
      */
     function toUint128(
         uint256 value
@@ -51,13 +50,12 @@ library SafeCast {
 
     /**
      * @dev Returns the downcasted uint120 from uint256, reverting on
-     * overflow (when the input is greater than largest uint120).
+     *  overflow (i.e. when the input is greater than largest uint120).
      *
-     * Counterpart to Solidity's `uint120` operator.
+     *  Counterpart to Solidity's `uint120` operator.
      *
-     * Requirements:
-     *
-     * - input must fit into 120 bits
+     *  Requirements:
+     *  - `value` must fit into 120 bits.
      */
     function toUint120(
         uint256 value
@@ -72,13 +70,12 @@ library SafeCast {
 
     /**
      * @dev Returns the downcasted uint32 from uint256, reverting on
-     * overflow (when the input is greater than largest uint32).
+     *  overflow (i.e. when the input is greater than largest uint32).
      *
-     * Counterpart to Solidity's `uint32` operator.
+     *  Counterpart to Solidity's `uint32` operator.
      *
-     * Requirements:
-     *
-     * - input must fit into 32 bits
+     *  Requirements:
+     *  - `value` must fit into 32 bits.
      */
     function toUint32(
         uint256 value

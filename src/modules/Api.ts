@@ -1,18 +1,24 @@
 import { default as axios } from 'axios';
 import BigNumber from 'bignumber.js';
 import {
-  address,
-  SigningMethod,
-  ApiMarketName,
-  BigNumberable,
-  Order,
-  SignedOrder,
-  Fee,
-  Price,
-  ApiOrder,
-  ApiSide,
-  ApiMarketMessage,
   ApiAccount,
+  ApiFundingRates,
+  ApiHistoricalFundingRates,
+  ApiIndexPrice,
+  ApiMarketMessage,
+  ApiMarketName,
+  ApiOptions,
+  ApiOrder,
+  ApiOrderOnOrderbook,
+  ApiSide,
+  BigNumberable,
+  Fee,
+  Order,
+  Price,
+  SignedOrder,
+  SigningMethod,
+  address,
+  RequestMethod,
 } from '../lib/types';
 import { Orders } from './Orders';
 
@@ -27,13 +33,14 @@ export class Api {
 
   constructor(
     perpetualOrders: Orders,
-    endpoint: string = DEFAULT_API_ENDPOINT,
-    timeout: number = DEFAULT_API_TIMEOUT,
+    apiOptions: ApiOptions = {},
   ) {
-    this.endpoint = endpoint;
+    this.endpoint = apiOptions.endpoint || DEFAULT_API_ENDPOINT;
+    this.timeout = apiOptions.timeout || DEFAULT_API_TIMEOUT;
     this.perpetualOrders = perpetualOrders;
-    this.timeout = timeout;
   }
+
+  // ============ Managing Orders ============
 
   public async placePerpetualOrder({
     order: {
@@ -44,6 +51,7 @@ export class Api {
       taker,
       expiration = new BigNumber(FOUR_WEEKS_IN_SECONDS),
       limitFee,
+      salt,
     },
     market,
     fillOrKill,
@@ -60,6 +68,7 @@ export class Api {
       taker: address,
       expiration: BigNumberable,
       limitFee?: BigNumberable,
+      salt?: BigNumberable,
     },
     market: ApiMarketName,
     fillOrKill?: boolean,
@@ -68,11 +77,8 @@ export class Api {
     cancelId?: string,
     cancelAmountOnRevert?: boolean,
   }): Promise<{ order: ApiOrder }> {
-    if (!Object.values(ApiMarketName).includes(market)) {
-      throw new Error(`market: ${market} is invalid`);
-    }
-
     const order: SignedOrder = await this.createPerpetualOrder({
+      market,
       side,
       amount,
       price,
@@ -81,6 +87,7 @@ export class Api {
       expiration,
       postOnly,
       limitFee,
+      salt,
     });
 
     return this.submitPerpetualOrder({
@@ -98,6 +105,7 @@ export class Api {
    * Creates but does not place a signed perpetualOrder
    */
   async createPerpetualOrder({
+    market,
     side,
     amount,
     price,
@@ -106,7 +114,9 @@ export class Api {
     expiration,
     postOnly,
     limitFee,
+    salt,
   }: {
+    market: ApiMarketName,
     side: ApiSide,
     amount: BigNumberable,
     price: BigNumberable,
@@ -115,7 +125,11 @@ export class Api {
     expiration: BigNumberable,
     postOnly: boolean,
     limitFee?: BigNumberable,
+    salt?: BigNumberable,
   }): Promise<SignedOrder> {
+    if (!Object.values(ApiMarketName).includes(market)) {
+      throw new Error(`market: ${market} is invalid`);
+    }
     if (!Object.values(ApiSide).includes(side)) {
       throw new Error(`side: ${side} is invalid`);
     }
@@ -136,7 +150,7 @@ export class Api {
       limitPrice: new Price(price),
       triggerPrice: new Price('0'),
       expiration: realExpiration,
-      salt: generatePseudoRandom256BitNumber(),
+      salt: salt ? new BigNumber(salt) : generatePseudoRandom256BitNumber(),
     };
 
     const typedSignature: string = await this.perpetualOrders.signOrder(
@@ -164,9 +178,9 @@ export class Api {
   }: {
     order: SignedOrder,
     market: ApiMarketName,
-    fillOrKill: boolean,
-    postOnly: boolean,
-    cancelId: string,
+    fillOrKill?: boolean,
+    postOnly?: boolean,
+    cancelId?: string,
     clientId?: string,
     cancelAmountOnRevert?: boolean,
   }): Promise<{ order: ApiOrder }> {
@@ -182,49 +196,43 @@ export class Api {
       order: jsonOrder,
     };
 
-    const response = await axios({
+    return this.axiosRequest({
       data,
-      method: 'post',
+      method: RequestMethod.POST,
       url: `${this.endpoint}/v2/orders`,
-      timeout: this.timeout,
     });
-
-    return response.data;
   }
 
-  public async cancelOrderV2({
+  public async cancelOrder({
     orderId,
-    makerAccountOwner,
+    maker,
   }: {
     orderId: string,
-    makerAccountOwner: address,
+    maker: address,
   }): Promise<{ order: ApiOrder }> {
     const signature = await this.perpetualOrders.signCancelOrderByHash(
       orderId,
-      makerAccountOwner,
+      maker,
       SigningMethod.Hash,
     );
 
-    const response = await axios({
+    return this.axiosRequest({
       url: `${this.endpoint}/v2/orders/${orderId}`,
-      method: 'delete',
+      method: RequestMethod.DELETE,
       headers: {
         authorization: `Bearer ${signature}`,
       },
-      timeout: this.timeout,
     });
-
-    return response.data;
   }
 
-  public async getMarketsV2():
-    Promise<{ markets: { [market: string]: ApiMarketMessage } }> {
-    const response = await axios({
+  // ============ Getters ============
+
+  public async getMarkets():
+    Promise<{ markets: ApiMarketMessage[] }> {
+    return this.axiosRequest({
       url: `${this.endpoint}/v1/perpetual-markets`,
-      method: 'get',
-      timeout: this.timeout,
+      method: RequestMethod.GET,
     });
-    return response.data;
   }
 
   public async getAccountBalances({
@@ -232,13 +240,131 @@ export class Api {
   }: {
     accountOwner: address,
   }): Promise<ApiAccount> {
-    const response = await axios({
+    return this.axiosRequest({
       url: `${this.endpoint}/v1/perpetual-accounts/${accountOwner}`,
-      method: 'get',
-      timeout: this.timeout,
+      method: RequestMethod.GET,
     });
+  }
 
-    return response.data;
+  public async getOrderbook({
+    market,
+  }: {
+    market: ApiMarketName,
+  }): Promise<{ bids: ApiOrderOnOrderbook[], asks: ApiOrderOnOrderbook[] }> {
+    return this.axiosRequest({
+      url: `${this.endpoint}/v1/orderbook/${market}`,
+      method: RequestMethod.GET,
+    });
+  }
+
+  // ============ Funding Getters ============
+
+  /**
+   * Get the current and predicted funding rates.
+   *
+   * IMPORTANT: The `current` value returned by this function is not active until it has been mined
+   * on-chain, which may not happen for some period of time after the start of the hour. To get the
+   * funding rate that is currently active on-chain, use the getMarkets() function.
+   *
+   * The `current` rate is updated each hour, on the hour. The `predicted` rate is updated each
+   * minute, on the minute, and may be null if no premiums have been calculated since the last
+   * funding rate update.
+   *
+   * Params:
+   * - markets (optional): Limit results to the specified markets.
+   */
+  public async getFundingRates({
+    markets,
+  }: {
+    markets?: ApiMarketName[],
+  } = {}): Promise<{ [market: string]: ApiFundingRates }> {
+    return this.axiosRequest({
+      url: `${this.endpoint}/v1/funding-rates`,
+      method: RequestMethod.GET,
+      params: { markets },
+    });
+  }
+
+  /**
+   * Get historical funding rates. The most recent funding rates are returned first.
+   *
+   * Params:
+   * - markets (optional): Limit results to the specified markets.
+   * - limit (optional): The maximum number of funding rates. The default, and maximum, is 100.
+   * - startingBefore (optional): Return funding rates effective before this date.
+   */
+  public async getHistoricalFundingRates({
+    markets,
+    limit,
+    startingBefore,
+  }: {
+    markets?: ApiMarketName[],
+    limit?: number,
+    startingBefore?: Date,
+  } = {}): Promise<{ [market: string]: ApiHistoricalFundingRates }> {
+    return this.axiosRequest({
+      url: `${this.endpoint}/v1/historical-funding-rates`,
+      method: RequestMethod.GET,
+      params: {
+        markets,
+        limit,
+        startingBefore: startingBefore && startingBefore.toISOString(),
+      },
+    });
+  }
+
+  /**
+   * Get the index price used in the funding rate calculation.
+   *
+   * Params:
+   * - markets (optional): Limit results to the specified markets.
+   */
+  public async getFundingIndexPrice({
+    markets,
+  }: {
+    markets?: ApiMarketName[],
+  } = {}): Promise<{ [market: string]: ApiIndexPrice }> {
+    return this.axiosRequest({
+      url: `${this.endpoint}/v1/index-price`,
+      method: RequestMethod.GET,
+      params: { markets },
+    });
+  }
+
+  private async axiosRequest(
+    {
+      url,
+      method,
+      headers,
+      data,
+      params,
+    }: {
+      url: string,
+      method: RequestMethod,
+      headers?: any,
+      data?: any,
+      params?: any,
+    }): Promise<any> {
+    try {
+      const response = await axios({
+        url,
+        method,
+        headers,
+        data,
+        params,
+        timeout: this.timeout,
+      });
+
+      return response.data;
+    } catch (error) {
+      if (error.response) {
+        throw new Error(error.response.data.errors[0].msg);
+      } else {
+        const newError = new Error(error.message);
+        newError.stack = error.stack;
+        throw new Error;
+      }
+    }
   }
 }
 

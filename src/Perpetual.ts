@@ -19,60 +19,101 @@
 import Web3 from 'web3';
 import {
   address,
+  EthereumAccount,
   Networks,
   Provider,
+  PerpetualMarket,
+  PerpetualOptions,
+  SendOptions,
 } from './lib/types';
 import { Contracts } from './modules/Contracts';
 import { Logs } from './modules/Logs';
 import { Proxy } from './modules/Proxy';
 import { Admin } from './modules/Admin';
-import { Deleveraging } from './modules/Deleveraging';
 import { FinalSettlement } from './modules/FinalSettlement';
 import { FundingOracle } from './modules/FundingOracle';
 import { PriceOracle } from './modules/PriceOracle';
+import { Relayer } from './modules/Relayer';
+import { Deleveraging } from './modules/Deleveraging';
 import { Liquidation } from './modules/Liquidation';
+import { CurrencyConverterProxy } from './modules/CurrencyConverterProxy';
+import { LiquidatorProxy } from './modules/LiquidatorProxy';
+import { SoloBridgeProxy } from './modules/SoloBridgeProxy';
+import { WethProxy } from './modules/WethProxy';
 import { Getters } from './modules/Getters';
 import { Margin } from './modules/Margin';
 import { Operator } from './modules/Operator';
 import { Orders } from './modules/Orders';
+import { InverseOrders } from './modules/InverseOrders';
+import { Token } from './modules/Token';
 import { Trade } from './modules/Trade';
+import { Weth } from './modules/Weth';
+import { Api } from './modules/Api';
 
 export class Perpetual {
   public web3: Web3;
   public contracts: Contracts;
   public proxy: Proxy;
   public admin: Admin;
-  public deleveraging: Deleveraging;
   public finalSettlement: FinalSettlement;
   public fundingOracle: FundingOracle;
   public priceOracle: PriceOracle;
+  public relayer: Relayer;
+  public deleveraging: Deleveraging;
   public liquidation: Liquidation;
+  public currencyConverterProxy: CurrencyConverterProxy;
+  public liquidatorProxy: LiquidatorProxy;
+  public soloBridgeProxy: SoloBridgeProxy;
+  public wethProxy: WethProxy;
   public getters: Getters;
   public logs: Logs;
   public margin: Margin;
   public operator: Operator;
   public orders: Orders;
+  public token: Token;
   public trade: Trade;
+  public weth: Weth;
+  public api: Api;
 
   constructor(
     provider: Provider,
+    market: PerpetualMarket,
     networkId: number = Networks.MAINNET,
+    options: PerpetualOptions = {},
   ) {
     this.web3 = new Web3(provider);
-    this.contracts = this.getContracts(provider, networkId);
+    this.contracts = this.getContracts(provider, market, networkId, options.sendOptions);
     this.proxy = new Proxy(this.contracts);
     this.admin = new Admin(this.contracts);
-    this.deleveraging = new Deleveraging(this.contracts);
     this.finalSettlement = new FinalSettlement(this.contracts);
     this.fundingOracle = new FundingOracle(this.contracts);
     this.priceOracle = new PriceOracle(this.contracts);
+    this.relayer = new Relayer(this.contracts);
+    this.deleveraging = new Deleveraging(this.contracts);
     this.liquidation = new Liquidation(this.contracts);
+    this.currencyConverterProxy = new CurrencyConverterProxy(this.contracts);
+    this.liquidatorProxy = new LiquidatorProxy(this.contracts);
+    this.soloBridgeProxy = new SoloBridgeProxy(this.contracts, this.web3);
+    this.wethProxy = new WethProxy(this.contracts);
     this.getters = new Getters(this.contracts);
     this.logs = new Logs(this.contracts, this.web3);
     this.margin = new Margin(this.contracts);
     this.operator = new Operator(this.contracts);
-    this.orders = new Orders(this.contracts, this.web3, networkId);
+    this.token = new Token(this.contracts);
+    this.weth = new Weth(this.contracts);
+    this.api = new Api(this.orders, options.apiOptions);
+
+    // Use different Orders module depending on if the market is a linear or inverse perpetual.
+    if (market === PerpetualMarket.PBTC_USDC) {
+      this.orders = new Orders(this.contracts, this.web3);
+    } else {
+      this.orders = new InverseOrders(this.contracts, this.web3);
+    }
     this.trade = new Trade(this.contracts, this.orders);
+
+    if (options.accounts) {
+      options.accounts.forEach(a => this.loadAccount(a));
+    }
   }
 
   public setProvider(
@@ -83,17 +124,50 @@ export class Perpetual {
     this.contracts.setProvider(provider, networkId);
   }
 
-  protected getContracts(
-    provider: Provider,
-    networkId: number,
-  ): Contracts {
-    return new Contracts(provider, networkId, this.web3);
-  }
-
   public setDefaultAccount(
     account: address,
   ): void {
     this.web3.eth.defaultAccount = account;
     this.contracts.setDefaultAccount(account);
+  }
+
+  public getDefaultAccount(): address {
+    return this.web3.eth.defaultAccount;
+  }
+
+  public loadAccount(
+    account: EthereumAccount,
+  ): void {
+    const newAccount = this.web3.eth.accounts.wallet.add(
+      account.privateKey,
+    );
+
+    if (
+      !newAccount
+      || (
+        account.address
+        && account.address.toLowerCase() !== newAccount.address.toLowerCase()
+      )
+    ) {
+      throw new Error(`Loaded account address mismatch.
+        Expected ${account.address}, got ${newAccount ? newAccount.address : null}`);
+    }
+  }
+
+  // ============ Helper Functions ============
+
+  protected getContracts(
+    provider: Provider,
+    market: PerpetualMarket,
+    networkId: number,
+    sendOptions?: SendOptions,
+  ): Contracts {
+    return new Contracts(
+      provider,
+      market,
+      networkId,
+      this.web3,
+      sendOptions,
+    );
   }
 }

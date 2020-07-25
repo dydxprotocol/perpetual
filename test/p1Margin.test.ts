@@ -4,7 +4,7 @@ import { mineAvgBlock } from './helpers/EVM';
 import { expect, expectBN, expectThrow } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
 import { expectMarginBalances, expectTokenBalances, mintAndDeposit } from './helpers/balances';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { sell } from './helpers/trade';
 import {
   address,
@@ -26,8 +26,15 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
     it('Account owner can deposit', async () => {
       // Set initial balances and allowances.
       const amount = new BigNumber(150);
-      await ctx.perpetual.testing.token.mint(accountOwner, amount);
-      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
+      await ctx.perpetual.testing.token.mint(
+        ctx.perpetual.contracts.testToken.options.address,
+        accountOwner,
+        amount,
+      );
+      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
+        ctx.perpetual.contracts.testToken.options.address,
+        accountOwner,
+      );
 
       // Execute deposit.
       const txResult = await ctx.perpetual.margin.deposit(
@@ -55,8 +62,15 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
     it('Non-owner can deposit', async () => {
       // Set initial balances and allowances.
       const amount = new BigNumber(150);
-      await ctx.perpetual.testing.token.mint(otherUser, amount);
-      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(otherUser);
+      await ctx.perpetual.testing.token.mint(
+        ctx.perpetual.contracts.testToken.options.address,
+        otherUser,
+        amount,
+      );
+      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
+        ctx.perpetual.contracts.testToken.options.address,
+        otherUser,
+      );
 
       // Execute deposit.
       const txResult = await ctx.perpetual.margin.deposit(
@@ -74,10 +88,24 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
 
     it('Can make multiple deposits', async () => {
       // Set initial balances and allowances.
-      await ctx.perpetual.testing.token.mint(accountOwner, new BigNumber(1000));
-      await ctx.perpetual.testing.token.mint(otherUser, new BigNumber(1000));
-      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(accountOwner);
-      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(otherUser);
+      await ctx.perpetual.testing.token.mint(
+        ctx.perpetual.contracts.testToken.options.address,
+        accountOwner,
+        new BigNumber(1000),
+      );
+      await ctx.perpetual.testing.token.mint(
+        ctx.perpetual.contracts.testToken.options.address,
+        otherUser,
+        new BigNumber(1000),
+      );
+      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
+        ctx.perpetual.contracts.testToken.options.address,
+        accountOwner,
+      );
+      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
+        ctx.perpetual.contracts.testToken.options.address,
+        otherUser,
+      );
 
       // Execute deposits.
       await ctx.perpetual.margin.deposit(accountOwner, new BigNumber(50), { from: accountOwner });
@@ -96,8 +124,15 @@ perpetualDescribe('P1Margin', init, (ctx: ITestContext) => {
     it('Cannot deposit more than the sender\'s balance', async () => {
       // Set initial balances and allowances.
       const amount = new BigNumber(1000);
-      await ctx.perpetual.testing.token.mint(accountOwner, amount);
-      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(otherUser);
+      await ctx.perpetual.testing.token.mint(
+        ctx.perpetual.contracts.testToken.options.address,
+        accountOwner,
+        amount,
+      );
+      await ctx.perpetual.testing.token.setMaximumPerpetualAllowance(
+        ctx.perpetual.contracts.testToken.options.address,
+        otherUser,
+      );
 
       await expectThrow(
         ctx.perpetual.margin.deposit(accountOwner, amount.plus(1), { from: accountOwner }),

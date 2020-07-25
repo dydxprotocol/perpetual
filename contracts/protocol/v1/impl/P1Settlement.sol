@@ -64,8 +64,11 @@ contract P1Settlement is
 
     /**
      * @dev Calculates the funding change since the last update and stores it in the Global Index.
-     * @return Context struct that contains The current Oracle Price, Global Index, and Minimum
-     * Collateralization.
+     *
+     * @return Context struct that containing:
+     *         - The current oracle price;
+     *         - The global index;
+     *         - The minimum required collateralization.
      */
     function _loadContext()
         internal

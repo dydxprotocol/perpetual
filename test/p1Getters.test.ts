@@ -1,10 +1,10 @@
 import BigNumber from 'bignumber.js';
 
-import { expect, expectBN, expectBaseValueEqual } from './helpers/Expect';
+import { expect, expectBN, expectBaseValueEqual, expectThrow } from './helpers/Expect';
 import { BaseValue, address, Price } from '../src/lib/types';
 import { mintAndDeposit } from './helpers/balances';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { buy } from './helpers/trade';
 
 // Tolerance when comparing blockchain timestamp against local timestamp.
@@ -105,5 +105,24 @@ perpetualDescribe('P1Getters', init, (ctx: ITestContext) => {
     await ctx.perpetual.admin.enableFinalSettlement(new Price(0), new Price(0), { from: admin });
     enabled = await ctx.perpetual.getters.getFinalSettlementEnabled();
     expect(enabled).to.equal(true);
+  });
+
+  it('getOraclePrice() success', async () => {
+    await ctx.perpetual.testing.oracle.setPrice(new Price(1234));
+    const [
+      price,
+      actualPrice,
+    ] = await Promise.all([
+      ctx.perpetual.getters.getOraclePrice(),
+      ctx.perpetual.testing.oracle.getPrice(),
+    ]);
+    expectBaseValueEqual(price, actualPrice);
+  });
+
+  it('getOraclePrice() failure', async () => {
+    await expectThrow(
+      ctx.perpetual.getters.getOraclePrice({ from: ctx.accounts[9] }),
+      'Oracle price requester not global operator',
+    );
   });
 });

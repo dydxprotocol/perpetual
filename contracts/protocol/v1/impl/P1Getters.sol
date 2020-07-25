@@ -20,6 +20,7 @@ pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
 import { P1Storage } from "./P1Storage.sol";
+import { I_P1Oracle } from "../intf/I_P1Oracle.sol";
 import { P1Types } from "../lib/P1Types.sol";
 
 
@@ -35,9 +36,10 @@ contract P1Getters is
     // ============ Account Getters ============
 
     /**
-     * @notice Gets the most recently cached balance of an account.
-     * @param account The address of the account to query the balances of.
-     * @return The balances of the account.
+     * @notice Get the balance of an account, without accounting for changes in the index.
+     *
+     * @param  account  The address of the account to query the balances of.
+     * @return          The balances of the account.
      */
     function getAccountBalance(
         address account
@@ -51,8 +53,9 @@ contract P1Getters is
 
     /**
      * @notice Gets the most recently cached index of an account.
-     * @param account The address of the account to query the index of.
-     * @return The index of the account.
+     *
+     * @param  account  The address of the account to query the index of.
+     * @return          The index of the account.
      */
     function getAccountIndex(
         address account
@@ -64,6 +67,13 @@ contract P1Getters is
         return _LOCAL_INDEXES_[account];
     }
 
+    /**
+     * @notice Gets the local operator status of an operator for a particular account.
+     *
+     * @param  account   The account to query the operator for.
+     * @param  operator  The address of the operator to query the status of.
+     * @return           True if the operator is a local operator of the account, false otherwise.
+     */
     function getIsLocalOperator(
         address account,
         address operator
@@ -79,8 +89,9 @@ contract P1Getters is
 
     /**
      * @notice Gets the global operator status of an address.
-     * @param operator The address of the operator to query the status of.
-     * @return True if the address is a global operator, false otherwise.
+     *
+     * @param  operator  The address of the operator to query the status of.
+     * @return           True if the address is a global operator, false otherwise.
      */
     function getIsGlobalOperator(
         address operator
@@ -94,6 +105,7 @@ contract P1Getters is
 
     /**
      * @notice Gets the address of the ERC20 margin contract used for margin deposits.
+     *
      * @return The address of the ERC20 token.
      */
     function getTokenContract()
@@ -106,6 +118,7 @@ contract P1Getters is
 
     /**
      * @notice Gets the current address of the price oracle contract.
+     *
      * @return The address of the price oracle contract.
      */
     function getOracleContract()
@@ -118,6 +131,7 @@ contract P1Getters is
 
     /**
      * @notice Gets the current address of the funder contract.
+     *
      * @return The address of the funder contract.
      */
     function getFunderContract()
@@ -130,6 +144,7 @@ contract P1Getters is
 
     /**
      * @notice Gets the most recently cached global index.
+     *
      * @return The most recently cached global index.
      */
     function getGlobalIndex()
@@ -142,8 +157,9 @@ contract P1Getters is
 
     /**
      * @notice Gets minimum collateralization ratio of the protocol.
+     *
      * @return The minimum-acceptable collateralization ratio, returned as a fixed-point number with
-     * 18 decimals of precision.
+     *  18 decimals of precision.
      */
     function getMinCollateral()
         external
@@ -155,6 +171,7 @@ contract P1Getters is
 
     /**
      * @notice Gets the status of whether final-settlement was initiated by the Admin.
+     *
      * @return True if final-settlement was enabled, false otherwise.
      */
     function getFinalSettlementEnabled()
@@ -165,13 +182,35 @@ contract P1Getters is
         return _FINAL_SETTLEMENT_ENABLED_;
     }
 
+    // ============ Authorized External Getters ============
+
+    /**
+     * @notice Gets the price returned by the oracle.
+     * @dev Only able to be called by global operators.
+     *
+     * @return The price returned by the current price oracle.
+     */
+    function getOraclePrice()
+        external
+        view
+        returns (uint256)
+    {
+        require(
+            _GLOBAL_OPERATORS_[msg.sender],
+            "Oracle price requester not global operator"
+        );
+        return I_P1Oracle(_ORACLE_).getPrice();
+    }
+
     // ============ Public Getters ============
 
     /**
      * @notice Gets whether an address has permissions to operate an account.
-     * @param account The account to query.
-     * @param operator The address to query.
-     * @return True if the operator has permission to operate the account, false otherwise.
+     *
+     * @param  account   The account to query.
+     * @param  operator  The address to query.
+     * @return           True if the operator has permission to operate the account,
+     *                   and false otherwise.
      */
     function hasAccountPermissions(
         address account,

@@ -33,8 +33,8 @@ library Math {
 
     // ============ Library Functions ============
 
-    /*
-     * Return target * (numerator / denominator).
+    /**
+     * @dev Return target * (numerator / denominator), rounded down.
      */
     function getFraction(
         uint256 target,
@@ -48,8 +48,8 @@ library Math {
         return target.mul(numerator).div(denominator);
     }
 
-    /*
-     * Return target * (numerator / denominator), but rounded up.
+    /**
+     * @dev Return target * (numerator / denominator), rounded up.
      */
     function getFractionRoundUp(
         uint256 target,
@@ -68,7 +68,7 @@ library Math {
     }
 
     /**
-     * Returns the minimum between a and b.
+     * @dev Returns the minimum between a and b.
      */
     function min(
         uint256 a,
@@ -82,7 +82,7 @@ library Math {
     }
 
     /**
-     * Returns the maximum between a and b.
+     * @dev Returns the maximum between a and b.
      */
     function max(
         uint256 a,

@@ -1,6 +1,9 @@
 import {
   Networks,
+  PerpetualMarket,
+  PerpetualOptions,
   Provider,
+  SendOptions,
 } from '../../src/lib/types';
 import { Contracts } from '../../src/modules/Contracts';
 import { Perpetual } from '../../src/Perpetual';
@@ -13,10 +16,12 @@ export class TestPerpetual extends Perpetual {
 
   constructor(
     provider: Provider,
-    networkId: number = Networks.MAINNET,
+    market: PerpetualMarket,
+    networkId: number,
+    options: PerpetualOptions = {},
   ) {
-    super(provider, networkId);
-    this.testing = new Testing(provider, this.contracts);
+    super(provider, market, networkId, options);
+    this.testing = new Testing(provider, this.contracts, this.web3);
   }
 
   public setProvider(
@@ -29,8 +34,16 @@ export class TestPerpetual extends Perpetual {
 
   protected getContracts(
     provider: Provider,
+    market: PerpetualMarket,
     networkId: number,
+    sendOptions?: SendOptions,
   ): Contracts {
-    return new TestContracts(provider, networkId, this.web3);
+    return new TestContracts(
+      provider,
+      market,
+      networkId,
+      this.web3,
+      sendOptions,
+    );
   }
 }

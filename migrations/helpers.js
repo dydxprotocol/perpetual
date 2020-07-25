@@ -107,6 +107,102 @@ function getOracleAdjustment(network) {
   throw new Error('Cannot find oracle adjustment');
 }
 
+function getInverseOracleAdjustmentExponent(network) {
+  if (isMainnet(network) || isKovan(network)) {
+    return '18'; // 1e18
+  }
+  if (isDevNetwork(network)) {
+    return '16'; // 0.01e18
+  }
+  throw new Error('Cannot find inverse oracle adjustment');
+}
+
+function getTokenAddress(network) {
+  if (isMainnet(network)) {
+    return '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'; // USDC
+  }
+  if (isKovan(network)) {
+    return '0x0000000000000000000000000000000000000000'; // null
+  }
+  throw new Error('Cannot find token address');
+}
+
+function getWethAddress(network, devContract) {
+  if (isMainnet(network)) {
+    return '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2';
+  }
+  if (isKovan(network)) {
+    return '0xd0a1e359811322d97991e03f863a0c30c2cf029c';
+  }
+  if (isDevNetwork(network)) {
+    return devContract.address;
+  }
+  throw new Error('Cannot find WETH address');
+}
+
+function getMinCollateralization(network) {
+  if (isMainnet(network) || isKovan(network)) {
+    return '1075000000000000000'; // 107.5%
+  }
+  if (isDevNetwork(network)) {
+    return '1100000000000000000'; // 110.0%
+  }
+  throw new Error('Cannot find minimum collateralization');
+}
+
+function getInsuranceFundAddress(network) {
+  if (isMainnet(network) || isKovan(network)) {
+    return '0x75ef8432566A79C86BBF207A47df3963B8Cf0753';
+  }
+  if (isDevNetwork(network)) {
+    return '0x0000000000000000000000000000000000000000'; // set later in tests
+  }
+  throw new Error('Cannot find insurance fund address');
+}
+
+function getInsuranceFee(network) {
+  if (isMainnet(network) || isKovan(network)) {
+    return '200000000000000000'; // 20%
+  }
+  if (isDevNetwork(network)) {
+    return '100000000000000000'; // 10%
+  }
+  throw new Error('Cannot find insurance fund fee');
+}
+
+function getDeleveragingOperatorAddress(network) {
+  if (isMainnet(network) || isKovan(network)) {
+    return '0x0000000000000000000000000000000000000000'; // TODO
+  }
+  if (isDevNetwork(network)) {
+    return '0x0000000000000000000000000000000000000000'; // set later in tests
+  }
+  throw new Error('Cannot find funding rate provider address');
+}
+
+function getFundingRateProviderAddress(network) {
+  if (isMainnet(network) || isKovan(network)) {
+    return '0xe5E98525553d8a20d77211F4db4DC1f599515FF3';
+  }
+  if (isDevNetwork(network)) {
+    return '0x0000000000000000000000000000000000000000'; // set later in tests
+  }
+  throw new Error('Cannot find funding rate provider address');
+}
+
+function getSoloAddress(network, devContract) {
+  if (isMainnet(network)) {
+    return '0x1E0447b19BB6EcFdAe1e4AE1694b0C3659614e4e';
+  }
+  if (isKovan(network)) {
+    return '0x4EC3570cADaAEE08Ae384779B0f3A45EF85289DE';
+  }
+  if (isDevNetwork(network)) {
+    return devContract.address;
+  }
+  throw new Error('Cannot find Solo');
+}
+
 module.exports = {
   getChainId,
   isDevNetwork,
@@ -114,4 +210,13 @@ module.exports = {
   getMakerPriceOracleAddress,
   getDeployerAddress,
   getOracleAdjustment,
+  getInverseOracleAdjustmentExponent,
+  getTokenAddress,
+  getWethAddress,
+  getMinCollateralization,
+  getInsuranceFundAddress,
+  getInsuranceFee,
+  getDeleveragingOperatorAddress,
+  getFundingRateProviderAddress,
+  getSoloAddress,
 };

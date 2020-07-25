@@ -24,18 +24,45 @@ pragma experimental ABIEncoderV2;
  * @title I_MakerOracle
  * @author dYdX
  *
- * Interface for the price oracles run by MakerDao
+ * Interface for the MakerDAO Oracles V2 smart contrats.
  */
 interface I_MakerOracle {
-    // returns the current value (ETH/USD * 10**18) as a bytes32
+
+    // ============ Getter Functions ============
+
+    // Returns the current value (e.g. BTC/USD * 10**20) as a bytes32.
     function peek()
         external
         view
         returns (bytes32, bool);
 
-    // requires a fresh price and then returns the current value
+    // Requires a fresh price and then returns the current value.
     function read()
         external
         view
         returns (bytes32);
+
+    // Returns the number of signers per poke.
+    function bar()
+        external
+        view
+        returns (uint256);
+
+    // Returns the timetamp of the last update.
+    function age()
+        external
+        view
+        returns (uint32);
+
+    // ============ State-Changing Functions ============
+
+    // Updates the value of the oracle
+    function poke(
+        uint256[] calldata val_,
+        uint256[] calldata age_,
+        uint8[] calldata v,
+        bytes32[] calldata r,
+        bytes32[] calldata s
+    )
+        external;
 }

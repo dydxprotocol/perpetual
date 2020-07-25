@@ -50,23 +50,21 @@ contract P1FundingOracle is
     // ============ Constants ============
 
     uint256 private constant FLAG_IS_POSITIVE = 1 << 128;
+    uint128 constant internal BASE = 10 ** 18;
 
     /**
-     * Bounding params constraining updates to the funding rate.
+     * @notice Bounding params constraining updates to the funding rate.
      *
-     * Like the funding rate, these are per-second rates, fixed-point with 18 decimals.
-     * We calculate the per-second rates from the market specifications, which uses 8-hour rates:
-     *   - The max absolute funding rate is 0.75% (8-hour rate).
-     *   - The max change in a single update is 0.75% (8-hour rate).
-     *   - The max change over a 55-minute period is 0.75% (8-hour rate).
+     *  Like the funding rate, these are per-second rates, fixed-point with 18 decimals.
+     *  We calculate the per-second rates from the market specifications, which use 8-hour rates:
+     *  - The max absolute funding rate is 0.75% (8-hour rate).
+     *  - The max change over a 45-minute period is 1.5% (8-hour rate).
      *
-     * This means the fastest the funding rate can go from zero to its min or max allowed value
-     * (or vice versa) is in 55 minutes.
+     *  This means the fastest the funding rate can go from its min to its max value, or vice versa,
+     *  is in 45 minutes.
      */
-    uint128 constant internal BASE = 10 ** 18;
     uint128 public constant MAX_ABS_VALUE = BASE * 75 / 10000 / (8 hours);
-    uint128 public constant MAX_ABS_DIFF_PER_UPDATE = MAX_ABS_VALUE;
-    uint128 public constant MAX_ABS_DIFF_PER_SECOND = MAX_ABS_VALUE / (55 minutes);
+    uint128 public constant MAX_ABS_DIFF_PER_SECOND = MAX_ABS_VALUE * 2 / (45 minutes);
 
     // ============ Events ============
 
@@ -74,31 +72,46 @@ contract P1FundingOracle is
         bytes32 fundingRate
     );
 
+    event LogFundingRateProviderSet(
+        address fundingRateProvider
+    );
+
     // ============ Mutable Storage ============
 
     // The funding rate is denoted in units per second, as a fixed-point number with 18 decimals.
     P1Types.Index private _FUNDING_RATE_;
 
-    // ============ Functions ============
+    // Address which has the ability to update the funding rate.
+    address public _FUNDING_RATE_PROVIDER_;
 
-    constructor()
+    // ============ Constructor ============
+
+    constructor(
+        address fundingRateProvider
+    )
         public
     {
-        _FUNDING_RATE_ = P1Types.Index({
+        P1Types.Index memory fundingRate = P1Types.Index({
             timestamp: block.timestamp.toUint32(),
             isPositive: true,
             value: 0
         });
-        emit LogFundingRateUpdated(_FUNDING_RATE_.toBytes32());
+        _FUNDING_RATE_ = fundingRate;
+        _FUNDING_RATE_PROVIDER_ = fundingRateProvider;
+
+        emit LogFundingRateUpdated(fundingRate.toBytes32());
+        emit LogFundingRateProviderSet(fundingRateProvider);
     }
 
     // ============ External Functions ============
 
     /**
      * @notice Calculates the signed funding amount that has accumulated over a period of time.
-     * @param timeDelta Number of seconds over which to calculate the accumulated funding amount.
-     * @return True if the funding rate is positive, and false otherwise.
-     * @return Funding amount as a unitless rate, as a fixed-point number with 18 decimals.
+     *
+     * @param  timeDelta  Number of seconds over which to calculate the accumulated funding amount.
+     * @return            True if the funding rate is positive, and false otherwise.
+     * @return            The funding amount as a unitless rate, represented as a fixed-point number
+     *                    with 18 decimals.
      */
     function getFunding(
         uint256 timeDelta
@@ -115,19 +128,23 @@ contract P1FundingOracle is
     }
 
     /**
-     * @notice Set the funding rate.
-     * @dev Can only be called by the owner of this contract. Emits the LogFundingRateUpdated event.
-     * The rate is denoted in units per second, as a fixed-point number with 18 decimals.
-     * @param newRate The intended new funding rate. Is bounded by the global constant bounds.
-     * @return The new funding rate with a timestamp of the update.
+     * @notice Set the funding rate, denoted in units per second, fixed-point with 18 decimals.
+     * @dev Can only be called by the funding rate provider. Emits the LogFundingRateUpdated event.
+     *
+     * @param  newRate  The intended new funding rate. Is bounded by the global constant bounds.
+     * @return          The new funding rate with a timestamp of the update.
      */
     function setFundingRate(
         SignedMath.Int calldata newRate
     )
         external
-        onlyOwner
         returns (P1Types.Index memory)
     {
+        require(
+            msg.sender == _FUNDING_RATE_PROVIDER_,
+            "The funding rate can only be set by the funding rate provider"
+        );
+
         SignedMath.Int memory boundedNewRate = _boundRate(newRate);
         P1Types.Index memory boundedNewRateWithTimestamp = P1Types.Index({
             timestamp: block.timestamp.toUint32(),
@@ -135,8 +152,26 @@ contract P1FundingOracle is
             value: boundedNewRate.value.toUint128()
         });
         _FUNDING_RATE_ = boundedNewRateWithTimestamp;
+
         emit LogFundingRateUpdated(boundedNewRateWithTimestamp.toBytes32());
+
         return boundedNewRateWithTimestamp;
+    }
+
+    /**
+     * @notice Set the funding rate provider. Can only be called by the admin.
+     * @dev Emits the LogFundingRateProviderSet event.
+     *
+     * @param  newProvider  The new provider, who will have the ability to set the funding rate.
+     */
+    function setFundingRateProvider(
+        address newProvider
+    )
+        external
+        onlyOwner
+    {
+        _FUNDING_RATE_PROVIDER_ = newProvider;
+        emit LogFundingRateProviderSet(newProvider);
     }
 
     // ============ Helper Functions ============
@@ -160,10 +195,7 @@ contract P1FundingOracle is
 
         // Get the maximum allowed change in the rate.
         uint256 timeDelta = block.timestamp.sub(oldRateWithTimestamp.timestamp);
-        uint256 maxDiff = Math.min(
-            MAX_ABS_DIFF_PER_UPDATE,
-            MAX_ABS_DIFF_PER_SECOND.mul(timeDelta)
-        );
+        uint256 maxDiff = MAX_ABS_DIFF_PER_SECOND.mul(timeDelta);
 
         // Calculate and return the bounded rate.
         if (newRate.gt(oldRate)) {

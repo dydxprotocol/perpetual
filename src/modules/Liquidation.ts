@@ -56,6 +56,9 @@ export class Liquidation {
     return this.liquidation.options.address;
   }
 
+  /**
+   * Use eth_call to simulate the result of calling the trade() function.
+   */
   public async trade(
     sender: address,
     maker: address,

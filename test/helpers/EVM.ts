@@ -1,19 +1,22 @@
-import { perpetual } from './Perpetual';
+import { EVM } from '../modules/EVM';
+import provider from './Provider';
+
+const evm = new EVM(provider);
 
 export async function resetEVM(id?: string) {
-  await perpetual.testing.evm.resetEVM(id || process.env.RESET_SNAPSHOT_ID);
+  await evm.resetEVM(id || process.env.RESET_SNAPSHOT_ID);
 }
 
 export async function mineAvgBlock() {
-  await perpetual.testing.evm.increaseTime(15);
-  await perpetual.testing.evm.mineBlock();
+  await evm.increaseTime(15);
+  await evm.mineBlock();
 }
 
 export async function snapshot() {
-  return perpetual.testing.evm.snapshot();
+  return evm.snapshot();
 }
 
 export async function fastForward(seconds: number) {
-  await perpetual.testing.evm.increaseTime(seconds);
-  await perpetual.testing.evm.mineBlock();
+  await evm.increaseTime(seconds);
+  await evm.mineBlock();
 }

@@ -1,7 +1,7 @@
 import { BaseValue } from '../src';
 import { expectBN, expectBaseValueEqual } from './helpers/Expect';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 
 perpetualDescribe('Perpetual', initializePerpetual, (ctx: ITestContext) => {
 

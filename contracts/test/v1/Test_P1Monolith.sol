@@ -28,7 +28,7 @@ import { Test_P1Trader } from "./Test_P1Trader.sol";
  * @title Test_P1Monolith
  * @author dYdX
  *
- * A second contract for testing the funder, oracle, and trader.
+ * @notice A second contract for testing the funder, oracle, and trader.
  */
 /* solium-disable-next-line camelcase, no-empty-blocks */
 contract Test_P1Monolith is

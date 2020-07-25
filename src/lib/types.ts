@@ -37,6 +37,11 @@ export type BigNumberable = BigNumber | number | string;
 
 // ============ Enums ============
 
+export enum PerpetualMarket {
+  PBTC_USDC = 'PBTC-USDC',
+  WETH_PUSD = 'WETH-PUSD',
+}
+
 export enum ConfirmationType {
   Hash = 0,
   Confirmed = 1,
@@ -65,12 +70,32 @@ export interface OrderState {
   filledAmount: BigNumber;
 }
 
+export enum SoloBridgeTransferMode {
+  SOME_TO_PERPETUAL = 0,
+  SOME_TO_SOLO = 1,
+  ALL_TO_PERPETUAL = 2,
+}
+
 // ============ Constants ============
 
 export const Networks = {
   MAINNET: 1,
   KOVAN: 42,
 };
+
+// ============ Initialization Options ============
+
+export interface PerpetualOptions {
+  defaultAccount?: address;
+  sendOptions?: SendOptions;
+  apiOptions?: ApiOptions;
+  accounts?: EthereumAccount[];
+}
+
+export interface ApiOptions {
+  endpoint?: string;
+  timeout?: number;
+}
 
 // ============ Interfaces ============
 
@@ -94,6 +119,7 @@ export interface TxResult {
     [eventName: string]: EventLog;
   };
   status?: boolean;
+  nonce?: number; // non-standard field, returned only through dYdX Sender service
   confirmation?: Promise<TransactionReceipt>;
   gasEstimate?: number;
   gas?: number;
@@ -101,12 +127,16 @@ export interface TxResult {
 
 export interface TxOptions {
   from?: address;
-  gasPrice?: number;
-  gas?: number;
-  value?: number;
+  value?: number | string;
 }
 
-export interface SendOptions extends TxOptions {
+export interface NativeSendOptions extends TxOptions {
+  gasPrice?: number | string;
+  gas?: number | string;
+  nonce?: string | number;
+}
+
+export interface SendOptions extends NativeSendOptions {
   confirmations?: number;
   confirmationType?: ConfirmationType;
   gasMultiplier?: number;
@@ -114,6 +144,11 @@ export interface SendOptions extends TxOptions {
 
 export interface CallOptions extends TxOptions {
   blockNumber?: number;
+}
+
+export interface PosAndNegValues {
+  positiveValue: BigNumber;
+  negativeValue: BigNumber;
 }
 
 // ============ Solidity Interfaces ============
@@ -152,7 +187,6 @@ export interface TradeResult {
 
 export interface FundingRateBounds {
   maxAbsValue: FundingRate;
-  maxAbsDiffPerUpdate: FundingRate;
   maxAbsDiffPerSecond: FundingRate;
 }
 
@@ -180,6 +214,27 @@ export interface Order {
 }
 
 export interface SignedOrder extends Order {
+  typedSignature: string;
+}
+
+export interface MakerOracleMessage {
+  price: Price;
+  timestamp: BigNumber;
+  signature: string;
+}
+
+export interface SoloBridgeTransfer {
+  account: address;
+  perpetual: address;
+  soloAccountNumber: BigNumberable;
+  soloMarketId: BigNumberable;
+  amount: BigNumberable;
+  transferMode: SoloBridgeTransferMode;
+  expiration?: BigNumberable;
+  salt?: BigNumberable;
+}
+
+export interface SignedSoloBridgeTransfer extends SoloBridgeTransfer {
   typedSignature: string;
 }
 
@@ -234,32 +289,43 @@ export class Balance {
   }
 
   /**
-   * Get the collateralization ratio of the balance, given an oracle price.
-   *
-   * Returns BigNumber(Infinity) if there are no negative balances.
+   * Get the positive and negative values (in terms of margin-token) of the balance,
+   * given an oracle price.
    */
-  public getCollateralization(price: Price): BigNumber {
+  public getPositiveAndNegativeValues(price: Price): PosAndNegValues {
     let positiveValue = new BigNumber(0);
     let negativeValue = new BigNumber(0);
 
+    const marginValue = this.margin.abs();
     if (this.margin.isPositive()) {
-      positiveValue = this.margin;
+      positiveValue = marginValue;
     } else {
-      negativeValue = this.margin;
+      negativeValue = marginValue;
     }
 
-    const positionValue = this.position.times(price.value);
+    const positionValue = this.position.times(price.value).abs();
     if (this.position.isPositive()) {
       positiveValue = positiveValue.plus(positionValue);
     } else {
       negativeValue = negativeValue.plus(positionValue);
     }
 
-    if (negativeValue.isZero()) {
+    return { positiveValue, negativeValue };
+  }
+
+  /**
+   * Get the collateralization ratio of the balance, given an oracle price.
+   *
+   * Returns BigNumber(Infinity) if there are no negative balances.
+   */
+  public getCollateralization(price: Price): BigNumber {
+    const values = this.getPositiveAndNegativeValues(price);
+
+    if (values.negativeValue.isZero()) {
       return new BigNumber(Infinity);
     }
 
-    return positiveValue.div(negativeValue.abs());
+    return values.positiveValue.div(values.negativeValue);
   }
 }
 
@@ -321,6 +387,10 @@ export class BaseValue {
 
   public minus(value: BigNumberable): BaseValue {
     return new BaseValue(this.value.minus(value));
+  }
+
+  public abs(): BaseValue {
+    return new BaseValue(this.value.abs());
   }
 
   public negated(): BaseValue {
@@ -408,12 +478,28 @@ export interface ApiOrder {
   cancelReason: ApiOrderCancelReason;
 }
 
+export interface ApiOrderOnOrderbook {
+  id: string;
+  uuid: string;
+  amount: string;
+  price: string;
+}
+
+export interface ApiBalance {
+  margin: string;
+  position: string;
+  indexValue: string;
+  indexTimestamp: string;
+  pendingMargin: string;
+  pendingPosition: string;
+}
+
 export interface ApiMarketMessage {
   createdAt: string;
   updatedAt: string;
   market: ApiMarketName;
-  oraclePrice: BigNumber;
-  fundingRate: BigNumber;
+  oraclePrice: string;
+  fundingRate: string;
   globalIndexValue: string;
   globalIndexTimeStamp: string;
 }
@@ -422,12 +508,39 @@ export interface ApiAccount {
   owner: string;
   uuid: string;
   balances: {
-    Market: {
-      Margin: BigNumber;
-      position: BigNumber;
-      indexValue: BigNumber;
-      indexTimestamp: string;
-      cachedMargin: BigNumber;
-    };
+    [market: string]: ApiBalance,
   };
+}
+
+// ============ Funding API ============
+
+export interface ApiFundingRate {
+  market: ApiMarketName;
+  effectiveAt: string;
+  fundingRate: string;
+  fundingRate8Hr: string;
+  averagePremiumComponent: string;
+  averagePremiumComponent8Hr: string;
+}
+
+// Per-market response from /funding-rates
+export interface ApiFundingRates {
+  current: ApiFundingRate;
+  predicted: ApiFundingRate | null;
+}
+
+// Per-market response from /historical-funding-rates
+export interface ApiHistoricalFundingRates {
+  history: ApiFundingRate[];
+}
+
+// Per-market response from /index-price
+export interface ApiIndexPrice {
+  price: string;
+}
+
+export enum RequestMethod {
+  GET = 'get',
+  POST = 'post',
+  DELETE = 'delete',
 }

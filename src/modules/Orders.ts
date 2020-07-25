@@ -1,13 +1,13 @@
-import { promisify } from 'es6-promisify';
-import Web3 from 'web3';
 import BigNumber from 'bignumber.js';
+import Web3 from 'web3';
+import { Contract } from 'web3-eth-contract';
+
 import { Contracts } from './Contracts';
 import {
   addressToBytes32,
   bnToBytes32,
   hashString,
   addressesAreEqual,
-  stripHexPrefix,
   combineHexStrings,
 } from '../lib/BytesHelper';
 import {
@@ -16,9 +16,13 @@ import {
   EIP712_DOMAIN_STRUCT,
   createTypedSignature,
   ecRecoverTypedSignature,
+  ethSignTypedDataInternal,
+  hashHasValidSignature,
+  getEIP712Hash,
 } from '../lib/SignatureHelper';
 import {
   Balance,
+  BigNumberable,
   CallOptions,
   Fee,
   Order,
@@ -29,7 +33,6 @@ import {
   SigningMethod,
   TypedSignature,
   address,
-  BaseValue,
 } from '../lib/types';
 import { ORDER_FLAGS } from '../lib/Constants';
 
@@ -44,6 +47,8 @@ const EIP712_ORDER_STRUCT = [
   { type: 'uint256', name: 'expiration' },
 ];
 
+const DEFAULT_EIP712_DOMAIN_NAME = 'P1Orders';
+const EIP712_DOMAIN_VERSION = '1.0';
 const EIP712_ORDER_STRUCT_STRING =
   'Order(' +
   'bytes32 flags,' +
@@ -62,26 +67,33 @@ const EIP712_CANCEL_ORDER_STRUCT = [
 ];
 
 const EIP712_CANCEL_ORDER_STRUCT_STRING =
-  'CancelOrder(' +
+  'CancelLimitOrder(' +
   'string action,' +
   'bytes32[] orderHashes' +
   ')';
 
 export class Orders {
   private contracts: Contracts;
-  private networkId: number;
   private web3: Web3;
+  private eip712DomainName: string;
+  private orders: Contract;
 
   // ============ Constructor ============
 
   constructor(
     contracts: Contracts,
     web3: Web3,
-    networkId: number,
+    eip712DomainName: string = DEFAULT_EIP712_DOMAIN_NAME,
+    orders: Contract = contracts.p1Orders,
   ) {
-    this.web3 = web3;
     this.contracts = contracts;
-    this.networkId = networkId;
+    this.web3 = web3;
+    this.eip712DomainName = eip712DomainName;
+    this.orders = orders;
+  }
+
+  get address(): address {
+    return this.orders.options.address;
   }
 
   // ============ On-Chain Approve / On-Chain Cancel ============
@@ -96,7 +108,7 @@ export class Orders {
   ): Promise<any> {
     const stringifiedOrder = this.orderToSolidity(order);
     return this.contracts.send(
-      this.contracts.p1Orders.methods.approveOrder(stringifiedOrder),
+      this.orders.methods.approveOrder(stringifiedOrder),
       options,
     );
   }
@@ -110,7 +122,7 @@ export class Orders {
   ): Promise<any> {
     const stringifiedOrder = this.orderToSolidity(order);
     return this.contracts.send(
-      this.contracts.p1Orders.methods.cancelOrder(stringifiedOrder),
+      this.orders.methods.cancelOrder(stringifiedOrder),
       options,
     );
   }
@@ -126,7 +138,7 @@ export class Orders {
   ): Promise<OrderState[]> {
     const orderHashes = orders.map(order => this.getOrderHash(order));
     const states: any[] = await this.contracts.call(
-      this.contracts.p1Orders.methods.getOrdersStatus(orderHashes),
+      this.orders.methods.getOrdersStatus(orderHashes),
       options,
     );
 
@@ -149,51 +161,75 @@ export class Orders {
    *
    * Returns the ending collateralization ratio for the account, or BigNumber(Infinity) if the
    * account does not end with any negative balances.
+   *
+   * @param  initialBalance  The initial margin and position balances of the maker account.
+   * @param  oraclePrice     The price at which to calculate collateralization.
+   * @param  orders          A sequence of orders, with the same maker, to be hypothetically filled.
+   * @param  fillAmounts     The corresponding fill amount for each order, denominated in the token
+   *                         spent by the maker--quote currency when buying, and base when selling.
    */
   public getAccountCollateralizationAfterMakingOrders(
     initialBalance: Balance,
     oraclePrice: Price,
     orders: Order[],
-    fillAmounts: BigNumber[],
+    makerTokenFillAmounts: BigNumber[],
   ): BigNumber {
     const runningBalance: Balance = initialBalance.copy();
 
-    // For each order, determine the effect on the balance by following the math in P1Orders.sol.
+    // For each order, determine the effect on the balance by following the smart contract math.
     for (let i = 0; i < orders.length; i += 1) {
       const order = orders[i];
-      const fillAmount = fillAmounts[i];
+
+      const fillAmount = order.isBuy
+        ? makerTokenFillAmounts[i].dividedBy(order.limitPrice.value)
+        : makerTokenFillAmounts[i];
 
       // Assume orders are filled at the limit price and limit fee.
-      // Order fee is denoted as a percentage of execution price.
-      const fee: BaseValue = order.limitFee.times(order.limitPrice.value);
-      const marginPerPosition: BaseValue = order.isBuy
-        ? order.limitPrice.plus(fee.value)
-        : order.limitPrice.minus(fee.value);
+      const { marginDelta, positionDelta } = this.getBalanceUpdatesAfterFillingOrder(
+        fillAmount,
+        order.limitPrice,
+        order.limitFee,
+        order.isBuy,
+      );
 
-      const marginAmount: BigNumber = fillAmount.times(marginPerPosition.value);
-
-      if (order.isBuy) {
-        runningBalance.margin = runningBalance.margin.minus(marginAmount);
-        runningBalance.position = runningBalance.position.plus(fillAmount);
-      } else {
-        runningBalance.margin = runningBalance.margin.plus(marginAmount);
-        runningBalance.position = runningBalance.position.minus(fillAmount);
-      }
+      runningBalance.margin = runningBalance.margin.plus(marginDelta);
+      runningBalance.position = runningBalance.position.plus(positionDelta);
     }
 
     return runningBalance.getCollateralization(oraclePrice);
+  }
+
+  /**
+   * Calculate the effect of filling an order on the maker's balances.
+   */
+  public getBalanceUpdatesAfterFillingOrder(
+    fillAmount: BigNumberable,
+    fillPrice: Price,
+    fillFee: Fee,
+    isBuy: boolean,
+  ): {
+    marginDelta: BigNumber,
+    positionDelta: BigNumber,
+  } {
+    const positionAmount = new BigNumber(fillAmount).dp(0, BigNumber.ROUND_DOWN);
+    const fee = fillFee.times(fillPrice.value).value.dp(18, BigNumber.ROUND_DOWN);
+    const marginPerPosition = isBuy ? fillPrice.plus(fee) : fillPrice.minus(fee);
+    const marginAmount = positionAmount.times(marginPerPosition.value).dp(0, BigNumber.ROUND_DOWN);
+    return {
+      marginDelta: isBuy ? marginAmount.negated() : marginAmount,
+      positionDelta: isBuy ? positionAmount : positionAmount.negated(),
+    };
   }
 
   public getFeeForOrder(
     amount: BigNumber,
     isTaker: boolean = true,
   ): Fee {
-    const isSmall = amount.lt('0.01e8');
     if (!isTaker) {
-      return isSmall
-        ? Fee.fromBips('0.0')
-        : Fee.fromBips('-2.5');
+      return Fee.fromBips('-2.5');
     }
+
+    const isSmall = amount.lt('0.5e8');
     return isSmall
       ? Fee.fromBips('50.0')
       : Fee.fromBips('7.5');
@@ -234,7 +270,7 @@ export class Orders {
         if (signingMethod === SigningMethod.UnsafeHash) {
           return unsafeHashSig;
         }
-        if (this.orderByHashHasValidSignature(orderHash, unsafeHashSig, order.maker)) {
+        if (hashHasValidSignature(orderHash, unsafeHashSig, order.maker)) {
           return unsafeHashSig;
         }
         return hashSig;
@@ -291,7 +327,7 @@ export class Orders {
         if (signingMethod === SigningMethod.UnsafeHash) {
           return unsafeHashSig;
         }
-        if (this.cancelOrderByHashHasValidSignature(orderHash, unsafeHashSig, signer)) {
+        if (hashHasValidSignature(orderHash, unsafeHashSig, signer)) {
           return unsafeHashSig;
         }
         return hashSig;
@@ -319,7 +355,7 @@ export class Orders {
   public orderHasValidSignature(
     order: SignedOrder,
   ): boolean {
-    return this.orderByHashHasValidSignature(
+    return hashHasValidSignature(
       this.getOrderHash(order),
       order.typedSignature,
       order.maker,
@@ -384,7 +420,7 @@ export class Orders {
       { t: 'bytes32', v: addressToBytes32(order.taker) },
       { t: 'uint256', v: order.expiration.toFixed(0) },
     );
-    return this.getEIP712Hash(structHash);
+    return getEIP712Hash(this.getDomainHash(), structHash);
   }
 
   /**
@@ -398,7 +434,7 @@ export class Orders {
       { t: 'bytes32', v: hashString('Cancel Orders') },
       { t: 'bytes32', v: Web3.utils.soliditySha3({ t: 'bytes32', v: orderHash }) },
     );
-    return this.getEIP712Hash(structHash);
+    return getEIP712Hash(this.getDomainHash(), structHash);
   }
 
   /**
@@ -407,23 +443,10 @@ export class Orders {
   public getDomainHash(): string {
     return Web3.utils.soliditySha3(
       { t: 'bytes32', v: hashString(EIP712_DOMAIN_STRING) },
-      { t: 'bytes32', v: hashString('P1Orders') },
-      { t: 'bytes32', v: hashString('1.0') },
-      { t: 'uint256', v: `${this.networkId}` },
-      { t: 'bytes32', v: addressToBytes32(this.contracts.p1Orders.options.address) },
-    );
-  }
-
-  /**
-   * Returns a signable EIP712 Hash of a struct
-   */
-  public getEIP712Hash(
-    structHash: string,
-  ): string {
-    return Web3.utils.soliditySha3(
-      { t: 'bytes2', v: '0x1901' },
-      { t: 'bytes32', v: this.getDomainHash() },
-      { t: 'bytes32', v: structHash },
+      { t: 'bytes32', v: hashString(this.eip712DomainName) },
+      { t: 'bytes32', v: hashString(EIP712_DOMAIN_VERSION) },
+      { t: 'uint256', v: `${this.contracts.networkId}` },
+      { t: 'bytes32', v: addressToBytes32(this.address) },
     );
   }
 
@@ -483,10 +506,10 @@ export class Orders {
 
   private getDomainData() {
     return {
-      name: 'P1Orders',
-      version: '1.0',
-      chainId: this.networkId,
-      verifyingContract: this.contracts.p1Orders.options.address,
+      name: this.eip712DomainName,
+      version: EIP712_DOMAIN_VERSION,
+      chainId: this.contracts.networkId,
+      verifyingContract: this.address,
     };
   }
 
@@ -494,16 +517,7 @@ export class Orders {
     order: Order,
     signingMethod: SigningMethod,
   ): Promise<TypedSignature> {
-    const orderData = {
-      flags: this.getOrderFlags(order),
-      amount: order.amount.toFixed(0),
-      limitPrice: order.limitPrice.toSolidity(),
-      triggerPrice: order.triggerPrice.toSolidity(),
-      limitFee: order.limitFee.toSolidity(),
-      maker: order.maker,
-      taker: order.taker,
-      expiration: order.expiration.toFixed(0),
-    };
+    const orderData = this.orderToSolidity(order);
     const data = {
       types: {
         EIP712Domain: EIP712_DOMAIN_STRUCT,
@@ -513,7 +527,8 @@ export class Orders {
       primaryType: 'Order',
       message: orderData,
     };
-    return this.ethSignTypedDataInternal(
+    return ethSignTypedDataInternal(
+      this.web3.currentProvider,
       order.maker,
       data,
       signingMethod,
@@ -528,68 +543,21 @@ export class Orders {
     const data = {
       types: {
         EIP712Domain: EIP712_DOMAIN_STRUCT,
-        CancelOrder: EIP712_CANCEL_ORDER_STRUCT,
+        CancelLimitOrder: EIP712_CANCEL_ORDER_STRUCT,
       },
       domain: this.getDomainData(),
-      primaryType: 'CancelOrder',
+      primaryType: 'CancelLimitOrder',
       message: {
         action: 'Cancel Orders',
         orderHashes: [orderHash],
       },
     };
-    return this.ethSignTypedDataInternal(
+    return ethSignTypedDataInternal(
+      this.web3.currentProvider,
       signer,
       data,
       signingMethod,
     );
-  }
-
-  private async ethSignTypedDataInternal(
-    signer: string,
-    data: any,
-    signingMethod: SigningMethod,
-  ): Promise<TypedSignature> {
-    let sendMethod: string;
-    let rpcMethod: string;
-    let rpcData: any;
-
-    switch (signingMethod) {
-      case SigningMethod.TypedData:
-        sendMethod = 'send';
-        rpcMethod = 'eth_signTypedData';
-        rpcData = data;
-        break;
-      case SigningMethod.MetaMask:
-        sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData_v3';
-        rpcData = JSON.stringify(data);
-        break;
-      case SigningMethod.MetaMaskLatest:
-        sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData_v4';
-        rpcData = JSON.stringify(data);
-        break;
-      case SigningMethod.CoinbaseWallet:
-        sendMethod = 'sendAsync';
-        rpcMethod = 'eth_signTypedData';
-        rpcData = data;
-        break;
-      default:
-        throw new Error(`Invalid signing method ${signingMethod}`);
-    }
-
-    const provider = this.web3.currentProvider;
-    const sendAsync = promisify(provider[sendMethod]).bind(provider);
-    const response = await sendAsync({
-      method: rpcMethod,
-      params: [signer, rpcData],
-      jsonrpc: '2.0',
-      id: new Date().getTime(),
-    });
-    if (response.error) {
-      throw new Error(response.error.message);
-    }
-    return `0x${stripHexPrefix(response.result)}0${SIGNATURE_TYPES.NO_PREPEND}`;
   }
 
   private getOrderFlags(

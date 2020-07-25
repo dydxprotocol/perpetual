@@ -39,8 +39,8 @@ library Require {
     // ============ Library Functions ============
 
     /**
-     * If the must condition is not true, reverts using a string combination of the reason and the
-     * address.
+     * @dev If the must condition is not true, reverts using a string combination of the reason and
+     *  the address.
      */
     function that(
         bool must,
@@ -58,9 +58,9 @@ library Require {
     // ============ Helper Functions ============
 
     /**
-     * Returns a bytes array that is an ASCII string representation of the input address.
-     * Returns " 0x", the first 4 bytes of the address in lowercase hex, "...", then the last 4
-     * bytes of the address in lowercase hex.
+     * @dev Returns a bytes array that is an ASCII string representation of the input address.
+     *  Returns " 0x", the first 4 bytes of the address in lowercase hex, "...", then the last 4
+     *  bytes of the address in lowercase hex.
      */
     function stringify(
         address input
@@ -89,7 +89,7 @@ library Require {
     }
 
     /**
-     * Returns the ASCII hex character that represents the last four bits of the input (0-9a-f).
+     * @dev Returns the ASCII hex character representing the last four bits of the input (0-9a-f).
      */
     function char(
         uint256 input

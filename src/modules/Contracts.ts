@@ -26,14 +26,16 @@ import {
   ContractSendMethod,
   Contract,
 } from 'web3-eth-contract';
-
 import {
-  address,
   CallOptions,
   ConfirmationType,
+  NativeSendOptions,
+  PerpetualMarket,
   Provider,
   SendOptions,
+  TxOptions,
   TxResult,
+  address,
 } from '../lib/types';
 
 // JSON
@@ -41,9 +43,18 @@ import perpetualProxyJson from '../../build/contracts/PerpetualProxy.json';
 import perpetualV1Json from '../../build/contracts/PerpetualV1.json';
 import p1FundingOracleJson from '../../build/contracts/P1FundingOracle.json';
 import p1MakerOracleJson from '../../build/contracts/P1MakerOracle.json';
+import p1OracleInverterJson from '../../build/contracts/P1OracleInverter.json';
 import p1OrdersJson from '../../build/contracts/P1Orders.json';
+import p1InverseOrdersJson from '../../build/contracts/P1InverseOrders.json';
 import p1DeleveragingJson from '../../build/contracts/P1Deleveraging.json';
 import p1LiquidationJson from '../../build/contracts/P1Liquidation.json';
+import p1CurrencyConverterProxyJson from '../../build/contracts/P1CurrencyConverterProxy.json';
+import p1LiquidatorProxyJson from '../../build/contracts/P1LiquidatorProxy.json';
+import p1SoloBridgeProxyJson from '../../build/contracts/P1SoloBridgeProxy.json';
+import p1WethProxyJson from '../../build/contracts/P1WethProxy.json';
+import erc20Json from '../../build/contracts/ERC20.json';
+import makerOracleJson from '../../build/contracts/I_MakerOracle.json';
+import wethJson from '../../build/contracts/WETH9.json';
 
 enum OUTCOMES {
   INITIAL = 0,
@@ -53,6 +64,7 @@ enum OUTCOMES {
 
 interface Json {
   abi: any;
+  contractName: string;
   networks: { [network: number]: any };
 }
 
@@ -66,8 +78,12 @@ export class Contracts {
   private defaultOptions: SendOptions;
   private _cumulativeGasUsed: number = 0;
   private _gasUsedByFunction: { name: string, gasUsed: number }[] = [];
+  private _countGasUsage: boolean = false;
 
   protected web3: Web3;
+
+  public market: PerpetualMarket;
+  public networkId: number;
 
   // Contract instances
   public contractsList: ContractInfo[] = [];
@@ -75,15 +91,27 @@ export class Contracts {
   public perpetualV1: Contract;
   public p1FundingOracle: Contract;
   public p1MakerOracle: Contract;
+  public p1OracleInverter: Contract;
   public p1Orders: Contract;
+  public p1InverseOrders: Contract;
   public p1Deleveraging: Contract;
   public p1Liquidation: Contract;
+  public p1CurrencyConverterProxy: Contract;
+  public p1LiquidatorProxy: Contract;
+  public p1SoloBridgeProxy: Contract;
+  public p1WethProxy: Contract;
+  public erc20: Contract;
+  public makerOracle: Contract;
+  public weth: Contract;
 
   constructor(
     provider: Provider,
+    market: PerpetualMarket,
     networkId: number,
     web3: Web3,
+    sendOptions: SendOptions = {},
   ) {
+    this.market = market;
     this.web3 = web3;
     this.defaultOptions = {
       gas: null,
@@ -93,6 +121,7 @@ export class Contracts {
       confirmations: 0,
       confirmationType: ConfirmationType.Confirmed,
       gasMultiplier: 1.5,
+      ...sendOptions,
     };
 
     // Contracts
@@ -100,9 +129,18 @@ export class Contracts {
     this.perpetualV1 = this.addContract(perpetualV1Json);
     this.p1FundingOracle = this.addContract(p1FundingOracleJson);
     this.p1MakerOracle = this.addContract(p1MakerOracleJson);
+    this.p1OracleInverter = this.addContract(p1OracleInverterJson);
     this.p1Orders = this.addContract(p1OrdersJson);
+    this.p1InverseOrders = this.addContract(p1InverseOrdersJson);
     this.p1Deleveraging = this.addContract(p1DeleveragingJson);
     this.p1Liquidation = this.addContract(p1LiquidationJson);
+    this.p1CurrencyConverterProxy = this.addContract(p1CurrencyConverterProxyJson);
+    this.p1LiquidatorProxy = this.addContract(p1LiquidatorProxyJson);
+    this.p1SoloBridgeProxy = this.addContract(p1SoloBridgeProxyJson);
+    this.p1WethProxy = this.addContract(p1WethProxyJson);
+    this.erc20 = this.addContract(erc20Json, true);
+    this.makerOracle = this.addContract(makerOracleJson, true);
+    this.weth = this.addContract(wethJson, true);
 
     this.setProvider(provider, networkId);
     this.setDefaultAccount(this.web3.eth.defaultAccount);
@@ -119,8 +157,6 @@ export class Contracts {
 
   /**
    * Get a list of gas used by function since last call to resetGasUsed().
-   *
-   * Empty unless DEBUG_GAS_USAGE_BY_FUNCTION was set.
    */
   public * getGasUsedByFunction(): Iterable<{ name: string, gasUsed: number }> {
     for (const gasUsed of this._gasUsedByFunction) {
@@ -132,6 +168,11 @@ export class Contracts {
     provider: Provider,
     networkId: number,
   ): void {
+    this.networkId = networkId;
+
+    // Only record gas usage for local testnets.
+    this._countGasUsage = [1001, 1002].includes(networkId);
+
     this.contractsList.forEach(
       contract => this.setContractProvider(
         contract.contract,
@@ -157,36 +198,41 @@ export class Contracts {
     const {
       blockNumber,
       ...otherOptions
-    } = {
+    } = this.toCallOptions({
       ...this.defaultOptions,
       ...specificOptions,
-    };
-    return (method as any).call(otherOptions);
+    });
+    return (method as any).call(otherOptions, blockNumber || 'latest');
   }
 
   public async send(
     method: ContractSendMethod,
     specificOptions: SendOptions = {},
-  ): Promise<any> {
-    const txOptions = {
+  ): Promise<TxResult> {
+    const sendOptions: SendOptions = {
       ...this.defaultOptions,
       ...specificOptions,
     };
-    const result = await this._send(method, txOptions);
-    if (txOptions.confirmationType === ConfirmationType.Confirmed ||
-        txOptions.confirmationType === ConfirmationType.Both) {
 
+    const result = await this._send(method, sendOptions);
+
+    if (
+      this._countGasUsage
+      && [
+        ConfirmationType.Both,
+        ConfirmationType.Confirmed,
+      ].includes(sendOptions.confirmationType)
+    ) {
       // Count gas used.
       const contract: Contract = (method as any)._parent;
       const contractInfo = _.find(this.contractsList, { contract });
       if (contractInfo && !contractInfo.isTest) {
         const gasUsed = (result as TxResult).gasUsed;
         this._cumulativeGasUsed += gasUsed;
-        if (process.env.DEBUG_GAS_USAGE_BY_FUNCTION === 'true') {
-          this._gasUsedByFunction.push({ gasUsed, name: (method as any)._method.name });
-        }
+        this._gasUsedByFunction.push({ gasUsed, name: (method as any)._method.name });
       }
     }
+
     return result;
   }
 
@@ -211,22 +257,34 @@ export class Contracts {
     const json: Json = (contract === this.perpetualV1)
       ? _.find(this.contractsList, { contract: this.perpetualProxy }).json
       : contractJson;
-    contract.options.address = json.networks[networkId] && json.networks[networkId].address;
+
+    // Use market-specific info if available, and fall back to non-market-specific info.
+    const deployedInfo =
+      (json.networks[this.market] && json.networks[this.market][networkId]) ||
+      json.networks[networkId];
+    contract.options.address = deployedInfo && deployedInfo.address;
   }
 
   private async _send( // tslint:disable-line:function-name
     method: ContractSendMethod,
-    txOptions: SendOptions = {},
-  ): Promise<any> {
-    if (!Object.values(ConfirmationType).includes(txOptions.confirmationType)) {
-      throw new Error(`Invalid confirmation type: ${txOptions.confirmationType}`);
+    sendOptions: SendOptions = {},
+  ): Promise<TxResult> {
+    const {
+      confirmations,
+      confirmationType,
+      gasMultiplier,
+      ...txOptions
+    } = sendOptions;
+
+    if (!Object.values(ConfirmationType).includes(confirmationType)) {
+      throw new Error(`Invalid confirmation type: ${confirmationType}`);
     }
 
-    if (txOptions.confirmationType === ConfirmationType.Simulate || !txOptions.gas) {
+    if (confirmationType === ConfirmationType.Simulate || !txOptions.gas) {
       const gasEstimate = await this.estimateGas(method, txOptions);
-      txOptions.gas = Math.floor(gasEstimate * txOptions.gasMultiplier);
+      txOptions.gas = Math.floor(gasEstimate * gasMultiplier);
 
-      if (txOptions.confirmationType === ConfirmationType.Simulate) {
+      if (confirmationType === ConfirmationType.Simulate) {
         return {
           gasEstimate,
           gas: txOptions.gas,
@@ -234,7 +292,7 @@ export class Contracts {
       }
     }
 
-    const promi: PromiEvent<Contract> = method.send(txOptions as any);
+    const promi: PromiEvent<Contract> = method.send(this.toNativeSendOptions(txOptions) as any);
 
     let hashOutcome = OUTCOMES.INITIAL;
     let confirmationOutcome = OUTCOMES.INITIAL;
@@ -243,10 +301,10 @@ export class Contracts {
     let hashPromise: Promise<string>;
     let confirmationPromise: Promise<TransactionReceipt>;
 
-    if (
-      txOptions.confirmationType === ConfirmationType.Hash
-      || txOptions.confirmationType === ConfirmationType.Both
-    ) {
+    if ([
+      ConfirmationType.Hash,
+      ConfirmationType.Both,
+    ].includes(confirmationType)) {
       hashPromise = new Promise(
         (resolve, reject) => {
           promi.on('error', (error: Error) => {
@@ -261,7 +319,7 @@ export class Contracts {
             if (hashOutcome === OUTCOMES.INITIAL) {
               hashOutcome = OUTCOMES.RESOLVED;
               resolve(txHash);
-              if (txOptions.confirmationType !== ConfirmationType.Both) {
+              if (confirmationType !== ConfirmationType.Both) {
                 (promi as any).off();
               }
             }
@@ -271,17 +329,17 @@ export class Contracts {
       transactionHash = await hashPromise;
     }
 
-    if (
-      txOptions.confirmationType === ConfirmationType.Confirmed
-      || txOptions.confirmationType === ConfirmationType.Both
-    ) {
+    if ([
+      ConfirmationType.Confirmed,
+      ConfirmationType.Both,
+    ].includes(confirmationType)) {
       confirmationPromise = new Promise(
         (resolve, reject) => {
           promi.on('error', (error: Error) => {
             if (
               confirmationOutcome === OUTCOMES.INITIAL
               && (
-                txOptions.confirmationType === ConfirmationType.Confirmed
+                confirmationType === ConfirmationType.Confirmed
                 || hashOutcome === OUTCOMES.RESOLVED
               )
             ) {
@@ -291,9 +349,9 @@ export class Contracts {
             }
           });
 
-          if (txOptions.confirmations) {
+          if (confirmations) {
             promi.on('confirmation', (confNumber: number, receipt: TransactionReceipt) => {
-              if (confNumber >= txOptions.confirmations) {
+              if (confNumber >= confirmations) {
                 if (confirmationOutcome === OUTCOMES.INITIAL) {
                   confirmationOutcome = OUTCOMES.RESOLVED;
                   resolve(receipt);
@@ -312,36 +370,87 @@ export class Contracts {
       );
     }
 
-    if (txOptions.confirmationType === ConfirmationType.Hash) {
-      return { transactionHash };
+    if (confirmationType === ConfirmationType.Hash) {
+      return this.normalizeResponse({ transactionHash });
     }
 
-    if (txOptions.confirmationType === ConfirmationType.Confirmed) {
+    if (confirmationType === ConfirmationType.Confirmed) {
       return confirmationPromise;
     }
 
-    return {
+    return this.normalizeResponse({
       transactionHash,
       confirmation: confirmationPromise,
-    };
+    });
   }
 
   private async estimateGas(
     method: ContractSendMethod,
     txOptions: SendOptions,
   ) {
+    const estimateOptions: TxOptions = this.toEstimateOptions(txOptions);
     try {
-      const gasEstimate = await method.estimateGas(txOptions);
+      const gasEstimate = await method.estimateGas(estimateOptions);
       return gasEstimate;
     } catch (error) {
-      const { from, value } = txOptions;
       error.transactionData = {
-        from,
-        value,
+        ...estimateOptions,
         data: method.encodeABI(),
         to: (method as any)._parent._address,
       };
       throw error;
     }
+  }
+
+  // ============ Parse Options ============
+
+  private toEstimateOptions(
+    options: SendOptions,
+  ): TxOptions {
+    return _.pick(options, [
+      'from',
+      'value',
+    ]);
+  }
+
+  private toCallOptions(
+    options: any,
+  ): CallOptions {
+    return _.pick(options, [
+      'from',
+      'value',
+      'blockNumber',
+    ]);
+  }
+
+  private toNativeSendOptions(
+    options: any,
+  ): NativeSendOptions {
+    return _.pick(options, [
+      'from',
+      'value',
+      'gasPrice',
+      'gas',
+      'nonce',
+    ]);
+  }
+
+  private normalizeResponse(
+    txResult: any,
+  ): any {
+    const txHash = txResult.transactionHash;
+    if (txHash) {
+      const {
+        transactionHash: internalHash,
+        nonce: internalNonce,
+      } = txHash;
+      if (internalHash) {
+        txResult.transactionHash = internalHash;
+      }
+      if (internalNonce) {
+        txResult.nonce = internalNonce;
+      }
+    }
+    return txResult;
   }
 }

@@ -12,7 +12,7 @@ import { expectThrow, expect, expectAddressesEqual, expectBN } from './helpers/E
 import { expectBalances, mintAndDeposit } from './helpers/balances';
 import { mineAvgBlock } from './helpers/EVM';
 import initializePerpetual from './helpers/initializePerpetual';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { buy } from './helpers/trade';
 
 // Note: initialPrice * positionSize = initialMargin * 2
@@ -278,8 +278,13 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
 
           // Admin bails out the contract.
           const underwaterAmount = new BigNumber(1300);
-          await ctx.perpetual.testing.token.mint(admin, underwaterAmount);
+          await ctx.perpetual.testing.token.mint(
+            ctx.perpetual.contracts.testToken.options.address,
+            admin,
+            underwaterAmount,
+          );
           await ctx.perpetual.testing.token.transfer(
+            ctx.perpetual.contracts.testToken.options.address,
             admin,
             ctx.perpetual.contracts.perpetualProxy.options.address,
             underwaterAmount,
@@ -316,8 +321,13 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
 
           // Admin bails out the contract.
           const underwaterAmount = new BigNumber(300);
-          await ctx.perpetual.testing.token.mint(admin, underwaterAmount);
+          await ctx.perpetual.testing.token.mint(
+            ctx.perpetual.contracts.testToken.options.address,
+            admin,
+            underwaterAmount,
+          );
           await ctx.perpetual.testing.token.transfer(
+            ctx.perpetual.contracts.testToken.options.address,
             admin,
             ctx.perpetual.contracts.perpetualProxy.options.address,
             underwaterAmount,
@@ -347,6 +357,7 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
    * Enable final settlement at a certain price.
    */
   async function enableSettlement(settlementPrice: Price): Promise<TxResult> {
+    await mineAvgBlock();
     await ctx.perpetual.testing.oracle.setPrice(settlementPrice);
     const txResult = ctx.perpetual.admin.enableFinalSettlement(
       settlementPrice,
@@ -369,7 +380,10 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
   ): Promise<void> {
     const expectedAmountBN = new BigNumber(expectedAmount);
     const withdrawAmount = BigNumber.max(expectedAmountBN, 0);
-    const balanceBefore = await ctx.perpetual.testing.token.getBalance(account);
+    const balanceBefore = await ctx.perpetual.testing.token.getBalance(
+      ctx.perpetual.contracts.testToken.options.address,
+      account,
+    );
     const txResult = await ctx.perpetual.finalSettlement.withdrawFinalSettlement({ from: account });
 
     // Check logs length.
@@ -400,7 +414,10 @@ perpetualDescribe('P1FinalSettlement', init, (ctx: ITestContext) => {
     }
 
     // Check that token balance is updated as expected.
-    const balanceAfter = await ctx.perpetual.testing.token.getBalance(account);
+    const balanceAfter = await ctx.perpetual.testing.token.getBalance(
+      ctx.perpetual.contracts.testToken.options.address,
+      account,
+    );
     const balanceDiff = balanceAfter.minus(balanceBefore);
     expectBN(balanceDiff, 'change in token balance').to.equal(withdrawAmount);
   }

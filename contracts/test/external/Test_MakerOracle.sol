@@ -32,6 +32,8 @@ import { I_MakerOracle } from "../../external/maker/I_MakerOracle.sol";
 contract Test_MakerOracle is
     I_MakerOracle
 {
+    uint256 public bar = 1;
+    uint32 public age = uint32(block.timestamp);
     uint256 public _PRICE_ = 0;
     bool public _VALID_ = true;
 
@@ -53,7 +55,7 @@ contract Test_MakerOracle is
         _VALID_ = valid;
     }
 
-    // ============ Get Functions ============
+    // ============ Getter Functions ============
 
     function read()
         external
@@ -74,4 +76,16 @@ contract Test_MakerOracle is
     {
         return (bytes32(_PRICE_), _VALID_);
     }
+
+    // ============ State-Changing Functions ============
+
+    function poke(
+        uint256[] calldata,
+        uint256[] calldata,
+        uint8[] calldata,
+        bytes32[] calldata,
+        bytes32[] calldata
+    )
+        external
+    { /* solium-disable-line no-empty-blocks */ }
 }

@@ -1,13 +1,15 @@
 import BigNumber from 'bignumber.js';
 import _ from 'lodash';
 
+import { mineAvgBlock } from './helpers/EVM';
 import initializePerpetual from './helpers/initializePerpetual';
 import { expectBalances, mintAndDeposit, expectPositions } from './helpers/balances';
-import perpetualDescribe, { ITestContext } from './helpers/perpetualDescribe';
+import { ITestContext, perpetualDescribe } from './helpers/perpetualDescribe';
 import { buy, sell } from './helpers/trade';
 import { expect, expectBN, expectBaseValueEqual, expectThrow } from './helpers/Expect';
 import { FEES, INTEGERS, PRICES } from '../src/lib/Constants';
 import {
+  BaseValue,
   BigNumberable,
   Order,
   Price,
@@ -28,6 +30,7 @@ let admin: address;
 let long: address;
 let short: address;
 let thirdParty: address;
+let globalOperator: address;
 
 async function init(ctx: ITestContext): Promise<void> {
   await initializePerpetual(ctx);
@@ -35,6 +38,7 @@ async function init(ctx: ITestContext): Promise<void> {
   long = ctx.accounts[1];
   short = ctx.accounts[2];
   thirdParty = ctx.accounts[3];
+  globalOperator = ctx.accounts[4];
 
   // Set up initial balances:
   // +---------+--------+----------+-------------------+
@@ -45,6 +49,7 @@ async function init(ctx: ITestContext): Promise<void> {
   // +---------+--------+----------+-------------------+
   await Promise.all([
     ctx.perpetual.testing.oracle.setPrice(initialPrice),
+    ctx.perpetual.admin.setGlobalOperator(globalOperator, true, { from: admin }),
     mintAndDeposit(ctx, long, new BigNumber(500)),
     mintAndDeposit(ctx, short, new BigNumber(500)),
   ]);
@@ -202,7 +207,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
       );
     });
 
-    it('Succeeds even if amount is greater than the maker position', async() => {
+    it('Succeeds even if amount is greater than the maker position', async () => {
       // Cover some of the short position.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
       await buy(ctx, short, thirdParty, new BigNumber(1), new BigNumber(150));
@@ -227,7 +232,7 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
       );
     });
 
-    it('Succeeds even if amount is greater than the taker position', async() => {
+    it('Succeeds even if amount is greater than the taker position', async () => {
       // Sell off some of the long position.
       await mintAndDeposit(ctx, thirdParty, new BigNumber(10000));
       await sell(ctx, long, thirdParty, new BigNumber(1), new BigNumber(150));
@@ -340,7 +345,10 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
     });
 
     it('Succeeds liquidating after an order has executed in the same tx', async () => {
-      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+      await Promise.all([
+        ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice),
+        ctx.perpetual.admin.setGlobalOperator(short, true, { from: admin }),
+      ]);
 
       const defaultOrder: Order = {
         isBuy: true,
@@ -371,40 +379,56 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
         .commit({ from: short });
     });
 
-    describe('sent by a third party', () => {
+    it('Cannot liquidate if the sender is not a global operator', async () => {
+      await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
+      const error = 'Sender is not a global operator';
+      await expectThrow(
+        liquidate(long, short, positionSize, { sender: thirdParty }),
+        error,
+      );
+      await expectThrow(
+        liquidate(long, short, positionSize, { sender: admin }),
+        error,
+      );
+    });
+
+    describe('when an account has no positive value', async () => {
       beforeEach(async () => {
-        await ctx.perpetual.testing.oracle.setPrice(longUndercollateralizedPrice);
-        ctx.perpetual.contracts.resetGasUsed();
+        // Short begins with -10 position, 1500 margin.
+        // Set a negative funding rate and accumulate 2000 margin worth of interest.
+        await ctx.perpetual.testing.funder.setFunding(new BaseValue(-2));
+        await mineAvgBlock();
+        await ctx.perpetual.margin.deposit(short, 0);
+        const balance = await ctx.perpetual.getters.getAccountBalance(short);
+        expectBN(balance.position).to.equal(-10);
+        expectBN(balance.margin).to.equal(-500);
       });
 
-      it('Succeeds liquidating if the sender is a global operator', async () => {
-        await ctx.perpetual.admin.setGlobalOperator(thirdParty, true, { from: admin });
-        const txResult = await liquidate(long, short, positionSize, { sender: thirdParty });
-        await expectBalances(
-          ctx,
-          txResult,
-          [long, short],
-          [new BigNumber(0), new BigNumber(1000)],
-          [new BigNumber(0), new BigNumber(0)],
-        );
-      });
-
-      it('Succeeds liquidating if the sender is a local operator', async () => {
-        await ctx.perpetual.operator.setLocalOperator(thirdParty, true, { from: short });
-        const txResult = await liquidate(long, short, positionSize, { sender: thirdParty });
-        await expectBalances(
-          ctx,
-          txResult,
-          [long, short],
-          [new BigNumber(0), new BigNumber(1000)],
-          [new BigNumber(0), new BigNumber(0)],
-        );
-      });
-
-      it('Cannot liquidate if the sender is not the taker or an authorized operator', async () => {
+      it('Cannot directly liquidate the account', async () => {
         await expectThrow(
-          liquidate(long, short, positionSize, { sender: thirdParty }),
-          'sender does not have permissions for the taker (i.e. liquidator)',
+          liquidate(short, long, positionSize),
+          'Cannot liquidate when maker position and margin are both negative',
+        );
+      });
+
+      it('Succeeds liquidating after bringing margin up to zero', async () => {
+        // Avoid additional funding.
+        await ctx.perpetual.testing.funder.setFunding(new BaseValue(0));
+
+        // Deposit margin into the target account to bring it to zero margin.
+        await ctx.perpetual.margin.withdraw(long, long, 500, { from: long });
+        await ctx.perpetual.margin.deposit(short, 500, { from: long });
+
+        // Liquidate the underwater account.
+        const txResult = await liquidate(short, long, positionSize);
+
+        // Check balances.
+        await expectBalances(
+          ctx,
+          txResult,
+          [long, short],
+          [new BigNumber(1000), new BigNumber(0)],
+          [new BigNumber(0), new BigNumber(0)],
         );
       });
     });
@@ -428,6 +452,6 @@ perpetualDescribe('P1Liquidation', init, (ctx: ITestContext) => {
     return ctx.perpetual.trade
       .initiate()
       .liquidate(maker, taker, amount, isBuy, !!args.allOrNothing)
-      .commit({ from: args.sender || taker });
+      .commit({ from: args.sender || globalOperator });
   }
 });

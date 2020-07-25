@@ -1,6 +1,16 @@
+import util from 'util';
 import Web3 from 'web3';
-import { stripHexPrefix } from './BytesHelper';
-import { address } from './types';
+
+import {
+  addressesAreEqual,
+  combineHexStrings,
+  stripHexPrefix,
+} from './BytesHelper';
+import {
+  SigningMethod,
+  TypedSignature,
+  address,
+} from './types';
 
 export enum SIGNATURE_TYPES {
   NO_PREPEND = 0,
@@ -37,6 +47,20 @@ export function isValidSigType(
   }
 }
 
+/**
+ * Returns a signable EIP712 Hash of a struct, given the domain and struct hashes.
+ */
+export function getEIP712Hash(
+  domainHash: string,
+  structHash: string,
+): string {
+  return Web3.utils.soliditySha3(
+    { t: 'bytes2', v: '0x1901' },
+    { t: 'bytes32', v: domainHash },
+    { t: 'bytes32', v: structHash },
+  );
+}
+
 export function getPrependedHash(
   hash: string,
   sigType: SIGNATURE_TYPES,
@@ -57,6 +81,18 @@ export function getPrependedHash(
     default:
       throw Error(`invalid sigType ${sigType}`);
   }
+}
+
+/**
+ * Returns true if the hash has a non-null valid signature from a particular signer.
+ */
+export function hashHasValidSignature(
+  hash: string,
+  typedSignature: string,
+  expectedSigner: address,
+): boolean {
+  const signer = ecRecoverTypedSignature(hash, typedSignature);
+  return addressesAreEqual(signer, expectedSigner);
 }
 
 export function ecRecoverTypedSignature(
@@ -101,24 +137,108 @@ export function createTypedSignature(
 export function fixRawSignature(
   signature: string,
 ): string {
+  const { v, r, s } = signatureToVRS(signature);
+
+  let trueV: string;
+  switch (v) {
+    case '00':
+      trueV = '1b';
+      break;
+    case '01':
+      trueV = '1c';
+      break;
+    case '1b':
+    case '1c':
+      trueV = v;
+      break;
+    default:
+      throw new Error(`Invalid v value: ${v}`);
+  }
+
+  return combineHexStrings(r, s, trueV);
+}
+
+export function signatureToVRS(
+  signature: string,
+): {
+  v: string,
+  r: string,
+  s: string,
+} {
   const stripped = stripHexPrefix(signature);
 
   if (stripped.length !== 130) {
     throw new Error(`Invalid raw signature: ${signature}`);
   }
 
-  const rs = stripped.substr(0, 128);
+  const r = stripped.substr(0, 64);
+  const s = stripped.substr(64, 64);
   const v = stripped.substr(128, 2);
 
-  switch (v) {
-    case '00':
-      return `0x${rs}1b`;
-    case '01':
-      return `0x${rs}1c`;
-    case '1b':
-    case '1c':
-      return `0x${stripped}`;
+  return { v, r, s };
+}
+
+export function signatureToSolidityStruct(
+  typedSignature: TypedSignature,
+): {
+  vType: string,
+  r: string;
+  s: string
+} {
+  const rawSignature = typedSignature.slice(0, 132);
+  const signatureType = typedSignature.slice(132, 134);
+  const { v, r, s } = signatureToVRS(rawSignature);
+  return {
+    vType: `0x${v}${signatureType}`,
+    r: `0x${r}`,
+    s: `0x${s}`,
+  };
+}
+
+export async function ethSignTypedDataInternal(
+  provider: any,
+  signer: string,
+  data: any,
+  signingMethod: SigningMethod,
+): Promise <TypedSignature> {
+  let sendMethod: string;
+  let rpcMethod: string;
+  let rpcData: any;
+
+  switch (signingMethod) {
+    case SigningMethod.TypedData:
+      sendMethod = 'send';
+      rpcMethod = 'eth_signTypedData';
+      rpcData = data;
+      break;
+    case SigningMethod.MetaMask:
+      sendMethod = 'sendAsync';
+      rpcMethod = 'eth_signTypedData_v3';
+      rpcData = JSON.stringify(data);
+      break;
+    case SigningMethod.MetaMaskLatest:
+      sendMethod = 'sendAsync';
+      rpcMethod = 'eth_signTypedData_v4';
+      rpcData = JSON.stringify(data);
+      break;
+    case SigningMethod.CoinbaseWallet:
+      sendMethod = 'sendAsync';
+      rpcMethod = 'eth_signTypedData';
+      rpcData = data;
+      break;
     default:
-      throw new Error(`Invalid v value: ${v}`);
+      throw new Error(`Invalid signing method ${signingMethod}`);
   }
+
+  const sendAsync = util.promisify(provider[sendMethod]).bind(provider);
+  const response = await sendAsync({
+    method: rpcMethod,
+    params: [signer, rpcData],
+    jsonrpc: '2.0',
+    id: new Date().getTime(),
+  });
+  if (response.error) {
+    throw new Error(response.error.message);
+  }
+  return `0x${stripHexPrefix(response.result)}0${SIGNATURE_TYPES.NO_PREPEND}`;
 }

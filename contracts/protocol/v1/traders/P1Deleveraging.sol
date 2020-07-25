@@ -69,6 +69,10 @@ contract P1Deleveraging is
         address indexed account
     );
 
+    event LogDeleveragingOperatorSet(
+        address deleveragingOperator
+    );
+
     // ============ Immutable Storage ============
 
     // address of the perpetual contract
@@ -85,29 +89,38 @@ contract P1Deleveraging is
     // The contract admin can deleverage underwater accounts at any time.
     mapping (address => uint256) public _MARKED_TIMESTAMP_;
 
+    // Address which has the ability to deleverage accounts without marking them first.
+    address public _DELEVERAGING_OPERATOR_;
+
     // ============ Constructor ============
 
     constructor (
-        address perpetualV1
+        address perpetualV1,
+        address deleveragingOperator
     )
         public
     {
         _PERPETUAL_V1_ = perpetualV1;
+        _DELEVERAGING_OPERATOR_ = deleveragingOperator;
+
+        emit LogDeleveragingOperatorSet(deleveragingOperator);
     }
 
     // ============ External Functions ============
 
     /**
      * @notice Allows an underwater (less than 100% collateralization) account to be subsumed by any
-     * other account with an offsetting position (a position of opposite sign). The sender must be
-     * the owner account unless the account has been marked as underwater for a timelock period.
+     *  other account with an offsetting position (a position of opposite sign). The sender must be
+     *  the privileged deleveraging operator unless the account has been marked as underwater for
+     *  the timelock period.
      * @dev Emits the LogDeleveraged event. May emit the LogUnmarkedForDeleveraging event.
-     * @param sender The address that called the trade() function on PerpetualV1.
-     * @param maker The underwater account.
-     * @param taker The offsetting account.
-     * @param price The current oracle price of the underlying asset.
-     * @param data A struct of type TradeData.
-     * @return The assets to be traded and traderFlags that indicate that a deleverage occurred.
+     *
+     * @param  sender  The address that called the trade() function on PerpetualV1.
+     * @param  maker   The underwater account.
+     * @param  taker   The offsetting account.
+     * @param  price   The current oracle price of the underlying asset.
+     * @param  data    A struct of type TradeData.
+     * @return         The amounts to be traded, and flags indicating that deleveraging occurred.
      */
     function trade(
         address sender,
@@ -118,7 +131,7 @@ contract P1Deleveraging is
         bytes32 traderFlags
     )
         external
-        returns(P1Types.TradeResult memory)
+        returns (P1Types.TradeResult memory)
     {
         address perpetual = _PERPETUAL_V1_;
         require(
@@ -126,8 +139,8 @@ contract P1Deleveraging is
             "msg.sender must be PerpetualV1"
         );
         require(
-            traderFlags & TRADER_FLAG_ORDERS == 0,
-            "cannot deleverage after execution of an order, in the same tx"
+            traderFlags == 0,
+            "cannot deleverage after other trade operations, in the same tx"
         );
 
         _verifyPermissions(
@@ -156,7 +169,10 @@ contract P1Deleveraging is
         // Ensure the collateralization of the maker does not decrease.
         uint256 marginAmount;
         if (tradeData.isBuy) {
-            marginAmount = uint256(makerBalance.margin).getFractionRoundUp(amount, makerBalance.position);
+            marginAmount = uint256(makerBalance.margin).getFractionRoundUp(
+                amount,
+                makerBalance.position
+            );
         } else {
             marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
         }
@@ -183,9 +199,10 @@ contract P1Deleveraging is
 
     /**
      * @notice Mark an account as underwater. An account must be marked for a period of time before
-     * any non-admin is allowed to deleverage that account.
+     *  any non-admin is allowed to deleverage that account.
      * @dev Emits the LogMarkedForDeleveraging event.
-     * @param account The account to mark.
+     *
+     * @param  account  The account to mark.
      */
     function mark(
         address account
@@ -201,9 +218,10 @@ contract P1Deleveraging is
     }
 
     /**
-     * @notice Un-mark an account as underwater if it no longer is.
+     * @notice Un-mark an account which is no longer underwater.
      * @dev Emits the LogUnmarkedForDeleveraging event.
-     * @param account The account to unmark.
+     *
+     * @param  account  The account to unmark.
      */
     function unmark(
         address account
@@ -215,6 +233,23 @@ contract P1Deleveraging is
             "Cannot unmark since account is underwater"
         );
         _unmark(account);
+    }
+
+    /**
+     * @notice Set the privileged deleveraging operator. Can only be called by the admin.
+     * @dev Emits the LogFundingRateProviderSet event.
+     *
+     * @param  newOperator  The new operator, who will have the ability to deleverage accounts
+     *                      without first marking them and waiting the timelock period.
+     */
+    function setDeleveragingOperator(
+        address newOperator
+    )
+        external
+        onlyOwner
+    {
+        _DELEVERAGING_OPERATOR_ = newOperator;
+        emit LogDeleveragingOperatorSet(newOperator);
     }
 
     // ============ Helper Functions ============
@@ -245,8 +280,8 @@ contract P1Deleveraging is
         private
         view
     {
-        // The contract admin may deleverage underwater accounts at any time.
-        if (sender != owner()) {
+        // The privileged deleveraging operator may deleverage underwater accounts at any time.
+        if (sender != _DELEVERAGING_OPERATOR_) {
             uint256 markedTimestamp = _MARKED_TIMESTAMP_[maker];
             require(
                 markedTimestamp != 0,
@@ -288,6 +323,16 @@ contract P1Deleveraging is
         require(
             tradeData.isBuy == makerBalance.positionIsPositive,
             "deleveraging must not increase maker's position size"
+        );
+
+        // Disallow deleveraging in the edge case where both the position and margin are negative.
+        //
+        // This case is not handled correctly by P1Trade. If an account is in this situation, the
+        // margin should first be set to zero via a deposit, then the account should be deleveraged.
+        require(
+            makerBalance.marginIsPositive || makerBalance.margin == 0 ||
+                makerBalance.positionIsPositive || makerBalance.position == 0,
+            "Cannot liquidate when maker position and margin are both negative"
         );
     }
 

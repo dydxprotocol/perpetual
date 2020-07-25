@@ -78,14 +78,15 @@ contract P1Liquidation is
 
     /**
      * @notice Allows an account below the minimum collateralization to be liquidated by another
-     * account. This allows the account to be partially or fully subsumed by the liquidator.
+     *  account. This allows the account to be partially or fully subsumed by the liquidator.
      * @dev Emits the LogLiquidated event.
-     * @param sender The address that called the trade() function on PerpetualV1.
-     * @param maker The account to be liquidated.
-     * @param taker The account of the liquidator.
-     * @param price The current oracle price of the underlying asset.
-     * @param data A struct of type TradeData.
-     * @return The assets to be traded and traderFlags that indicate that a liquidation occurred.
+     *
+     * @param  sender  The address that called the trade() function on PerpetualV1.
+     * @param  maker   The account to be liquidated.
+     * @param  taker   The account of the liquidator.
+     * @param  price   The current oracle price of the underlying asset.
+     * @param  data    A struct of type TradeData.
+     * @return         The amounts to be traded, and flags indicating that a liquidation occurred.
      */
     function trade(
         address sender,
@@ -96,7 +97,7 @@ contract P1Liquidation is
         bytes32 /* traderFlags */
     )
         external
-        returns(P1Types.TradeResult memory)
+        returns (P1Types.TradeResult memory)
     {
         address perpetual = _PERPETUAL_V1_;
 
@@ -106,8 +107,8 @@ contract P1Liquidation is
         );
 
         require(
-            P1Getters(perpetual).hasAccountPermissions(taker, sender),
-            "sender does not have permissions for the taker (i.e. liquidator)"
+            P1Getters(perpetual).getIsGlobalOperator(sender),
+            "Sender is not a global operator"
         );
 
         TradeData memory tradeData = abi.decode(data, (TradeData));
@@ -127,7 +128,10 @@ contract P1Liquidation is
         // Ensure the collateralization of the maker does not decrease.
         uint256 marginAmount;
         if (tradeData.isBuy) {
-            marginAmount = uint256(makerBalance.margin).getFractionRoundUp(amount, makerBalance.position);
+            marginAmount = uint256(makerBalance.margin).getFractionRoundUp(
+                amount,
+                makerBalance.position
+            );
         } else {
             marginAmount = uint256(makerBalance.margin).getFraction(amount, makerBalance.position);
         }
@@ -170,6 +174,16 @@ contract P1Liquidation is
         require(
             tradeData.isBuy == makerBalance.positionIsPositive,
             "liquidation must not increase maker's position size"
+        );
+
+        // Disallow liquidating in the edge case where both the position and margin are negative.
+        //
+        // This case is not handled correctly by P1Trade. If an account is in this situation, the
+        // margin should first be set to zero via a deposit, then the account should be deleveraged.
+        require(
+            makerBalance.marginIsPositive || makerBalance.margin == 0 ||
+                makerBalance.positionIsPositive || makerBalance.position == 0,
+            "Cannot liquidate when maker position and margin are both negative"
         );
     }
 
