@@ -53,6 +53,9 @@ import { Api } from './modules/Api';
 export class Perpetual {
   public web3: Web3;
   public contracts: Contracts;
+  public market: PerpetualMarket;
+
+  // Client modules.
   public proxy: Proxy;
   public admin: Admin;
   public finalSettlement: FinalSettlement;
@@ -83,6 +86,9 @@ export class Perpetual {
   ) {
     this.web3 = new Web3(provider);
     this.contracts = this.getContracts(provider, market, networkId, options.sendOptions);
+    this.market = market;
+
+    // Client modules.
     this.proxy = new Proxy(this.contracts);
     this.admin = new Admin(this.contracts);
     this.finalSettlement = new FinalSettlement(this.contracts);
@@ -104,16 +110,20 @@ export class Perpetual {
     this.api = new Api(this.orders, options.apiOptions);
 
     // Use different Orders module depending on if the market is a linear or inverse perpetual.
-    if (market === PerpetualMarket.PBTC_USDC) {
-      this.orders = new Orders(this.contracts, this.web3);
-    } else {
+    if (this.isInverse()) {
       this.orders = new InverseOrders(this.contracts, this.web3);
+    } else {
+      this.orders = new Orders(this.contracts, this.web3);
     }
     this.trade = new Trade(this.contracts, this.orders);
 
     if (options.accounts) {
       options.accounts.forEach(a => this.loadAccount(a));
     }
+  }
+
+  public isInverse(): boolean {
+    return this.market === PerpetualMarket.WETH_PUSD;
   }
 
   public setProvider(
