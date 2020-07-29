@@ -327,7 +327,7 @@ export class Orders {
         if (signingMethod === SigningMethod.UnsafeHash) {
           return unsafeHashSig;
         }
-        if (hashHasValidSignature(orderHash, unsafeHashSig, signer)) {
+        if (hashHasValidSignature(cancelHash, unsafeHashSig, signer)) {
           return unsafeHashSig;
         }
         return hashSig;
