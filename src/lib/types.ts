@@ -443,6 +443,7 @@ export enum ApiOrderType {
 
 export enum ApiMarketName {
   PBTC_USDC = 'PBTC-USDC',
+  WETH_PUSD = 'WETH-PUSD',
 }
 
 export enum ApiSide {
