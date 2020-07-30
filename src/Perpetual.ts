@@ -107,7 +107,6 @@ export class Perpetual {
     this.operator = new Operator(this.contracts);
     this.token = new Token(this.contracts);
     this.weth = new Weth(this.contracts);
-    this.api = new Api(this.orders, options.apiOptions);
 
     // Use different Orders module depending on if the market is a linear or inverse perpetual.
     if (this.isInverse()) {
@@ -115,7 +114,10 @@ export class Perpetual {
     } else {
       this.orders = new Orders(this.contracts, this.web3);
     }
+
+    // Client modules that rely on this.orders.
     this.trade = new Trade(this.contracts, this.orders);
+    this.api = new Api(this.orders, options.apiOptions);
 
     if (options.accounts) {
       options.accounts.forEach(a => this.loadAccount(a));
