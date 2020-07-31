@@ -100,4 +100,21 @@ export class InverseOrders extends Orders {
       positionDelta: isBuy ? positionAmount.negated() : positionAmount,
     };
   }
+
+  public getFeeForOrder(
+    amount: BigNumber,
+    isTaker: boolean = true,
+  ): Fee {
+    if (!isTaker) {
+      return Fee.fromBips('-2.5');
+    }
+
+    // WETH-PUSD: Small order size is 1000 USD.
+    //
+    // TODO: Address fees more generally on a per-market basis.
+    const isSmall = amount.lt('1000e6');
+    return isSmall
+      ? Fee.fromBips('50.0')
+      : Fee.fromBips('7.5');
+  }
 }
