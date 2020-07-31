@@ -229,6 +229,9 @@ export class Orders {
       return Fee.fromBips('-2.5');
     }
 
+    // PBTC-USDC: Small order size is 0.5 BTC.
+    //
+    // TODO: Address fees more generally on a per-market basis.
     const isSmall = amount.lt('0.5e8');
     return isSmall
       ? Fee.fromBips('50.0')
