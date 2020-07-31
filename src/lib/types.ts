@@ -86,7 +86,6 @@ export const Networks = {
 // ============ Initialization Options ============
 
 export interface PerpetualOptions {
-  defaultAccount?: address;
   sendOptions?: SendOptions;
   apiOptions?: ApiOptions;
   accounts?: EthereumAccount[];

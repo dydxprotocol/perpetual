@@ -44,7 +44,7 @@ Check out our full documentation at [docs.dydx.exchange](https://docs.dydx.excha
 
 ## Contracts
 
-The current contract addresses can be found in the [`migrations/deployed.json`](https://github.com/dydxprotocol/perpetual/blob/master/migrations/deployed.json) file.
+The current contract addresses can be found in the [`migrations/deployed.json`](./migrations/deployed.json) file.
 
 ## Security
 
