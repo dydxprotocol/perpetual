@@ -38,7 +38,7 @@ export class FundingOracle {
 
   constructor(
     contracts: Contracts,
-    oracle: Contract = contracts.p1FundingOracle,
+    oracle: Contract,
   ) {
     this.contracts = contracts;
     this.oracle = oracle;

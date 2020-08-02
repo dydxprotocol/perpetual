@@ -92,7 +92,6 @@ export class Perpetual {
     this.proxy = new Proxy(this.contracts);
     this.admin = new Admin(this.contracts);
     this.finalSettlement = new FinalSettlement(this.contracts);
-    this.fundingOracle = new FundingOracle(this.contracts);
     this.priceOracle = new PriceOracle(this.contracts);
     this.relayer = new Relayer(this.contracts);
     this.deleveraging = new Deleveraging(this.contracts);
@@ -108,11 +107,13 @@ export class Perpetual {
     this.token = new Token(this.contracts);
     this.weth = new Weth(this.contracts);
 
-    // Use different Orders module depending on if the market is a linear or inverse perpetual.
+    // Use different modules/contracts depending on if the market is a linear or inverse perpetual.
     if (this.isInverse()) {
       this.orders = new InverseOrders(this.contracts, this.web3);
+      this.fundingOracle = new FundingOracle(this.contracts, this.contracts.p1InverseFundingOracle);
     } else {
       this.orders = new Orders(this.contracts, this.web3);
+      this.fundingOracle = new FundingOracle(this.contracts, this.contracts.p1FundingOracle);
     }
 
     // Client modules that rely on this.orders.

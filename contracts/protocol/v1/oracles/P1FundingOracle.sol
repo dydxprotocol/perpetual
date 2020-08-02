@@ -116,7 +116,7 @@ contract P1FundingOracle is
     function getFunding(
         uint256 timeDelta
     )
-        external
+        public
         view
         returns (bool, uint256)
     {

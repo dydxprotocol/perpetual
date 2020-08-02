@@ -19,34 +19,19 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { I_P1Funder } from "../intf/I_P1Funder.sol";
+import { P1FundingOracle } from "./P1FundingOracle.sol";
 
 
 /**
- * @title P1FundingOracleInverter
+ * @title P1InverseFundingOracle
  * @author dYdX
  *
- * @notice P1FundingOracle that returns the inverted rate (i.e. flips base and quote currencies) of
- *  another P1FundingOracle.
+ * @notice P1FundingOracle that uses the inverted rate (i.e. flips base and quote currencies)
+ *  when getting the funding amount.
  */
-contract P1FundingOracleInverter is
-    I_P1Funder
+contract P1InverseFundingOracle is
+    P1FundingOracle
 {
-    // ============ Immutable Storage ============
-
-    // The underlying P1FundingOracle to get and invert the rate of.
-    address public _ORACLE_;
-
-    // ============ Constructor ============
-
-    constructor(
-        address oracle
-    )
-        public
-    {
-        _ORACLE_ = oracle;
-    }
-
     // ============ External Functions ============
 
     /**
@@ -60,11 +45,11 @@ contract P1FundingOracleInverter is
     function getFunding(
         uint256 timeDelta
     )
-        external
+        public
         view
         returns (bool, uint256)
     {
-        (bool isPositive, uint256 fundingAmount) = I_P1Funder(_ORACLE_).getFunding(timeDelta);
+        (bool isPositive, uint256 fundingAmount) = super.getFunding(timeDelta);
         return (!isPositive, fundingAmount);
     }
 }
