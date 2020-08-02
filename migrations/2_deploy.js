@@ -45,6 +45,7 @@ const PerpetualV1 = artifacts.require('PerpetualV1');
 
 // Funding Oracles
 const P1FundingOracle = artifacts.require('P1FundingOracle');
+const P1FundingOracleInverter = artifacts.require('P1FundingOracleInverter');
 
 // Traders
 const P1Orders = artifacts.require('P1Orders');
@@ -127,13 +128,19 @@ async function deployOracles(deployer, network) {
     deployer.deploy(P1MakerOracle),
   ]);
 
-  // Deploy oracle inverter.
-  await deployer.deploy(
-    P1OracleInverter,
-    P1MakerOracle.address,
-    PerpetualProxy.address, // TODO: Supply inverse perpetual address.
-    getInverseOracleAdjustmentExponent(network),
-  );
+  // Deploy price oracle inverter and funding oracle inverter.
+  await Promise.all([
+    deployer.deploy(
+      P1OracleInverter,
+      P1MakerOracle.address,
+      PerpetualProxy.address, // TODO: Supply inverse perpetual address.
+      getInverseOracleAdjustmentExponent(network),
+    ),
+    deployer.deploy(
+      P1FundingOracleInverter,
+      P1FundingOracle.address,
+    ),
+  ]);
 
   const oracle = await P1MakerOracle.deployed();
   const makerOracle = getMakerPriceOracleAddress(network, TestMakerOracle);

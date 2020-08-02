@@ -19,9 +19,7 @@
 pragma solidity 0.5.16;
 pragma experimental ABIEncoderV2;
 
-import { BaseMath } from "../../lib/BaseMath.sol";
 import { I_P1Funder } from "../intf/I_P1Funder.sol";
-import { P1Types } from "../lib/P1Types.sol";
 
 
 /**
@@ -31,7 +29,7 @@ import { P1Types } from "../lib/P1Types.sol";
  * @notice P1FundingOracle that returns the inverted rate (i.e. flips base and quote currencies) of
  *  another P1FundingOracle.
  */
-contract P1FundingOracle is
+contract P1FundingOracleInverter is
     I_P1Funder
 {
     // ============ Immutable Storage ============
