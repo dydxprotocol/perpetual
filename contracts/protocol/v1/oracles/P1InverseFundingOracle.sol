@@ -32,6 +32,16 @@ import { P1FundingOracle } from "./P1FundingOracle.sol";
 contract P1InverseFundingOracle is
     P1FundingOracle
 {
+    // ============ Constructor ============
+
+    constructor(
+        address fundingRateProvider
+    )
+        P1FundingOracle(fundingRateProvider)
+        public
+    {
+    }
+
     // ============ External Functions ============
 
     /**
