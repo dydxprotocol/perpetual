@@ -38,12 +38,14 @@
                 "address": "0x4525D2B71f7f018c9EBddFcD336852A85404e75B",
                 "transactionHash": "0x4c28d4cde296e23aa06eae7a69e0d7b92afb366771d548f014d835e4f3de5515"
             }
-        },
+        }
+    },
+    "P1InverseFundingOracle": {
         "WETH-PUSD": {
             "1": {
                 "links": {},
-                "address": "0x0119b84Bd8B114a60a5cC2e4A74708857a290213",
-                "transactionHash": "0x305d1377a6abdafe605b44e5f578b7a3c2c656d1d5186c546e512ec297dc56de"
+                "address": "0x5DDC23dEE470AEc28D51721b4E3A25f9399166EC",
+                "transactionHash": "0xe0d223e47b256512f277bc8298dda26502a9bf37f9203026ac2f9b92e09ab34e"
             }
         }
     },
