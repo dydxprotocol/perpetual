@@ -109,7 +109,7 @@ function getOracleAdjustment(network) {
 
 function getInverseOracleAdjustmentExponent(network) {
   if (isMainnet(network) || isKovan(network)) {
-    return '18'; // 1e18
+    return '30'; // 1e18
   }
   if (isDevNetwork(network)) {
     return '16'; // 0.01e18

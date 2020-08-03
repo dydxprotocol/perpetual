@@ -58,8 +58,8 @@
         "WETH-PUSD": {
             "1": {
                 "links": {},
-                "address": "0x45bB943f763411dedEcc6890657F94ED061b73C8",
-                "transactionHash": "0xf5eade731056084cb391bf5968397ae4f7c6eddf647c520905180f41b803e434"
+                "address": "0x538038E526517680735568f9C5342c6E68bbDA12",
+                "transactionHash": "0x0edf3c0cd9832ea4e6c0def02d95a22bdd967f702df3e3c84b41c59a65c2525a"
             }
         }
     },
@@ -67,8 +67,8 @@
         "WETH-PUSD": {
             "1": {
                 "links": {},
-                "address": "0x5DB3d2fcf17C4A5aE75F548288b2126768C5882f",
-                "transactionHash": "0xfe940bfb74cf6c64448735d8483287e7a42594cc075a91f76ba465815cb1a7ea"
+                "address": "0xcD37221C53b5208a2D7eabc7d5051B98D8030424",
+                "transactionHash": "0xacfb1292b75bb71b6a63aec2209bc8f8160510e55671e5ee07594c06711acaff"
             }
         }
     },
