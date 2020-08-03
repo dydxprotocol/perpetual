@@ -106,28 +106,6 @@ contract P1FundingOracle is
     // ============ External Functions ============
 
     /**
-     * @notice Calculates the signed funding amount that has accumulated over a period of time.
-     *
-     * @param  timeDelta  Number of seconds over which to calculate the accumulated funding amount.
-     * @return            True if the funding rate is positive, and false otherwise.
-     * @return            The funding amount as a unitless rate, represented as a fixed-point number
-     *                    with 18 decimals.
-     */
-    function getFunding(
-        uint256 timeDelta
-    )
-        external
-        view
-        returns (bool, uint256)
-    {
-        // Note: Funding interest in PerpetualV1 does not compound, as the interest affects margin
-        // balances but is calculated based on position balances.
-        P1Types.Index memory fundingRate = _FUNDING_RATE_;
-        uint256 fundingAmount = uint256(fundingRate.value).mul(timeDelta);
-        return (fundingRate.isPositive, fundingAmount);
-    }
-
-    /**
      * @notice Set the funding rate, denoted in units per second, fixed-point with 18 decimals.
      * @dev Can only be called by the funding rate provider. Emits the LogFundingRateUpdated event.
      *
@@ -172,6 +150,30 @@ contract P1FundingOracle is
     {
         _FUNDING_RATE_PROVIDER_ = newProvider;
         emit LogFundingRateProviderSet(newProvider);
+    }
+
+    // ============ Public Functions ============
+
+    /**
+     * @notice Calculates the signed funding amount that has accumulated over a period of time.
+     *
+     * @param  timeDelta  Number of seconds over which to calculate the accumulated funding amount.
+     * @return            True if the funding rate is positive, and false otherwise.
+     * @return            The funding amount as a unitless rate, represented as a fixed-point number
+     *                    with 18 decimals.
+     */
+    function getFunding(
+        uint256 timeDelta
+    )
+        public
+        view
+        returns (bool, uint256)
+    {
+        // Note: Funding interest in PerpetualV1 does not compound, as the interest affects margin
+        // balances but is calculated based on position balances.
+        P1Types.Index memory fundingRate = _FUNDING_RATE_;
+        uint256 fundingAmount = uint256(fundingRate.value).mul(timeDelta);
+        return (fundingRate.isPositive, fundingAmount);
     }
 
     // ============ Helper Functions ============

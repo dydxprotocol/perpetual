@@ -17,6 +17,7 @@
 */
 
 import BigNumber from 'bignumber.js';
+import { Contract } from 'web3-eth-contract';
 
 import { Contracts } from '../modules/Contracts';
 import {
@@ -33,15 +34,18 @@ import {
 
 export class FundingOracle {
   private contracts: Contracts;
+  private fundingOracle: Contract;
 
   constructor(
     contracts: Contracts,
+    fundingOracle: Contract,
   ) {
     this.contracts = contracts;
+    this.fundingOracle = fundingOracle;
   }
 
   public get address(): string {
-    return this.contracts.p1FundingOracle.options.address;
+    return this.fundingOracle.options.address;
   }
 
   // ============ Getters ============
@@ -50,9 +54,9 @@ export class FundingOracle {
     options?: CallOptions,
   ): Promise<FundingRateBounds> {
     const results: [string, string] = await Promise.all([
-      this.contracts.call(this.contracts.p1FundingOracle.methods.MAX_ABS_VALUE(), options),
+      this.contracts.call(this.fundingOracle.methods.MAX_ABS_VALUE(), options),
       this.contracts.call(
-        this.contracts.p1FundingOracle.methods.MAX_ABS_DIFF_PER_SECOND(),
+        this.fundingOracle.methods.MAX_ABS_DIFF_PER_SECOND(),
         options,
       ),
     ]);
@@ -67,7 +71,7 @@ export class FundingOracle {
     options?: CallOptions,
   ): Promise<BaseValue> {
     const [isPositive, funding]: [boolean, string] = await this.contracts.call(
-      this.contracts.p1FundingOracle.methods.getFunding(
+      this.fundingOracle.methods.getFunding(
         new BigNumber(timeDelta).toFixed(0),
       ),
       options,
@@ -86,7 +90,7 @@ export class FundingOracle {
     options?: CallOptions,
   ): Promise<address> {
     return this.contracts.call(
-      this.contracts.p1FundingOracle.methods._FUNDING_RATE_PROVIDER_(),
+      this.fundingOracle.methods._FUNDING_RATE_PROVIDER_(),
       options,
     );
   }
@@ -99,7 +103,7 @@ export class FundingOracle {
     options?: CallOptions,
   ): Promise<FundingRate> {
     const result: FundingRateStruct = await this.contracts.call(
-      this.contracts.p1FundingOracle.methods.setFundingRate(
+      this.fundingOracle.methods.setFundingRate(
         fundingRate.toSoliditySignedInt(),
       ),
       options,
@@ -119,7 +123,7 @@ export class FundingOracle {
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
-      this.contracts.p1FundingOracle.methods.setFundingRate(
+      this.fundingOracle.methods.setFundingRate(
         fundingRate.toSoliditySignedInt(),
       ),
       options,
@@ -136,7 +140,7 @@ export class FundingOracle {
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.contracts.send(
-      this.contracts.p1FundingOracle.methods.setFundingRateProvider(
+      this.fundingOracle.methods.setFundingRateProvider(
         fundingRateProvider,
       ),
       options,

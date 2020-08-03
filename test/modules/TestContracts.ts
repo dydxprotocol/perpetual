@@ -10,6 +10,7 @@ const jsonFolder = `../../${process.env.COVERAGE ? '.coverage_artifacts' : 'buil
 const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 const p1FundingOracleJson = require(`${jsonFolder}P1FundingOracle.json`);
+const p1InverseFundingOracleJson = require(`${jsonFolder}P1InverseFundingOracle.json`);
 const p1MakerOracleJson = require(`${jsonFolder}P1MakerOracle.json`);
 const p1OracleInverterJson = require(`${jsonFolder}P1OracleInverter.json`);
 const p1OrdersJson = require(`${jsonFolder}P1Orders.json`);
@@ -62,6 +63,7 @@ export class TestContracts extends Contracts {
     this.perpetualProxy = this.addContract(perpetualProxyJson);
     this.perpetualV1 = this.addContract(perpetualV1Json);
     this.p1FundingOracle = this.addContract(p1FundingOracleJson);
+    this.p1InverseFundingOracle = this.addContract(p1InverseFundingOracleJson);
     this.p1MakerOracle = this.addContract(p1MakerOracleJson);
     this.p1OracleInverter = this.addContract(p1OracleInverterJson);
     this.p1Orders = this.addContract(p1OrdersJson);

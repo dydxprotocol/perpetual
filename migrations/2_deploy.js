@@ -45,6 +45,7 @@ const PerpetualV1 = artifacts.require('PerpetualV1');
 
 // Funding Oracles
 const P1FundingOracle = artifacts.require('P1FundingOracle');
+const P1InverseFundingOracle = artifacts.require('P1InverseFundingOracle');
 
 // Traders
 const P1Orders = artifacts.require('P1Orders');
@@ -118,10 +119,14 @@ async function deployProtocol(deployer, network, accounts) {
 }
 
 async function deployOracles(deployer, network) {
-  // Deploy funding oracle and Maker oracle wrapper.
+  // Deploy funding oracles and Maker oracle wrapper.
   await Promise.all([
     deployer.deploy(
       P1FundingOracle,
+      getFundingRateProviderAddress(network),
+    ),
+    deployer.deploy(
+      P1InverseFundingOracle,
       getFundingRateProviderAddress(network),
     ),
     deployer.deploy(P1MakerOracle),
