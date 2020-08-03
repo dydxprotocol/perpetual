@@ -38,7 +38,7 @@ export class FundingOracle {
 
   constructor(
     contracts: Contracts,
-    fundingOracle: Contract,
+    fundingOracle: Contract = contracts.p1FundingOracle,
   ) {
     this.contracts = contracts;
     this.fundingOracle = fundingOracle;
@@ -66,19 +66,27 @@ export class FundingOracle {
     return { maxAbsValue, maxAbsDiffPerSecond };
   }
 
+  /**
+   * Get the funding that would accumulate over a period of time at the current rate.
+   *
+   * This is simply the current funding rate multiplied by the time delta in seconds.
+   */
   public async getFunding(
-    timeDelta: BigNumberable,
+    timeDeltaSeconds: BigNumberable,
     options?: CallOptions,
   ): Promise<BaseValue> {
     const [isPositive, funding]: [boolean, string] = await this.contracts.call(
       this.fundingOracle.methods.getFunding(
-        new BigNumber(timeDelta).toFixed(0),
+        new BigNumber(timeDeltaSeconds).toFixed(0),
       ),
       options,
     );
     return BaseValue.fromSolidity(funding, isPositive);
   }
 
+  /**
+   * Get the current funding rate, represented as a per-second rate.
+   */
   public async getFundingRate(
     options?: CallOptions,
   ): Promise<FundingRate> {
@@ -86,6 +94,9 @@ export class FundingOracle {
     return new FundingRate(oneSecondFunding.value);
   }
 
+  /**
+   * Get the address with permission to update the funding rate.
+   */
   public async getFundingRateProvider(
     options?: CallOptions,
   ): Promise<address> {
