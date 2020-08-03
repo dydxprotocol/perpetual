@@ -5,6 +5,7 @@
 import { default as PerpetualProxy } from '../build/contracts/PerpetualProxy.json';
 import { default as PerpetualV1 } from '../build/contracts/PerpetualV1.json';
 import { default as P1FundingOracle } from '../build/contracts/P1FundingOracle.json';
+import { default as P1InverseFundingOracle } from '../build/contracts/P1InverseFundingOracle.json';
 import { default as P1MakerOracle } from '../build/contracts/P1MakerOracle.json';
 import { default as P1OracleInverter } from '../build/contracts/P1OracleInverter.json';
 import { default as P1Orders } from '../build/contracts/P1Orders.json';
@@ -23,6 +24,7 @@ export default {
   PerpetualProxy,
   PerpetualV1,
   P1FundingOracle,
+  P1InverseFundingOracle,
   P1MakerOracle,
   P1OracleInverter,
   P1Orders,
