@@ -23,6 +23,7 @@ const EIP712_DOMAIN_NAME = 'P1InverseOrders';
  * - The fee is paid (or received) in base currency (margin).
  */
 export class InverseOrders extends Orders {
+
   constructor(
     contracts: Contracts,
     web3: Web3,
