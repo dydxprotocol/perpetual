@@ -186,7 +186,8 @@ perpetualDescribe('P1MirrorOracle', init, (ctx: ITestContext) => {
 
       await ctx.perpetual.testing.makerOracle.lift([signers[0]]);
       await oracle.lift([signers[0]]);
-      await ctx.perpetual.testing.makerOracle.lift([newSigner]);
+      // Use lowercase to avoid address checksum failure.
+      await ctx.perpetual.testing.makerOracle.lift([newSigner.toLowerCase()]);
 
       // Call the function.
       const { signersToAdd, signersToRemove, barNeedsUpdate } = await oracle.checkSyncedDetailed();
@@ -379,7 +380,8 @@ perpetualDescribe('P1MirrorOracle', init, (ctx: ITestContext) => {
 
       // Authorize it on the underlying oracle.
       await ctx.perpetual.testing.makerOracle.drop([signers[2]]);
-      await ctx.perpetual.testing.makerOracle.lift([newSigner]);
+      // Use lowercase to avoid address checksum failure.
+      await ctx.perpetual.testing.makerOracle.lift([newSigner.toLowerCase()]);
 
       await oracle.lift([newSigner]);
       await expectThrow(
@@ -459,7 +461,8 @@ perpetualDescribe('P1MirrorOracle', init, (ctx: ITestContext) => {
 
       // The orcl check will fail, but not the slot check.
       await expectThrow(
-        oracle.drop([newSigner]),
+        // Use lowercase to avoid address checksum failure.
+        oracle.drop([newSigner.toLowerCase()]),
         'P1MirrorOracle#drop: Signer is already not authorized',
       );
     });
