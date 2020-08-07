@@ -181,13 +181,14 @@ perpetualDescribe('P1MirrorOracle', init, (ctx: ITestContext) => {
 
     it('detects if a signer has changed to another signer with the same first byte', async () => {
       // Create a new signer address with the same first byte.
-      const newSigner = `${signers[0].slice(0, 4)}00000000000000000000000000000000000000`;
-      expect(newSigner).not.to.equal(signers[0]);
+      const newSigner = (
+        `${signers[0].slice(0, 4)}00000000000000000000000000000000000000`.toLowerCase()
+      );
 
       await ctx.perpetual.testing.makerOracle.lift([signers[0]]);
       await oracle.lift([signers[0]]);
       // Use lowercase to avoid address checksum failure.
-      await ctx.perpetual.testing.makerOracle.lift([newSigner.toLowerCase()]);
+      await ctx.perpetual.testing.makerOracle.lift([newSigner]);
 
       // Call the function.
       const { signersToAdd, signersToRemove, barNeedsUpdate } = await oracle.checkSyncedDetailed();
@@ -375,13 +376,14 @@ perpetualDescribe('P1MirrorOracle', init, (ctx: ITestContext) => {
 
     it('fails if a different signer with the same first byte is already authorized', async () => {
       // Create a new signer address with the same first byte.
-      const newSigner = `${signers[2].slice(0, 4)}00000000000000000000000000000000000000`;
-      expect(newSigner).not.to.equal(signers[2]);
+      const newSigner = (
+        `${signers[2].slice(0, 4)}00000000000000000000000000000000000000`.toLowerCase()
+      );
 
       // Authorize it on the underlying oracle.
       await ctx.perpetual.testing.makerOracle.drop([signers[2]]);
       // Use lowercase to avoid address checksum failure.
-      await ctx.perpetual.testing.makerOracle.lift([newSigner.toLowerCase()]);
+      await ctx.perpetual.testing.makerOracle.lift([newSigner]);
 
       await oracle.lift([newSigner]);
       await expectThrow(
@@ -456,13 +458,14 @@ perpetualDescribe('P1MirrorOracle', init, (ctx: ITestContext) => {
 
     it('fails to drop invalid signer even if the first byte matches a valid signer', async () => {
       // Create a new signer address with the same first byte.
-      const newSigner = `${signers[2].slice(0, 4)}00000000000000000000000000000000000000`;
-      expect(newSigner).not.to.equal(signers[2]);
+      const newSigner = (
+        `${signers[2].slice(0, 4)}00000000000000000000000000000000000000`.toLowerCase()
+      );
 
       // The orcl check will fail, but not the slot check.
       await expectThrow(
         // Use lowercase to avoid address checksum failure.
-        oracle.drop([newSigner.toLowerCase()]),
+        oracle.drop([newSigner]),
         'P1MirrorOracle#drop: Signer is already not authorized',
       );
     });
