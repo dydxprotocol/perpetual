@@ -164,5 +164,21 @@
                 "transactionHash": "0x79ac6ef29c10681802b5993b1fe4235dde4d47d358201ff2d82a853715367bde"
             }
         }
+    },
+    "P1MirrorOracleETHUSD": {
+        "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x29a199a49aF8d657C110418C2b0D2F932b025dE7",
+                "transactionHash": "0xad2c481b25dc01a68808f75418d6fff745e69b6264d6159577f09874423967db"
+            }
+        },
+        "WETH-PUSD": {
+            "1": {
+                "links": {},
+                "address": "0x29a199a49aF8d657C110418C2b0D2F932b025dE7",
+                "transactionHash": "0xad2c481b25dc01a68808f75418d6fff745e69b6264d6159577f09874423967db"
+            }
+        }
     }
 }
