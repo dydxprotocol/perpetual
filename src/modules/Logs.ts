@@ -64,7 +64,7 @@ export class Logs {
     return this._contractsByAddress;
   }
 
-  public parseLogs(receipt: TxResult): any {
+  public parseLogs(receipt: TxResult): any[] {
     let events: any[];
 
     if (receipt.logs) {

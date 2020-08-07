@@ -34,10 +34,29 @@ contract Test_MakerOracle is
 {
     uint256 public bar = 1;
     uint32 public age = uint32(block.timestamp);
+    mapping (address => uint256) public orcl;
+    mapping (address => uint256) public bud;
+    mapping (uint8 => address) public slot;
     uint256 public _PRICE_ = 0;
     bool public _VALID_ = true;
 
     // ============ Set Functions ============
+
+    function setBar(
+        uint256 newBar
+    )
+        external
+    {
+        bar = newBar;
+    }
+
+    function setAge(
+        uint256 newAge
+    )
+        external
+    {
+        age = uint32(newAge);
+    }
 
     function setPrice(
         uint256 newPrice
@@ -88,4 +107,66 @@ contract Test_MakerOracle is
     )
         external
     { /* solium-disable-line no-empty-blocks */ }
+
+    function lift(
+        address[] calldata signers
+    )
+        external
+    {
+        for (uint i = 0; i < signers.length; i++) {
+            address signer = signers[i];
+            uint8 signerId = uint8(uint256(signer) >> 152);
+            orcl[signer] = 1;
+            slot[signerId] = signer;
+        }
+    }
+
+    function drop(
+        address[] calldata signers
+    )
+        external
+    {
+        for (uint i = 0; i < signers.length; i++) {
+            address signer = signers[i];
+            uint8 signerId = uint8(uint256(signer) >> 152);
+            orcl[signer] = 0;
+            slot[signerId] = address(0);
+        }
+    }
+
+    function kiss(
+        address reader
+    )
+        external
+    {
+        bud[reader] = 1;
+    }
+
+    function diss(
+        address reader
+    )
+        external
+    {
+        bud[reader] = 0;
+    }
+
+    function kiss(
+        address[] calldata readers
+    )
+        external
+    {
+        for (uint256 i = 0; i < readers.length; i++) {
+            bud[readers[i]] = 1;
+        }
+    }
+
+    function diss(
+        address[] calldata readers
+    )
+        external
+    {
+        for (uint256 i = 0; i < readers.length; i++) {
+            bud[readers[i]] = 0;
+        }
+    }
 }

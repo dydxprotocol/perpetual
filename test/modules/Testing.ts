@@ -57,7 +57,7 @@ export class Testing {
     this.trader = new TestP1Trader(contracts);
     this.solo = new TestSolo(contracts);
     this.token = new TestToken(contracts);
-    this.makerOracle = new TestMakerOracle(contracts);
+    this.makerOracle = new TestMakerOracle(contracts, web3);
   }
 
   public setProvider(

@@ -27,6 +27,10 @@ import {
   TxResult,
 } from '../lib/types';
 
+/**
+ * Used to read and update the P1MakerOracle contract, which itself acts as a proxy for reading
+ * prices from one or more oracles implementing the Maker Oracle V2 interface.
+ */
 export class PriceOracle {
   private contracts: Contracts;
   private oracles: {[address: string]: Contract};
