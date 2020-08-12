@@ -235,7 +235,7 @@ export class Orders {
     const isSmall = amount.lt('0.5e8');
     return isSmall
       ? Fee.fromBips('50.0')
-      : Fee.fromBips('7.5');
+      : Fee.fromBips('15');
   }
 
   // ============ Signing Methods ============
