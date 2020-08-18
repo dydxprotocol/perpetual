@@ -27,7 +27,7 @@ perpetualDescribe('P1ChainlinkOracle', init, (ctx: ITestContext) => {
 
       await ctx.perpetual.testing.chainlinkAggregator.setAnswer(aggregatorPrice + 1000);
       const price2 = await ctx.perpetual.priceOracle.getPrice();
-      expectBaseValueEqual(price2, expectedOraclePrice.plus(1e-17));
+      expectBaseValueEqual(price2, expectedOraclePrice.plus(1e-5));
     });
 
     it('fails if msg.sender is not the authorized reader', async () => {
