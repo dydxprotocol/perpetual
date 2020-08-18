@@ -33,6 +33,7 @@ const testP1TraderJson = require(`${jsonFolder}Test_P1Trader.json`);
 const testSoloJson = require(`${jsonFolder}Test_Solo.json`);
 const testTokenJson = require(`${jsonFolder}Test_Token.json`);
 const testToken2Json = require(`${jsonFolder}Test_Token2.json`);
+const testChainlinkAggregatorJson = require(`${jsonFolder}Test_ChainlinkAggregator.json`);
 const testMakerOracleJson = require(`${jsonFolder}Test_MakerOracle.json`);
 const wethJson  = require(`${jsonFolder}/WETH9.json`);
 
@@ -48,6 +49,7 @@ export class TestContracts extends Contracts {
   public testSolo: Contract;
   public testToken: Contract;
   public testToken2: Contract;
+  public testChainlinkAggregator: Contract;
   public testMakerOracle: Contract;
 
   constructor(
@@ -88,6 +90,7 @@ export class TestContracts extends Contracts {
     this.testSolo = this.addContract(testSoloJson, true);
     this.testToken = this.addContract(testTokenJson, true);
     this.testToken2 = this.addContract(testToken2Json, true);
+    this.testChainlinkAggregator = this.addContract(testChainlinkAggregatorJson, true);
     this.testMakerOracle = this.addContract(testMakerOracleJson, true);
 
     this.setProvider(provider, networkId);

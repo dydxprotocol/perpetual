@@ -27,6 +27,7 @@ import { TestP1Oracle } from './TestP1Oracle';
 import { TestP1Trader } from './TestP1Trader';
 import { TestSolo } from './TestSolo';
 import { TestToken } from './TestToken';
+import { TestChainlinkAggregator } from './TestChainlinkAggregator';
 import { TestMakerOracle } from './TestMakerOracle';
 import { Provider } from '../../src/lib/types';
 import { TestContracts } from './TestContracts';
@@ -41,6 +42,7 @@ export class Testing {
   public trader: TestP1Trader;
   public solo: TestSolo;
   public token: TestToken;
+  public chainlinkAggregator: TestChainlinkAggregator;
   public makerOracle: TestMakerOracle;
 
   constructor(
@@ -57,6 +59,7 @@ export class Testing {
     this.trader = new TestP1Trader(contracts);
     this.solo = new TestSolo(contracts);
     this.token = new TestToken(contracts);
+    this.chainlinkAggregator = new TestChainlinkAggregator(contracts);
     this.makerOracle = new TestMakerOracle(contracts, web3);
   }
 
