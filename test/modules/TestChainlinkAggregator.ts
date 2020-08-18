@@ -21,7 +21,7 @@ export class TestChainlinkAggregator {
     options?: SendOptions,
   ): Promise<TxResult> {
     return this.testContracts.send(
-      this.testContracts.testMakerOracle.methods.setAnswer(
+      this.testContracts.testChainlinkAggregator.methods.setAnswer(
         new BigNumber(newAnswer).toFixed(0),
       ),
       options,

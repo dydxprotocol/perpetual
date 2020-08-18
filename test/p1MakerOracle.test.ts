@@ -28,24 +28,24 @@ perpetualDescribe('P1MakerOracle', init, (ctx: ITestContext) => {
       const makerOracleAddress = ctx.perpetual.testing.makerOracle.address;
       const nullAddress = ADDRESSES.ZERO;
 
-      await ctx.perpetual.priceOracle.setRoute(
+      await ctx.perpetual.makerPriceOracle.setRoute(
         proxyAddress,
         nullAddress,
         { from: ctx.accounts[0] },
       );
-      expect(await ctx.perpetual.priceOracle.getRoute(proxyAddress)).to.eq(nullAddress);
+      expect(await ctx.perpetual.makerPriceOracle.getRoute(proxyAddress)).to.eq(nullAddress);
 
-      await ctx.perpetual.priceOracle.setRoute(
+      await ctx.perpetual.makerPriceOracle.setRoute(
         proxyAddress,
         makerOracleAddress,
         { from: ctx.accounts[0] },
       );
-      expect(await ctx.perpetual.priceOracle.getRoute(proxyAddress)).to.eq(makerOracleAddress);
+      expect(await ctx.perpetual.makerPriceOracle.getRoute(proxyAddress)).to.eq(makerOracleAddress);
     });
 
     it('fails if not owner', async () => {
       await expectThrow(
-        ctx.perpetual.priceOracle.setRoute(
+        ctx.perpetual.makerPriceOracle.setRoute(
           ADDRESSES.ZERO,
           ADDRESSES.ZERO,
           { from: ctx.accounts[9] },
@@ -57,21 +57,21 @@ perpetualDescribe('P1MakerOracle', init, (ctx: ITestContext) => {
 
   describe('setAdjustment', () => {
     it('succeeds', async () => {
-      await ctx.perpetual.priceOracle.setAdjustment(
+      await ctx.perpetual.makerPriceOracle.setAdjustment(
         ctx.perpetual.testing.makerOracle.address,
         new BaseValue(0),
         { from: ctx.accounts[0] },
       );
       const price0 = await ctx.perpetual.priceOracle.getPrice();
 
-      await ctx.perpetual.priceOracle.setAdjustment(
+      await ctx.perpetual.makerPriceOracle.setAdjustment(
         ctx.perpetual.testing.makerOracle.address,
         new BaseValue(1),
         { from: ctx.accounts[0] },
       );
       const price1 = await ctx.perpetual.priceOracle.getPrice();
 
-      await ctx.perpetual.priceOracle.setAdjustment(
+      await ctx.perpetual.makerPriceOracle.setAdjustment(
         ctx.perpetual.testing.makerOracle.address,
         new BaseValue(2),
         { from: ctx.accounts[0] },
@@ -85,7 +85,7 @@ perpetualDescribe('P1MakerOracle', init, (ctx: ITestContext) => {
 
     it('fails if not owner', async () => {
       await expectThrow(
-        ctx.perpetual.priceOracle.setAdjustment(
+        ctx.perpetual.makerPriceOracle.setAdjustment(
           ADDRESSES.ZERO,
           new BaseValue(1),
           { from: ctx.accounts[9] },
@@ -118,7 +118,7 @@ perpetualDescribe('P1MakerOracle', init, (ctx: ITestContext) => {
 
     it('fails if about to return zero', async () => {
       await ctx.perpetual.testing.makerOracle.setPrice(Price.fromSolidity(100));
-      await ctx.perpetual.priceOracle.setAdjustment(
+      await ctx.perpetual.makerPriceOracle.setAdjustment(
         ctx.perpetual.testing.makerOracle.address,
         new BaseValue('0.001'),
         { from: ctx.accounts[0] },

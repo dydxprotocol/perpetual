@@ -139,7 +139,7 @@ async function deployOracles(deployer, network) {
       P1InverseFundingOracle,
       getFundingRateProviderAddress(network),
     ),
-    deployder.deploy(
+    deployer.deploy(
       P1ChainlinkOracle,
       chainlinkOracle,
       PerpetualProxy.address,

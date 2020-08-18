@@ -117,7 +117,7 @@ function getOracleAdjustment(network) {
   throw new Error('Cannot find oracle adjustment');
 }
 
-function getChainlinkOracleAdjustmentExponent(network) {
+function getChainlinkOracleAdjustmentExponent() {
   // Aggregator provides “natural” price with 8 decimals of precision.
   // LINK has 18 decimals.
   // USD has 6 decimals (by convention).
