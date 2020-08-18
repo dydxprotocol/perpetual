@@ -119,9 +119,9 @@ function getOracleAdjustment(network) {
 
 function getChainlinkOracleAdjustmentExponent() {
   // Aggregator provides “natural” price with 8 decimals of precision.
-  // LINK has 18 decimals.
-  // USD has 6 decimals (by convention).
-  return '16'; // 0.01e18
+  // PLINK uses 6 decimals (by convention).
+  // USDC uses 6 decimals.
+  return '28';
 }
 
 function getInverseOracleAdjustmentExponent(network) {
