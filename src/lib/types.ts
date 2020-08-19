@@ -445,6 +445,7 @@ export enum ApiOrderType {
 export enum ApiMarketName {
   PBTC_USDC = 'PBTC-USDC',
   WETH_PUSD = 'WETH-PUSD',
+  PLINK_USDC = 'PLINK-USDC',
 }
 
 export enum ApiSide {

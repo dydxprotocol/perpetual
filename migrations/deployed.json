@@ -7,6 +7,13 @@
                 "transactionHash": "0xb50455ad54d77e18450d55ad9f3b9b50e203a9157b131e97ca9b55fe7f350c85"
             }
         },
+        "PLINK-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x1c50c582c7066049C560Bca20416b1d9E0dfb003",
+                "transactionHash": "0x489e25f74821bdd25a28e896a7af1c00fb8ed4f1105fbd51d489ae82a51a8f3c"
+            }
+        },
         "WETH-PUSD": {
             "1": {
                 "links": {},
@@ -17,6 +24,13 @@
     },
     "PerpetualV1": {
         "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0xE883b3efdaE637fC599b467478a23199778F2cCf",
+                "transactionHash": "0x47363365c2f28f4e7082c6a0ed7be04d5e0a5636e13dc622dd5e426cb6c48c86"
+            }
+        },
+        "PLINK-USDC": {
             "1": {
                 "links": {},
                 "address": "0xE883b3efdaE637fC599b467478a23199778F2cCf",
@@ -37,6 +51,13 @@
                 "links": {},
                 "address": "0x4525D2B71f7f018c9EBddFcD336852A85404e75B",
                 "transactionHash": "0x4c28d4cde296e23aa06eae7a69e0d7b92afb366771d548f014d835e4f3de5515"
+            }
+        },
+        "PLINK-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x8B90515C7a99b7Edd97702c04d1E3666281De1B0",
+                "transactionHash": "0xa935927f7e9269033c8e9cc35d3b74a05c13b4ff81cd4a8917f56bb302d36690"
             }
         }
     },
@@ -74,12 +95,28 @@
             }
         }
     },
+    "P1ChainlinkOracle": {
+        "PLINK-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x78456DE31f5978C44E1595DD2F49AfD1B71fd377",
+                "transactionHash": "0xa0e9a450b3ef67490c5f109838e6050644beef65cdaadc9e3f52b2f217046663"
+            }
+        }
+    },
     "P1Orders": {
         "PBTC-USDC": {
             "1": {
                 "links": {},
                 "address": "0x3ea6F88eC8F7b24Bb3Ad206fa80124210e8e28F3",
                 "transactionHash": "0xc7ba3cbde3a89f4a34e0f7a323ffb6439a86e2431c3011d0a01ce5aebd7b5d66"
+            }
+        },
+        "PLINK-USDC": {
+            "1": {
+                "links": {},
+                "address": "0xaC14B70adBf42bedE4E4c7Ef67E8CB618b0D4506",
+                "transactionHash": "0x233dcd04401b7d70d0f21ae0d5f785f92bb6e6f2a93abfb0abd8ba327b9d55d2"
             }
         }
     },
@@ -100,6 +137,13 @@
                 "transactionHash": "0xfbbd02bccef8f30c6e60edfd8323b30e76e24d2ec8e52213d8393f433d616b00"
             }
         },
+        "PLINK-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x5f428e427096D5085D8d95D64d90f3e7c13C92Fb",
+                "transactionHash": "0x8e74ca4d6044af90143ef7bd8fde5f0e10f8964b73ff940828eecc45f8f7d251"
+            }
+        },
         "WETH-PUSD": {
             "1": {
                 "links": {},
@@ -114,6 +158,13 @@
                 "links": {},
                 "address": "0x9b1289dd794F10AF38A3117fE933836D685f7339",
                 "transactionHash": "0x4eabdf1b32ae3b0364818ae10df41fd4a6d284480d1d78a32ffd52ea72fc49b4"
+            }
+        },
+        "PLINK-USDC": {
+            "1": {
+                "links": {},
+                "address": "0xEc4870B8Dd7979bfc7c5E6220893B3A5dD646F0C",
+                "transactionHash": "0x944d0305cd9c29a47ee413614fcd0f591f01357cc62279b5cfefd2937d3783dc"
             }
         },
         "WETH-PUSD": {
@@ -132,6 +183,13 @@
                 "transactionHash": "0x96a9e89570c1251e719017a500089f3b2348a547482b8ec33ddb0d94bf634af3"
             }
         },
+        "PLINK-USDC": {
+            "1": {
+                "links": {},
+                "address": "0xfe66fB327CbECe4697DC9f9ef091B2f8710775b7",
+                "transactionHash": "0x09515c5fd1f97cd84b85aad329b3a3d434890a5ad77995c2cc83c2201dfdfe99"
+            }
+        },
         "WETH-PUSD": {
             "1": {
                 "links": {},
@@ -142,6 +200,13 @@
     },
     "P1CurrencyConverterProxy": {
         "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0xA0d885316Be23dE8bB19E7C53F6d483279E3467D",
+                "transactionHash": "0xebf5df9bd9e7a35896f4e3c69b781b85f7c35a7b2f32500f634f7837bce74fdf"
+            }
+        },
+        "PLINK-USDC": {
             "1": {
                 "links": {},
                 "address": "0xA0d885316Be23dE8bB19E7C53F6d483279E3467D",
@@ -167,6 +232,13 @@
     },
     "P1MirrorOracleETHUSD": {
         "PBTC-USDC": {
+            "1": {
+                "links": {},
+                "address": "0x29a199a49aF8d657C110418C2b0D2F932b025dE7",
+                "transactionHash": "0xad2c481b25dc01a68808f75418d6fff745e69b6264d6159577f09874423967db"
+            }
+        },
+        "PLINK-USDC": {
             "1": {
                 "links": {},
                 "address": "0x29a199a49aF8d657C110418C2b0D2F932b025dE7",
