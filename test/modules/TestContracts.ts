@@ -11,6 +11,7 @@ const perpetualProxyJson = require(`${jsonFolder}PerpetualProxy.json`);
 const perpetualV1Json = require(`${jsonFolder}PerpetualV1.json`);
 const p1FundingOracleJson = require(`${jsonFolder}P1FundingOracle.json`);
 const p1InverseFundingOracleJson = require(`${jsonFolder}P1InverseFundingOracle.json`);
+const p1ChainlinkOracleJson = require(`${jsonFolder}P1ChainlinkOracle.json`);
 const p1MakerOracleJson = require(`${jsonFolder}P1MakerOracle.json`);
 const p1MirrorOracleETHUSDJson = require(`${jsonFolder}P1MirrorOracleETHUSD.json`);
 const p1OracleInverterJson = require(`${jsonFolder}P1OracleInverter.json`);
@@ -67,6 +68,7 @@ export class TestContracts extends Contracts {
     this.perpetualV1 = this.addContract(perpetualV1Json);
     this.p1FundingOracle = this.addContract(p1FundingOracleJson);
     this.p1InverseFundingOracle = this.addContract(p1InverseFundingOracleJson);
+    this.p1ChainlinkOracle = this.addContract(p1ChainlinkOracleJson);
     this.p1MakerOracle = this.addContract(p1MakerOracleJson);
     this.p1MirrorOracle = this.addContract(p1MirrorOracleETHUSDJson);
     this.p1OracleInverter = this.addContract(p1OracleInverterJson);

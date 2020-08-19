@@ -152,7 +152,7 @@ async function deployOracles(deployer, network) {
   await deployer.deploy(
     P1OracleInverter,
     P1MakerOracle.address,
-    PerpetualProxy.address, // TODO: Supply inverse perpetual address.
+    PerpetualProxy.address,
     getInverseOracleAdjustmentExponent(network),
   );
 
