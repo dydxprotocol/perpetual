@@ -19,9 +19,11 @@
 const {
   getChainId,
   isDevNetwork,
+  getChainlinkPriceOracleAddress,
   getMakerPriceOracleAddress,
   getDeployerAddress,
   getOracleAdjustment,
+  getChainlinkOracleAdjustmentExponent,
   getInverseOracleAdjustmentExponent,
   getTokenAddress,
   getWethAddress,
@@ -54,6 +56,7 @@ const P1Deleveraging = artifacts.require('P1Deleveraging');
 const P1Liquidation = artifacts.require('P1Liquidation');
 
 // Price Oracles
+const P1ChainlinkOracle = artifacts.require('P1ChainlinkOracle');
 const P1MakerOracle = artifacts.require('P1MakerOracle');
 const P1OracleInverter = artifacts.require('P1OracleInverter');
 const P1MirrorOracleETHUSD = artifacts.require('P1MirrorOracleETHUSD');
@@ -75,6 +78,7 @@ const TestSolo = artifacts.require('Test_Solo');
 const TestToken = artifacts.require('Test_Token');
 const TestToken2 = artifacts.require('Test_Token2');
 const TestMakerOracle = artifacts.require('Test_MakerOracle');
+const TestChainlinkAggregator = artifacts.require('Test_ChainlinkAggregator');
 const WETH9 = artifacts.require('WETH9');
 
 // ============ Main Migration ============
@@ -104,6 +108,7 @@ async function deployTestContracts(deployer, network) {
       deployer.deploy(TestToken),
       deployer.deploy(TestToken2),
       deployer.deploy(TestMakerOracle),
+      deployer.deploy(TestChainlinkAggregator),
       deployer.deploy(WETH9),
     ]);
   }
@@ -120,7 +125,11 @@ async function deployProtocol(deployer, network, accounts) {
 }
 
 async function deployOracles(deployer, network) {
-  // Deploy funding oracles and Maker oracle wrapper.
+  // Get external oracle addresses.
+  const chainlinkOracle = getChainlinkPriceOracleAddress(network, TestChainlinkAggregator);
+  const makerOracle = getMakerPriceOracleAddress(network, TestMakerOracle);
+
+  // Deploy funding oracles, Maker oracle wrapper, and Chainlink oracle wrapper.
   await Promise.all([
     deployer.deploy(
       P1FundingOracle,
@@ -130,6 +139,12 @@ async function deployOracles(deployer, network) {
       P1InverseFundingOracle,
       getFundingRateProviderAddress(network),
     ),
+    deployer.deploy(
+      P1ChainlinkOracle,
+      chainlinkOracle,
+      PerpetualProxy.address,
+      getChainlinkOracleAdjustmentExponent(network),
+    ),
     deployer.deploy(P1MakerOracle),
   ]);
 
@@ -137,12 +152,11 @@ async function deployOracles(deployer, network) {
   await deployer.deploy(
     P1OracleInverter,
     P1MakerOracle.address,
-    PerpetualProxy.address, // TODO: Supply inverse perpetual address.
+    PerpetualProxy.address,
     getInverseOracleAdjustmentExponent(network),
   );
 
   // Deploy mirror oracle.
-  const makerOracle = getMakerPriceOracleAddress(network, TestMakerOracle);
   await deployer.deploy(
     P1MirrorOracleETHUSD,
     makerOracle,

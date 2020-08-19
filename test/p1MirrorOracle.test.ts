@@ -49,7 +49,7 @@ async function init(ctx: ITestContext): Promise<void> {
       ctx,
       { oracle: ctx.perpetual.contracts.p1MakerOracle.options.address },
     ),
-    ctx.perpetual.priceOracle.setRoute(
+    ctx.perpetual.makerPriceOracle.setRoute(
       ctx.perpetual.contracts.perpetualProxy.options.address,
       ctx.perpetual.contracts.p1MirrorOracle.options.address,
       { from: admin },

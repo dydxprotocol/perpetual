@@ -17,23 +17,19 @@
 */
 
 import { Contract } from 'web3-eth-contract';
+
 import { Contracts } from '../modules/Contracts';
 import {
-  address,
-  BaseValue,
   Price,
   CallOptions,
-  SendOptions,
-  TxResult,
 } from '../lib/types';
 
 /**
- * Used to read and update the P1MakerOracle contract, which itself acts as a proxy for reading
- * prices from one or more oracles implementing the Maker Oracle V2 interface.
+ * Reads from a contract implementing the I_P1Oracle interface.
  */
 export class PriceOracle {
-  private contracts: Contracts;
-  private oracles: {[address: string]: Contract};
+  protected contracts: Contracts;
+  private oracles: { [address: string]: Contract };
 
   constructor(
     contracts: Contracts,
@@ -43,10 +39,6 @@ export class PriceOracle {
   }
 
   // ============ Getter Functions ============
-
-  public get address(): string {
-    return this.contracts.p1MakerOracle.options.address;
-  }
 
   public async getPrice(
     options: CallOptions = {},
@@ -61,51 +53,6 @@ export class PriceOracle {
       combinedOptions,
     );
     return Price.fromSolidity(price);
-  }
-
-  public async getRoute(
-    sender: address,
-    options: CallOptions = {},
-  ): Promise<address> {
-    return this.contracts.call(
-      this.contracts.p1MakerOracle.methods._ROUTER_(sender),
-      options,
-    );
-  }
-
-  public async getOracleAdjustment(
-    oracleAddress: address,
-    options: CallOptions = {},
-  ): Promise<BaseValue> {
-    const result = await this.contracts.call(
-      this.contracts.p1MakerOracle.methods._ADJUSTMENTS_(oracleAddress),
-      options,
-    );
-    return BaseValue.fromSolidity(result);
-  }
-
-  // ============ Admin Functions ============
-
-  public async setRoute(
-    sender: address,
-    oracle: address,
-    options: SendOptions = {},
-  ): Promise<TxResult> {
-    return this.contracts.send(
-      this.contracts.p1MakerOracle.methods.setRoute(sender, oracle),
-      options,
-    );
-  }
-
-  public async setAdjustment(
-    oracle: address,
-    adjustment: BaseValue,
-    options: SendOptions = {},
-  ): Promise<TxResult> {
-    return this.contracts.send(
-      this.contracts.p1MakerOracle.methods.setAdjustment(oracle, adjustment.toSolidity()),
-      options,
-    );
   }
 
   // ============ Helper Functions ============

@@ -74,6 +74,16 @@ function getPartiallyDelayedMultisigAddress(network) {
   throw new Error('Cannot find Admin Multisig');
 }
 
+function getChainlinkPriceOracleAddress(network, devContract) {
+  if (isMainnet(network)) {
+    return '0x2c1d072e956AFFC0D435Cb7AC38EF18d24d9127c'; // LINK-USD price aggregator
+  }
+  if (isDevNetwork(network)) {
+    return devContract.address;
+  }
+  throw new Error('Cannot find Chainlink price oracle');
+}
+
 function getMakerPriceOracleAddress(network, devContract) {
   if (isMainnet(network)) {
     return '0x064409168198A7E9108036D072eF59F923dEDC9A';
@@ -84,7 +94,7 @@ function getMakerPriceOracleAddress(network, devContract) {
   if (isDevNetwork(network)) {
     return devContract.address;
   }
-  throw new Error('Cannot find MakerPriceOracle');
+  throw new Error('Cannot find Maker price oracle');
 }
 
 function getDeployerAddress(network, accounts) {
@@ -105,6 +115,13 @@ function getOracleAdjustment(network) {
     return '1000000000000000000'; // 1e18
   }
   throw new Error('Cannot find oracle adjustment');
+}
+
+function getChainlinkOracleAdjustmentExponent() {
+  // Aggregator provides “natural” price with 8 decimals of precision.
+  // PLINK uses 6 decimals (by convention).
+  // USDC uses 6 decimals.
+  return '28';
 }
 
 function getInverseOracleAdjustmentExponent(network) {
@@ -207,9 +224,11 @@ module.exports = {
   getChainId,
   isDevNetwork,
   getPartiallyDelayedMultisigAddress,
+  getChainlinkPriceOracleAddress,
   getMakerPriceOracleAddress,
   getDeployerAddress,
   getOracleAdjustment,
+  getChainlinkOracleAdjustmentExponent,
   getInverseOracleAdjustmentExponent,
   getTokenAddress,
   getWethAddress,

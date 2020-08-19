@@ -34,6 +34,7 @@ import { FinalSettlement } from './modules/FinalSettlement';
 import { FundingOracle } from './modules/FundingOracle';
 import { InverseFundingOracle } from './modules/InverseFundingOracle';
 import { PriceOracle } from './modules/PriceOracle';
+import { MakerPriceOracle } from './modules/MakerPriceOracle';
 import { Relayer } from './modules/Relayer';
 import { Deleveraging } from './modules/Deleveraging';
 import { Liquidation } from './modules/Liquidation';
@@ -93,7 +94,6 @@ export class Perpetual {
     this.proxy = new Proxy(this.contracts);
     this.admin = new Admin(this.contracts);
     this.finalSettlement = new FinalSettlement(this.contracts);
-    this.priceOracle = new PriceOracle(this.contracts);
     this.relayer = new Relayer(this.contracts, this.web3);
     this.deleveraging = new Deleveraging(this.contracts);
     this.liquidation = new Liquidation(this.contracts);
@@ -108,13 +108,18 @@ export class Perpetual {
     this.token = new Token(this.contracts);
     this.weth = new Weth(this.contracts);
 
-    // Use different modules/contracts depending on if the market is a linear or inverse perpetual.
+    // Use different modules/contracts depending on the market.
     if (this.isInverse()) {
       this.orders = new InverseOrders(this.contracts, this.web3);
       this.fundingOracle = new InverseFundingOracle(this.contracts);
     } else {
       this.orders = new Orders(this.contracts, this.web3);
       this.fundingOracle = new FundingOracle(this.contracts);
+    }
+    if (this.usesMakerOracle()) {
+      this.priceOracle = new MakerPriceOracle(this.contracts);
+    } else {
+      this.priceOracle = new PriceOracle(this.contracts);
     }
 
     // Client modules that rely on this.orders.
@@ -126,8 +131,19 @@ export class Perpetual {
     }
   }
 
+  get makerPriceOracle(): MakerPriceOracle {
+    if (this.usesMakerOracle()) {
+      return this.priceOracle as MakerPriceOracle;
+    }
+    throw new Error('Market does not use a Maker price oracle');
+  }
+
   public isInverse(): boolean {
     return this.market === PerpetualMarket.WETH_PUSD;
+  }
+
+  public usesMakerOracle(): boolean {
+    return [PerpetualMarket.PBTC_USDC, PerpetualMarket.WETH_PUSD].includes(this.market);
   }
 
   public setProvider(
