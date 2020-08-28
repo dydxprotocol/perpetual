@@ -393,6 +393,27 @@ perpetualDescribe('P1Orders', init, (ctx: ITestContext) => {
         await fillOrder();
         await fillOrder({ salt: defaultOrder.salt.plus(1) });
       });
+
+      it('succeeds if order taker is the zero address', async () => {
+        await fillOrder({ taker: ADDRESSES.ZERO });
+
+        const order = await getModifiedOrder({ taker: ADDRESSES.ZERO });
+        const tradeData = ctx.perpetual.orders.fillToTradeData(
+          order,
+          orderAmount,
+          limitPrice,
+          defaultOrder.limitFee,
+        );
+        await ctx.perpetual.trade
+          .initiate()
+          .addTradeArg({
+            maker: defaultOrder.maker,
+            taker: defaultOrder.taker,
+            data: tradeData,
+            trader: ctx.perpetual.orders.address,
+          })
+          .commit({ from: defaultOrder.taker });
+      });
     });
 
     describe('basic failure cases', () => {
